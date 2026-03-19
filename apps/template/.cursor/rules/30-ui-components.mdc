@@ -1,0 +1,18 @@
+---
+description: Patrones para componentes simples en Astro y MDX dentro del sitio
+globs: "{src/components/**/*.{astro,ts,tsx,js,jsx},src/content/docs/**/*.mdx}"
+alwaysApply: false
+---
+
+# UI components
+
+- Prefiere componentes nativos de Starlight antes de crear componentes propios.
+- Si un componente propio es necesario, que sea pequeño, presentacional y fácil de reutilizar.
+- No escondas información docente esencial dentro de componentes complejos.
+- Evita islands o lógica de cliente salvo necesidad clara.
+- Si un patrón visual se repite varias veces, extrae un componente o un bloque MDX reusable.
+
+## Ejemplo
+
+- ❌ Crear un componente interactivo para mostrar una lista estática
+- ✅ Resolverlo con Markdown, `Card` o un componente Astro simple

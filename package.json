@@ -1,0 +1,24 @@
+{
+  "name": "starlight-ion-theme",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+	  "dev": "pnpm --filter docs dev",
+    "changeset": "changeset",
+		"ci:install": "pnpm install --frozen-lockfile",
+		"ci:version": "pnpm changeset version",
+		"ci:publish": "pnpm changeset publish"
+  },
+  "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "5.2.2",
+    "prettier": "3.5.3",
+    "prettier-plugin-astro": "0.14.1"
+  },
+  "dependencies": {
+  	"@changesets/changelog-github": "0.5.1",
+		"@changesets/cli": "2.29.7",
+		"@changesets/config": "3.1.1",
+		"@changesets/write": "0.4.0"
+  },
+  "packageManager": "pnpm@10.18.1"
+}
