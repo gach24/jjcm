@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "pnpm --filter ./apps/template dev",
+    "di:dev": "pnpm --filter ./apps/di dev",
     "changeset": "changeset",
     "ci:install": "pnpm install --frozen-lockfile",
     "ci:version": "pnpm changeset version",
