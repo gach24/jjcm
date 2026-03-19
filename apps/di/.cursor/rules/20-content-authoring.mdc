@@ -1,0 +1,19 @@
+---
+description: Convenciones de autoría para unidades, prácticas, vídeos y recursos
+globs: "src/content/docs/**/*.{md,mdx}"
+alwaysApply: false
+---
+
+# Content authoring
+
+- Redacta en español claro, directo y pedagógico.
+- Cada página debe tener `title` y `description` útiles.
+- Usa la carpeta adecuada según el modelo: `unidades`, `practicas`, `videos`, `proyecto`, `recursos`.
+- Sigue slugs consistentes: `unidad-01`, `practica-02`, `video-slug`.
+- En unidades y prácticas, prioriza objetivo, desarrollo, evaluación y relación con el módulo.
+- Evita texto genérico, relleno o restos del starter de Starlight.
+
+## Ejemplo
+
+- ❌ `title: Página 1`
+- ✅ `title: Práctica 01 · Componentes reutilizables`
