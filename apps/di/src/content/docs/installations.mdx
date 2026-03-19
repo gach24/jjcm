@@ -18,13 +18,11 @@ import { Card, CardGrid } from "@astrojs/starlight/components";
 ## Instalar Visual Studio Code
 
 <Steps>
-
-1. **Descarga** el instalador desde [code.visualstudio.com](https://code.visualstudio.com/) (elige la versión para tu sistema operativo).
-
-2. **Ejecuta** el instalador y sigue el asistente. Puedes dejar las opciones por defecto.
-
-3. **Abre** VS Code y comprueba que se abre correctamente antes de instalar extensiones.
-
+  <ol>
+    <li><strong>Descarga</strong> el instalador desde <a href="https://code.visualstudio.com/">code.visualstudio.com</a> (elige la versión para tu sistema operativo).</li>
+    <li><strong>Ejecuta</strong> el instalador y sigue el asistente. Puedes dejar las opciones por defecto.</li>
+    <li><strong>Abre</strong> VS Code y comprueba que se abre correctamente antes de instalar extensiones.</li>
+  </ol>
 </Steps>
 
   </TabItem>
@@ -84,6 +82,27 @@ Las extensiones añaden funciones al editor. Para instalarlas: abre el **panel d
 :::tip[Instalación rápida por ID]
 En la paleta de comandos (`Ctrl+Shift+P` / `Cmd+Shift+P`) escribe **Extensions: Install Extensions** y luego pega: `ext install dbaeumer.vscode-eslint esbenp.prettier-vscode astro-build.astro-vscode unifiedjs.vscode-mdx usernamehw.errorlens`
 :::
+
+  </TabItem>
+</Tabs>
+
+## Docker / Docker Desktop
+
+<Tabs>
+  <TabItem label="Docker Desktop" icon="lucide:container">
+
+## Instalar Docker Desktop
+
+Docker Desktop incluye el motor Docker, Docker Compose y una interfaz gráfica. En el módulo lo usarás para ejecutar entornos de desarrollo o servicios en contenedores.
+
+<Steps>
+  <ol>
+    <li><strong>Descarga</strong> Docker Desktop desde <a href="https://www.docker.com/products/docker-desktop/">docker.com/products/docker-desktop</a> (elige Windows, Mac o Linux según tu equipo).</li>
+    <li><strong>Ejecuta</strong> el instalador y acepta los pasos del asistente. En Windows puede pedirte habilitar WSL 2 si aún no está activo.</li>
+    <li><strong>Inicia</strong> Docker Desktop desde el menú de aplicaciones. Espera a que el indicador muestre que Docker está en ejecución (icono de ballena en la bandeja del sistema).</li>
+    <li><strong>Comprueba</strong> que funciona abriendo una terminal y ejecutando <code>docker --version</code>. Deberías ver el número de versión instalada.</li>
+  </ol>
+</Steps>
 
   </TabItem>
 </Tabs>
