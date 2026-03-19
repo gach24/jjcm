@@ -4,11 +4,11 @@ import { ion } from "starlight-ion-theme";
 
 // https://astro.build/config
 export default defineConfig({
-  site: "https://louisescher.github.io",
-  base: "/starlight-ion-theme",
+  site: "https://gach24.github.io/di/",
+  base: "/di/",
   integrations: [
     starlight({
-      title: "Ion",
+      title: "Desarrollo de Interfaces",
       logo: {
         dark: "./src/assets/ion-logo.svg",
         light: "./src/assets/ion-logo-light.svg",
@@ -17,7 +17,7 @@ export default defineConfig({
         {
           icon: "github",
           label: "GitHub",
-          href: "https://github.com/louisescher/starlight-ion-theme",
+          href: "https://github.com/gach24/",
         },
       ],
       sidebar: [
@@ -28,6 +28,10 @@ export default defineConfig({
         {
           label: "[list] Getting Started",
           link: "/getting-started/",
+        },
+        {
+          label: "[box] Instalaciones",
+          link: "/installations/",
         },
         {
           label: "[changelog] Changelog",
@@ -54,7 +58,7 @@ export default defineConfig({
             iconDir: "./src/icons",
           },
           footer: {
-            text: "©️ Louis Escher 2025",
+            text: "©️ Germán Carreño 2026",
             links: [
               {
                 text: "Homepage",
@@ -64,7 +68,7 @@ export default defineConfig({
             icons: [
               {
                 name: "github",
-                href: "https://github.com/louisescher/starlight-ion-theme",
+                href: "https://github.com/gach24/",
               },
             ],
           },
