@@ -1,0 +1,108 @@
+---
+title: Instalaciones
+description: Herramientas y extensiones necesarias para el módulo
+tableOfContents:
+  minHeadingLevel: 2
+  maxHeadingLevel: 3
+---
+
+Para seguir el módulo necesitas tener instaladas las siguientes herramientas en tu equipo. En esta página se detallan los pasos de instalación y las extensiones recomendadas para cada una.
+
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+import { Steps } from "@astrojs/starlight/components";
+import { Card, CardGrid } from "@astrojs/starlight/components";
+
+<Tabs>
+  <TabItem label="Visual Studio Code" icon="lucide:code">
+
+## Instalar Visual Studio Code
+
+<Steps>
+  <ol>
+    <li><strong>Descarga</strong> el instalador desde <a href="https://code.visualstudio.com/">code.visualstudio.com</a> (elige la versión para tu sistema operativo).</li>
+    <li><strong>Ejecuta</strong> el instalador y sigue el asistente. Puedes dejar las opciones por defecto.</li>
+    <li><strong>Abre</strong> VS Code y comprueba que se abre correctamente antes de instalar extensiones.</li>
+  </ol>
+</Steps>
+
+  </TabItem>
+
+  <TabItem label="Extensiones recomendadas" icon="lucide:puzzle">
+
+## Extensiones para VS Code / Cursor
+
+Las extensiones añaden funciones al editor. Para instalarlas: abre el **panel de extensiones** con el icono de cuadrados en la barra lateral izquierda (o `Ctrl+Shift+X` / `Cmd+Shift+X`), busca el nombre de la extensión y pulsa **Instalar**. También puedes abrir el enlace de cada tarjeta y pulsar **Install** en el marketplace.
+
+<CardGrid stagger>
+
+  <Card title="ESLint" icon="lucide:shield-check">
+    **Instalar:** [ESLint en el marketplace](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
+
+    **Para qué sirve:** Revisa tu código en tiempo real y señala errores, código que no se usa y estilos inconsistentes (comillas, puntos y comas). No ejecuta el código; solo lo analiza.
+
+    **Qué notarás:** Subrayados y iconos en el margen izquierdo del editor. En el panel inferior **Problemas** verás la lista de avisos. Corrigiendo lo que marca aprenderás buenas prácticas casi sin darte cuenta.
+  </Card>
+
+  <Card title="Prettier" icon="lucide:sparkles">
+    **Instalar:** [Prettier en el marketplace](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
+
+    **Para qué sirve:** Formatea el código automáticamente (indentación, saltos de línea, espacios). Todo el proyecto se ve uniforme sin que tengas que preocuparte por el estilo.
+
+    **Qué notarás:** Al guardar (`Ctrl+S` / `Cmd+S`) el código se reordena solo. La primera vez puede pedirte que elijas Prettier como formateador por defecto — acepta. Sin guardar: clic derecho → **Format Document**.
+  </Card>
+
+  <Card title="Astro" icon="astro">
+    **Instalar:** [Astro en el marketplace](https://marketplace.visualstudio.com/items?itemName=astro-build.astro-vscode)
+
+    **Para qué sirve:** Soporte completo a Astro en el editor: coloreado en `.astro`, autocompletado de componentes y propiedades, y avisos si algo está mal en la configuración o en el código.
+
+    **Qué notarás:** Los `.astro` se ven con colores y sugerencias al escribir (p. ej. al escribir `<` o nombres de componentes). Los errores aparecen en el editor y en el panel de problemas.
+  </Card>
+
+  <Card title="MDX" icon="lucide:file-code">
+    **Instalar:** [MDX en el marketplace](https://marketplace.visualstudio.com/items?itemName=unifiedjs.vscode-mdx)
+
+    **Para qué sirve:** Mejora el resaltado en archivos `.mdx` (Markdown + componentes tipo JSX). Sin ella, el editor puede no colorear bien las etiquetas ni las expresiones.
+
+    **Qué notarás:** En los `.mdx` verás bien diferenciado el texto, títulos, código y bloques `<Componente />`. Facilita leer y editar prácticas y documentación del módulo.
+  </Card>
+
+  <Card title="Error Lens" icon="lucide:bug">
+    **Instalar:** [Error Lens en el marketplace](https://marketplace.visualstudio.com/items?itemName=usernamehw.errorlens)
+
+    **Para qué sirve:** Muestra el mensaje de error o aviso directamente en la línea donde ocurre (inline), en lugar de mirar solo el panel de Problemas.
+
+    **Qué notarás:** Junto a la línea con error verás el mensaje en rojo o amarillo. Localizas el fallo al instante. Si te resulta intrusivo, puedes desactivarla o ajustar su configuración.
+
+    **ID para buscar:** `usernamehw.errorlens`
+  </Card>
+
+</CardGrid>
+
+:::tip[Instalación rápida por ID]
+En la paleta de comandos (`Ctrl+Shift+P` / `Cmd+Shift+P`) escribe **Extensions: Install Extensions** y luego pega: `ext install dbaeumer.vscode-eslint esbenp.prettier-vscode astro-build.astro-vscode unifiedjs.vscode-mdx usernamehw.errorlens`
+:::
+
+  </TabItem>
+</Tabs>
+
+## Docker / Docker Desktop
+
+<Tabs>
+  <TabItem label="Docker Desktop" icon="lucide:container">
+
+## Instalar Docker Desktop
+
+Docker Desktop incluye el motor Docker, Docker Compose y una interfaz gráfica. En el módulo lo usarás para ejecutar entornos de desarrollo o servicios en contenedores.
+
+<Steps>
+  <ol>
+    <li><strong>Descarga</strong> Docker Desktop desde <a href="https://www.docker.com/products/docker-desktop/">docker.com/products/docker-desktop</a> (elige Windows, Mac o Linux según tu equipo).</li>
+    <li><strong>Ejecuta</strong> el instalador y acepta los pasos del asistente. En Windows puede pedirte habilitar WSL 2 si aún no está activo.</li>
+    <li><strong>Inicia</strong> Docker Desktop desde el menú de aplicaciones. Espera a que el indicador muestre que Docker está en ejecución (icono de ballena en la bandeja del sistema).</li>
+    <li><strong>Comprueba</strong> que funciona abriendo una terminal y ejecutando <code>docker --version</code>. Deberías ver el número de versión instalada.</li>
+  </ol>
+</Steps>
+
+  </TabItem>
+</Tabs>
