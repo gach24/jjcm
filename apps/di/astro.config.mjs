@@ -34,6 +34,22 @@ export default defineConfig({
           link: "/installations/",
         },
         {
+          label: "[lucide:book-open] Unidades",
+          items: [
+            {
+              label: "[lucide:book-open] Introducción",
+              items: [
+                {
+                  label: "[lucide:braces] JavaScript",
+                  autogenerate: {
+                    directory: "units/introduction/javascript",
+                  },
+                },
+              ],
+            },
+          ],
+        },
+        {
           label: "[changelog] Changelog",
           link: "/changelog/",
         },

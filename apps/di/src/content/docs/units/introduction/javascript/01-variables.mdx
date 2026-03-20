@@ -1,0 +1,179 @@
+---
+title: Variables
+description: Declaración de variables en JavaScript con let, const y var — ámbito, TDZ y buenas prácticas actuales.
+sidebar:
+  order: 2
+---
+
+import HeaderBadge from "starlight-ion-theme/components/HeaderBadge.astro";
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+
+JavaScript es **dinámico** y **débilmente tipado**: una variable puede referirse a un string y más tarde a un número u otro valor. Eso no invalida las buenas prácticas de nombrado ni el uso de herramientas como TypeScript en proyectos reales.
+
+<CardGrid stagger>
+	<Card title="let" icon="pencil">
+		Declaración **reasignable**. Ámbito de **bloque**. Existe **zona muerta temporal** (TDZ) hasta la línea de declaración.
+	</Card>
+	<Card title="const" icon="approve-check">
+		**No reasignable** el enlace (la “etiqueta” del valor). Debe **inicializarse** al declarar. Ámbito de bloque y TDZ igual que `let`.
+	</Card>
+	<Card title="var" icon="warning">
+		Estilo **heredado**. Ámbito de **función** y hoist peculiar. Evitar en código nuevo; sigue existiendo en legado y ejemplos antiguos.
+	</Card>
+</CardGrid>
+
+## `let`
+
+Puedes declarar sin valor inicial: el identificador existe, pero su valor es `undefined` hasta la primera asignación.
+
+```js {1, 6}
+let cliente = "Germán";
+cliente = "Ana";
+cliente = 20;
+console.log(cliente); // 20
+
+let precio; 
+console.log(precio); // undefined
+precio = 20.5;
+console.log(precio); // 20.5
+```
+
+<Aside type="tip" title="Comillas y plantillas">
+	Como veremos más adelante podemos utilizar strings: con `"..."`, `'...'` o *template literals* `` `Hola ${nombre}` ``.
+</Aside>
+
+## `const`
+
+Con `const` **no** puedes reasignar el nombre a otro valor. Eso no congela objetos ni arrays: solo impide que `persona` apunte a **otra** referencia.
+
+```js {1, 5}
+const cliente = "Germán";
+// cliente = "Ana"; // TypeError en modo estricto habitual
+
+const persona = { nombre: "Ana", edad: 30 };
+persona.edad = 31; // válido: mutamos el objeto
+// persona = {};    // inválido: reasignación del enlace
+```
+
+Debes dar valor en la misma sentencia de declaración:
+
+```js
+// const sinUsuario; // SyntaxError
+const sinUsuario = null;
+```
+
+## `var`
+
+- **Ámbito de función**, no de bloque: un `var` dentro de un `if` o un `for` “se escapa” a toda la función.
+- **Hoisting**: la declaración se eleva y puedes obtener `undefined` antes de la línea que escribiste, en lugar de un error claro.
+- En **módulos ES** y en proyectos actuales, `let`/`const` son la norma.
+
+```js
+function ejemplo() {
+	if (true) {
+		var x = 1;
+		let y = 2;
+	}
+	console.log(x); // 1 — aún visible
+	// console.log(y); // ReferenceError
+}
+```
+
+<Aside type="caution" title="Legado">
+	Si mantienes o estudias código antiguo, verás `var`; para lo que escribas tú, **`const` por defecto** y `let` cuando necesites reasignar.
+</Aside>
+
+## Ámbito de bloque
+
+`let` y `const` viven en el bloque `{ ... }` donde se declararon.
+
+```js {4, 6}
+{
+	// console.log(a); 
+	let a = 1;
+	console.log(a); // 1
+}
+// console.log(a); // ReferenceError — fuera de ámbito
+```
+
+## Convención práctica
+
+<Steps>
+
+1. Usa **`const`** para todo enlace que no vaya a reasignarse (casi siempre al principio).
+2. Si necesitas reasignar (`suma = …`, contadores, lectura en bucles clásicos), usa **`let`**.
+3. No uses **`var`** salvo requisitos muy concretos de compatibilidad o lectura de código viejo.
+
+</Steps>
+
+## Nombres de variable
+
+Reglas habituales (como en cualquier lenguaje):
+
+- Letras, dígitos, `_` y `$`; **no** puede empezar por dígito.
+- Evita palabras reservadas (`let`, `class`, `return`, …).
+- Convención muy extendida: **camelCase** para variables y funciones (`precioBase`, `obtenerUsuario`).
+
+## Comparar `let` y `const` en un vistazo
+
+<Tabs>
+	<TabItem label="let">
+		```js
+		let contador = 0;
+		contador += 1; // ok
+		let texto = "hola";
+		texto = "adiós"; // ok
+		```
+	</TabItem>
+	<TabItem label="const">
+		```js
+		const MAX = 100;
+		// MAX = 200; // TypeError
+
+		const lista = [1, 2];
+		lista.push(3); // ok — mismo array
+		// lista = []; // TypeError
+		```
+	</TabItem>
+</Tabs>
+
+## Siguientes pasos
+
+Documentación de referencia en **MDN** (español), comprobada:
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Statements/let"
+		title="Instrucción <code>let</code>"
+		description="Ámbito de bloque, TDZ y diferencias frente a <code>var</code>."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Statements/const"
+		title="Instrucción <code>const</code>"
+		description="Enlace no reasignable, obligatoriedad de inicializar y mutación de objetos."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Statements/var"
+		title="Instrucción <code>var</code>"
+		description="Ámbito de función, hoisting y comportamiento histórico."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+<Aside type="tip" title="Ejemplos ejecutables">
+	En el repositorio [DID — carpeta `01-javascript`](https://github.com/gach24/DID/tree/main/01-javascript) tienes el código de muestra (`js/`), los **ejercicios** (`ejercicios/`) y un `index.html` para probarlo en el navegador (p. ej. con Live Server).
+</Aside>

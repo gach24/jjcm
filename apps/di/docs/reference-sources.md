@@ -17,6 +17,13 @@
 - Priority: high
 - Last reviewed: 2026-03-18
 
+### starlight-ion-theme
+- Source: official documentation
+- URL: https://github.com/louisescher/starlight-ion-theme
+- Version policy: use the version installed in package.json
+- Use for: docs structure, frontmatter, sidebar, i18n, components
+- Priority: low
+
 ### MDN
 - Source: official documentation
 - URL: https://developer.mozilla.org
