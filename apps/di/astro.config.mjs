@@ -10,8 +10,8 @@ export default defineConfig({
     starlight({
       title: "Desarrollo de Interfaces",
       logo: {
-        dark: "./src/assets/ion-logo.svg",
-        light: "./src/assets/ion-logo-light.svg",
+        dark: "./src/assets/logo-dark.png",
+        light: "./src/assets/logo-light.png",
       },
       social: [
         {
