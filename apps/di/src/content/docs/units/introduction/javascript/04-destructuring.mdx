@@ -1,0 +1,410 @@
+---
+title: Desestructuración
+description: Desestructuración de objetos y arrays en JavaScript, valores por defecto, renombrado, rest y casos prácticos.
+evaluations:
+  - id: RA1
+    statement: Genera interfaces gráficos de usuario mediante editores visuales utilizando las funcionalidades del editor y adaptando el código generado
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de interfaces gráficos.
+      - Se ha creado un interfaz gráfico utilizando las herramientas de un editor visual.
+    contents:
+      - Generación de interfaces de usuario
+sources:
+  - author: Fernando Herrera
+    url: https://cursos.devtalles.com/courses/javascript-moderno
+	- author: Juan Pablo De la torre Valdez
+    url: https://www.udemy.com/course/react-de-principiante-a-experto-creando-mas-de-10-aplicaciones/
+sidebar:
+  order: 4
+date: 2026-03-21
+updated: 2026-03-21
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+La **desestructuración** (_destructuring_) es una sintaxis que permite **extraer valores** de objetos y arrays y asignarlos a variables individuales en una sola expresión. Evita accesos repetitivos como `persona.nombre`, `persona.edad`, `arr[0]`, `arr[1]`, etc.
+
+<CardGrid stagger>
+	<Card title="Objetos" icon="open-book">
+		Extraes propiedades por **nombre** usando `{ }`. El orden no importa; lo que cuenta es que el nombre coincida con la clave del objeto.
+	</Card>
+	<Card title="Arrays" icon="list-format">
+		Extraes elementos por **posición** usando `[ ]`. El primer identificador recibe el índice 0, el segundo el 1, y así sucesivamente.
+	</Card>
+	<Card title="Valores por defecto" icon="approve-check">
+		Si la propiedad o posición no existe (es `undefined`), puedes definir un **valor de respaldo** que se usará en su lugar.
+	</Card>
+	<Card title="Rest" icon="right-arrow">
+		El operador **rest** (`...`) recoge en un objeto o array los elementos **restantes** que no desestructuraste explícitamente.
+	</Card>
+</CardGrid>
+
+## Desestructuración de objetos
+
+### Caso básico
+
+Sin desestructuración accedes a cada propiedad con notación de punto:
+
+```js
+const persona = { nombre: "Laura", edad: 25, estudiante: true };
+
+const nombre = persona.nombre;
+const edad = persona.edad;
+const estudiante = persona.estudiante;
+```
+
+Con desestructuración:
+
+```js
+const persona = { nombre: "Laura", edad: 25, estudiante: true };
+
+const { nombre, edad, estudiante } = persona;
+console.log(nombre);     // "Laura"
+console.log(edad);        // 25
+console.log(estudiante);  // true
+```
+
+<Aside type="tip" title="Orden irrelevante">
+	En objetos el orden de las variables no importa; lo que vincula cada variable es el **nombre** de la propiedad, no su posición.
+</Aside>
+
+### Renombrar variables
+
+Si el nombre de la propiedad colisiona con otra variable o prefieres un nombre más descriptivo, usa la sintaxis `propiedad: nuevoNombre`:
+
+```js
+const producto = { nombre: "Teclado", precio: 49.99 };
+
+const { nombre: nombreProducto, precio: precioFinal } = producto;
+console.log(nombreProducto); // "Teclado"
+console.log(precioFinal);    // 49.99
+```
+
+### Valores por defecto
+
+Si una propiedad no existe en el objeto, la variable toma `undefined`. Puedes asignar un valor de respaldo con `=`:
+
+```js
+const config = { tema: "oscuro" };
+
+const { tema, idioma = "es", fontSize = 16 } = config;
+console.log(tema);     // "oscuro"
+console.log(idioma);   // "es"    — valor por defecto
+console.log(fontSize); // 16      — valor por defecto
+```
+
+### Combinar renombrado y valor por defecto
+
+Ambas funcionalidades se pueden usar a la vez:
+
+```js
+const usuario = { nombre: "Ana" };
+
+const { nombre: nombreUsuario, rol: rolUsuario = "visitante" } = usuario;
+console.log(nombreUsuario); // "Ana"
+console.log(rolUsuario);    // "visitante"
+```
+
+### Desestructuración anidada
+
+Para objetos dentro de objetos, anida las llaves:
+
+```js
+const empresa = {
+	nombre: "Acme",
+	direccion: {
+		calle: "Gran Vía 1",
+		ciudad: "Madrid",
+	},
+};
+
+const {
+	nombre,
+	direccion: { calle, ciudad },
+} = empresa;
+
+console.log(nombre); // "Acme"
+console.log(calle);  // "Gran Vía 1"
+console.log(ciudad); // "Madrid"
+```
+
+<Aside type="caution" title="Variable intermedia">
+	En el ejemplo anterior, `direccion` **no** se crea como variable; solo sirve como ruta de acceso. Si también la necesitas, desestructura en dos pasos o haz `const { direccion } = empresa` por separado.
+</Aside>
+
+### Rest en objetos
+
+El operador rest (`...`) recoge las propiedades sobrantes en un nuevo objeto:
+
+```js
+const alumno = { nombre: "Carlos", edad: 22, curso: "DAM", nota: 8.5 };
+
+const { nombre, edad, ...resto } = alumno;
+console.log(nombre); // "Carlos"
+console.log(edad);   // 22
+console.log(resto);  // { curso: "DAM", nota: 8.5 }
+```
+
+Útil cuando quieres separar unas cuantas propiedades del resto sin enumerarlas todas.
+
+## Desestructuración de arrays
+
+### Caso básico
+
+Sin desestructuración:
+
+```js
+const tecnologias = ["HTML", "CSS", "JavaScript", "React", "Node.js"];
+
+const primera = tecnologias[0];
+const segunda = tecnologias[1];
+```
+
+Con desestructuración:
+
+```js
+const tecnologias = ["HTML", "CSS", "JavaScript", "React", "Node.js"];
+
+const [html, css, js, react, node] = tecnologias;
+console.log(html);  // "HTML"
+console.log(react); // "React"
+```
+
+### Omitir posiciones
+
+Puedes saltar elementos con comas vacías:
+
+```js
+const tecnologias = ["HTML", "CSS", "JavaScript", "React", "Node.js"];
+
+const [, , , react] = tecnologias;
+console.log(react); // "React"
+```
+
+### Valores por defecto
+
+Igual que en objetos, se aplica cuando la posición es `undefined`:
+
+```js
+const colores = ["rojo"];
+
+const [primario, secundario = "azul"] = colores;
+console.log(primario);   // "rojo"
+console.log(secundario); // "azul" — valor por defecto
+```
+
+### Rest en arrays
+
+Recoge los elementos restantes en un nuevo array:
+
+```js
+const numeros = [10, 20, 30, 40, 50];
+
+const [primero, segundo, ...rest] = numeros;
+console.log(primero); // 10
+console.log(segundo); // 20
+console.log(rest);   // [30, 40, 50]
+```
+
+### Intercambiar variables
+
+Un caso práctico clásico: intercambiar valores sin variable auxiliar.
+
+```js {4}
+let a = 1;
+let b = 2;
+
+[a, b] = [b, a];
+console.log(a); // 2
+console.log(b); // 1
+```
+
+## Desestructuración en funciones
+
+### Parámetros de objeto
+
+En lugar de recibir un objeto completo y acceder a sus propiedades dentro del cuerpo, desestructura directamente en la firma:
+
+<Tabs>
+	<TabItem label="Sin desestructurar">
+		```js
+		function saludo(persona) {
+			return `Hola, ${persona.nombre}. Tienes ${persona.edad} años.`;
+		}
+		```
+	</TabItem>
+	<TabItem label="Con desestructurar">
+		```js
+		function saludo({ nombre, edad }) {
+			return `Hola, ${nombre}. Tienes ${edad} años.`;
+		}
+
+		const persona = { nombre: "Laura", edad: 25 };
+		console.log(saludo(persona));
+		// "Hola, Laura. Tienes 25 años."
+		```
+	</TabItem>
+</Tabs>
+
+Puedes combinar con valores por defecto:
+
+```js
+function crearUsuario({ nombre, rol = "viewer", activo = true } = {}) {
+	return { nombre, rol, activo };
+}
+
+console.log(crearUsuario({ nombre: "Ana" }));
+// { nombre: "Ana", rol: "viewer", activo: true }
+
+console.log(crearUsuario({ nombre: "Luis", rol: "admin" }));
+// { nombre: "Luis", rol: "admin", activo: true }
+```
+
+<Aside type="tip" title="= {} al final">
+	El `= {}` tras los parámetros desestructurados permite llamar a la función **sin argumentos** sin que lance un error.
+</Aside>
+
+### Parámetros de array
+
+Menos habitual, pero posible. Por ejemplo, al procesar coordenadas:
+
+```js
+function distanciaAlOrigen([x, y]) {
+	return Math.sqrt(x ** 2 + y ** 2);
+}
+
+console.log(distanciaAlOrigen([3, 4])); // 5
+```
+
+### Retorno desestructurado
+
+Las funciones que devuelven un objeto o un array se desestructuran al recoger el resultado:
+
+```js {5}
+function obtenerPosicion() {
+	return { lat: 43.36, lon: -5.85 };
+}
+
+const { lat, lon } = obtenerPosicion();
+console.log(lat); // 43.36
+console.log(lon); // -5.85
+```
+
+```js {5}
+function minMax(arr) {
+	return [Math.min(...arr), Math.max(...arr)];
+}
+
+const [min, max] = minMax([4, 2, 9, 1, 7]);
+console.log(min); // 1
+console.log(max); // 9
+```
+
+## Desestructuración anidada mixta
+
+Cuando la estructura mezcla objetos y arrays:
+
+```js {9-14}
+const respuesta = {
+	status: 200,
+	datos: {
+		usuarios: ["Ana", "Luis", "Marta"],
+		total: 3,
+	},
+};
+
+const {
+	status,
+	datos: {
+		usuarios: [primero, ...otrosUsuarios],
+		total,
+	},
+} = respuesta;
+
+console.log(status);        // 200
+console.log(primero);       // "Ana"
+console.log(otrosUsuarios); // ["Luis", "Marta"]
+console.log(total);         // 3
+```
+
+## Resumen rápido
+
+<Tabs>
+	<TabItem label="Objetos">
+		```js
+		const { a, b } = obj;            // básico
+		const { a: x } = obj;            // renombrar
+		const { a = 10 } = obj;          // valor por defecto
+		const { a, ...resto } = obj;     // rest
+		const { x: { y } } = obj;        // anidado
+		```
+	</TabItem>
+	<TabItem label="Arrays">
+		```js
+		const [a, b] = arr;              // básico
+		const [, , c] = arr;             // omitir
+		const [a = 0] = arr;             // valor por defecto
+		const [a, ...resto] = arr;       // rest
+		[a, b] = [b, a];                 // swap
+		```
+	</TabItem>
+</Tabs>
+
+## Convención práctica
+
+<Steps>
+
+1. Usa desestructuración cuando accedas a **dos o más** propiedades/elementos del mismo origen.
+2. Prefiere **renombrar** si el nombre original es genérico (`data`, `result`, `value`) para mejorar la legibilidad.
+3. Asigna **valores por defecto** cuando la propiedad sea opcional y quieras evitar comprobaciones `if` posteriores.
+4. Combina con **rest** para separar lo conocido de lo desconocido sin enumerar cada campo.
+
+</Steps>
+
+## Siguientes pasos
+
+Documentación de referencia en **MDN** (español):
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment"
+		title="Asignación por desestructuración"
+		description="Referencia completa: objetos, arrays, anidamiento, valores por defecto y patrones avanzados."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Functions/Default_parameters"
+		title="Parámetros por defecto"
+		description="Valores predeterminados en funciones, complemento directo de la desestructuración en parámetros."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Operators/Spread_syntax"
+		title="Sintaxis spread (<code>...</code>)"
+		description="Relación entre spread (expandir) y rest (recoger), dos caras del mismo operador."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+<Aside type="tip" title="Ejemplos ejecutables">
+	En el repositorio [DID — carpeta `01-javascript`](https://github.com/gach24/DID/tree/main/01-javascript) tienes el código de muestra (`js/`), los **ejercicios** (`ejercicios/`) y un `index.html` para probarlo en el navegador (p. ej. con Live Server).
+</Aside>

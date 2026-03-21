@@ -1,0 +1,699 @@
+---
+title: Métodos de arrays
+description: Métodos principales de los arrays en JavaScript — añadir, eliminar, buscar, transformar, ordenar, comprobar e iterar.
+evaluations:
+  - id: RA1
+    statement: Genera interfaces gráficos de usuario mediante editores visuales utilizando las funcionalidades del editor y adaptando el código generado
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de interfaces gráficos.
+      - Se ha creado un interfaz gráfico utilizando las herramientas de un editor visual.
+    contents:
+      - Generación de interfaces de usuario
+sources:
+  - author: Fernando Herrera
+    url: https://cursos.devtalles.com/courses/javascript-moderno
+  - author: Juan Pablo De la torre Valdez
+    url: https://www.udemy.com/course/react-de-principiante-a-experto-creando-mas-de-10-aplicaciones/
+sidebar:
+  order: 5
+date: 2026-03-21
+updated: 2026-03-21
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+Los arrays son una de las estructuras más usadas en JavaScript. Más allá de acceder por índice, el prototipo `Array` ofrece decenas de métodos que permiten **buscar**, **transformar**, **filtrar** y **reducir** datos sin escribir bucles manuales. Dominarlos es clave para escribir código expresivo y mantenible.
+
+<CardGrid stagger>
+	<Card title="Mutar vs devolver" icon="warning">
+		Algunos métodos **modifican** el array original (_mutadores_: `push`, `splice`, `sort`…). Otros devuelven un **nuevo** array sin tocar el original (_inmutables_: `map`, `filter`, `slice`…). Distinguirlos evita bugs difíciles de rastrear.
+	</Card>
+	<Card title="Callbacks" icon="setting">
+		La mayoría de métodos funcionales (`map`, `filter`, `reduce`, `find`…) reciben una **función callback** que se ejecuta por cada elemento. Usar arrow functions los hace muy concisos.
+	</Card>
+	<Card title="Encadenamiento" icon="right-arrow">
+		Los métodos que devuelven un array nuevo se pueden **encadenar**: `arr.filter(…).map(…).sort(…)`. Esto permite pipelines de datos en una sola expresión.
+	</Card>
+	<Card title="Nuevos métodos inmutables" icon="star">
+		ES2023 añade `toSorted()`, `toReversed()` y `toSpliced()`: versiones **no destructivas** de `sort`, `reverse` y `splice`.
+	</Card>
+</CardGrid>
+
+## Crear y comprobar arrays
+
+### Literal y `Array.isArray()`
+
+La forma más habitual de crear un array es con corchetes. Para comprobar si un valor es array, **nunca** uses `typeof` (devuelve `"object"`); usa `Array.isArray()`:
+
+```js
+const frutas = ["manzana", "pera", "naranja"];
+
+console.log(typeof frutas);          // "object"
+console.log(Array.isArray(frutas));   // true
+console.log(Array.isArray("hola"));   // false
+```
+
+### `Array.from()`
+
+Crea un array a partir de algo **iterable** o **array-like** (como `NodeList`, strings o `arguments`):
+
+```js
+const letras = Array.from("Hola");
+console.log(letras); // ["H", "o", "l", "a"]
+
+const pares = Array.from({ length: 5 }, (_, i) => i * 2);
+console.log(pares); // [0, 2, 4, 6, 8]
+```
+
+### `Array.of()`
+
+Crea un array con los argumentos que le pases, sin la ambigüedad de `new Array()`:
+
+```js
+console.log(Array.of(5));       // [5]     — un elemento
+console.log(new Array(5));      // [ , , , , ] — cinco huecos vacíos
+console.log(Array.of(1, 2, 3)); // [1, 2, 3]
+```
+
+## Añadir y eliminar elementos
+
+Estos métodos **mutan** el array original.
+
+### `push()` y `pop()`
+
+`push` añade al final; `pop` elimina el último elemento y lo devuelve:
+
+```js
+const stack = ["a", "b"];
+
+stack.push("c", "d");
+console.log(stack); // ["a", "b", "c", "d"]
+
+const ultimo = stack.pop();
+console.log(ultimo); // "d"
+console.log(stack);  // ["a", "b", "c"]
+```
+
+### `unshift()` y `shift()`
+
+`unshift` añade al principio; `shift` elimina el primero y lo devuelve:
+
+```js
+const cola = [2, 3, 4];
+
+cola.unshift(0, 1);
+console.log(cola); // [0, 1, 2, 3, 4]
+
+const primero = cola.shift();
+console.log(primero); // 0
+console.log(cola);    // [1, 2, 3, 4]
+```
+
+<Aside type="tip" title="Rendimiento">
+	`push`/`pop` operan al final del array y son **O(1)**. `unshift`/`shift` desplazan todos los índices y son **O(n)**. En arrays grandes la diferencia importa.
+</Aside>
+
+### `splice()`
+
+Navaja suiza: **elimina**, **reemplaza** o **inserta** elementos en cualquier posición. Recibe `(inicio, cantidad, ...nuevos)` y devuelve los elementos eliminados:
+
+<Tabs>
+	<TabItem label="Eliminar">
+		```js
+		const letras = ["a", "b", "c", "d", "e"];
+
+		const eliminados = letras.splice(1, 2);
+		console.log(eliminados); // ["b", "c"]
+		console.log(letras);     // ["a", "d", "e"]
+		```
+	</TabItem>
+	<TabItem label="Insertar">
+		```js
+		const letras = ["a", "d", "e"];
+
+		letras.splice(1, 0, "b", "c");
+		console.log(letras); // ["a", "b", "c", "d", "e"]
+		```
+	</TabItem>
+	<TabItem label="Reemplazar">
+		```js
+		const letras = ["a", "b", "c", "d", "e"];
+
+		letras.splice(2, 1, "X");
+		console.log(letras); // ["a", "b", "X", "d", "e"]
+		```
+	</TabItem>
+</Tabs>
+
+## Extraer y combinar (sin mutar)
+
+### `slice()`
+
+Devuelve una **copia superficial** de una porción del array. El original queda intacto:
+
+```js
+const numeros = [10, 20, 30, 40, 50];
+
+console.log(numeros.slice(1, 3));  // [20, 30]
+console.log(numeros.slice(2));     // [30, 40, 50]
+console.log(numeros.slice(-2));    // [40, 50]
+console.log(numeros);              // [10, 20, 30, 40, 50] — sin cambios
+```
+
+### `concat()`
+
+Une arrays y/o valores en un **nuevo** array:
+
+```js
+const a = [1, 2];
+const b = [3, 4];
+
+console.log(a.concat(b));       // [1, 2, 3, 4]
+console.log(a.concat(5, b));    // [1, 2, 5, 3, 4]
+console.log(a);                 // [1, 2] — sin cambios
+```
+
+<Aside type="tip" title="Spread como alternativa">
+	Con spread puedes hacer lo mismo: `[...a, ...b]`. El resultado es idéntico; spread suele leerse mejor en asignaciones.
+</Aside>
+
+### `join()`
+
+Convierte el array en un **string**, uniendo los elementos con el separador indicado (por defecto `","``):
+
+```js
+const techs = ["HTML", "CSS", "JS"];
+
+console.log(techs.join());      // "HTML,CSS,JS"
+console.log(techs.join(" - ")); // "HTML - CSS - JS"
+console.log(techs.join(""));    // "HTMLCSSJS"
+```
+
+### `flat()` y `flatMap()`
+
+`flat(profundidad)` aplana arrays anidados; `flatMap` hace map + flat de nivel 1 en un solo paso:
+
+```js
+const anidado = [1, [2, 3], [4, [5, 6]]];
+
+console.log(anidado.flat());   // [1, 2, 3, 4, [5, 6]]
+console.log(anidado.flat(2));  // [1, 2, 3, 4, 5, 6]
+console.log(anidado.flat(Infinity)); // [1, 2, 3, 4, 5, 6]
+```
+
+```js
+const frases = ["hola mundo", "adiós JS"];
+
+const palabras = frases.flatMap(f => f.split(" "));
+console.log(palabras); // ["hola", "mundo", "adiós", "JS"]
+```
+
+## Buscar elementos
+
+### `indexOf()` y `lastIndexOf()`
+
+Devuelven el **índice** de la primera/última ocurrencia, o `-1` si no existe. Comparan con `===`:
+
+```js
+const colores = ["rojo", "verde", "azul", "verde"];
+
+console.log(colores.indexOf("verde"));      // 1
+console.log(colores.lastIndexOf("verde"));   // 3
+console.log(colores.indexOf("amarillo"));    // -1
+```
+
+### `includes()`
+
+Devuelve `true`/`false`. Más legible que `indexOf !== -1`:
+
+```js
+const tecnologias = ["HTML", "CSS", "JavaScript", "React", "Node.js"];
+
+console.log(tecnologias.includes("React"));   // true
+console.log(tecnologias.includes("Angular")); // false
+```
+
+### `find()` y `findIndex()`
+
+`find` devuelve el **primer elemento** que cumple la condición (o `undefined`). `findIndex` devuelve su **índice** (o `-1`):
+
+```js
+const usuarios = [
+	{ nombre: "Ana", edad: 28 },
+	{ nombre: "Luis", edad: 17 },
+	{ nombre: "Marta", edad: 32 },
+];
+
+const menor = usuarios.find(u => u.edad < 18);
+console.log(menor); // { nombre: "Luis", edad: 17 }
+
+const idx = usuarios.findIndex(u => u.nombre === "Marta");
+console.log(idx); // 2
+```
+
+<Aside type="caution" title="find vs filter">
+	`find` devuelve **un solo** elemento (el primero que cumple). `filter` devuelve **todos** los que cumplen, en un array nuevo. Usa cada uno según lo que necesites.
+</Aside>
+
+### `findLast()` y `findLastIndex()`
+
+Igual que `find`/`findIndex`, pero buscando desde el **final**:
+
+```js
+const nums = [1, 5, 12, 8, 20, 3];
+
+console.log(nums.findLast(n => n > 10));       // 20
+console.log(nums.findLastIndex(n => n > 10));   // 4
+```
+
+## Transformar arrays
+
+Estos métodos **no mutan** el original; devuelven un array nuevo.
+
+### `map()`
+
+Aplica una función a cada elemento y devuelve un array con los **resultados**:
+
+```js
+const precios = [10, 20, 30, 40];
+
+const conIVA = precios.map(p => p * 1.21);
+console.log(conIVA); // [12.1, 24.2, 36.3, 48.4]
+```
+
+```js
+const nombres = ["ana", "luis", "marta"];
+
+const capitalizados = nombres.map(n => n[0].toUpperCase() + n.slice(1));
+console.log(capitalizados); // ["Ana", "Luis", "Marta"]
+```
+
+<Aside type="tip" title="map devuelve siempre la misma cantidad">
+	El array resultante tiene **exactamente** el mismo número de elementos que el original. Si necesitas filtrar a la vez, encadena `filter` antes o después.
+</Aside>
+
+### `filter()`
+
+Devuelve un **nuevo array** con los elementos que cumplen la condición del callback:
+
+```js
+const tecnologias = ["HTML", "CSS", "JavaScript", "React", "Node.js"];
+
+const sinReact = tecnologias.filter(tech => tech !== "React");
+console.log(sinReact); // ["HTML", "CSS", "JavaScript", "Node.js"]
+```
+
+```js
+const numeros = [10, 20, 30, 40, 50];
+
+const mayoresDe20 = numeros.filter(num => num > 20);
+console.log(mayoresDe20); // [30, 40, 50]
+```
+
+Ejemplo con objetos — filtrar usuarios activos y mayores de edad:
+
+```js
+const usuarios = [
+	{ nombre: "Ana", edad: 28, activo: true },
+	{ nombre: "Luis", edad: 17, activo: true },
+	{ nombre: "Marta", edad: 32, activo: false },
+	{ nombre: "Pedro", edad: 22, activo: true },
+];
+
+const elegibles = usuarios.filter(u => u.activo && u.edad >= 18);
+console.log(elegibles);
+// [{ nombre: "Ana", … }, { nombre: "Pedro", … }]
+```
+
+### `reduce()`
+
+Reduce el array a **un único valor** acumulado. Recibe un callback con `(acumulador, elementoActual)` y un valor inicial opcional:
+
+```js
+const numeros = [1, 2, 3, 4, 5];
+
+const suma = numeros.reduce((acc, num) => acc + num, 0);
+console.log(suma); // 15
+```
+
+Ejemplo práctico — totalizar un carrito de compra:
+
+```js
+const carrito = [
+	{ producto: "Teclado", precio: 49.99, cantidad: 1 },
+	{ producto: "Ratón", precio: 29.99, cantidad: 2 },
+	{ producto: "Monitor", precio: 199.99, cantidad: 1 },
+];
+
+const total = carrito.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
+console.log(total); // 309.96
+```
+
+Agrupar por categoría:
+
+```js
+const productos = [
+	{ nombre: "Manzana", tipo: "fruta" },
+	{ nombre: "Lechuga", tipo: "verdura" },
+	{ nombre: "Pera", tipo: "fruta" },
+	{ nombre: "Zanahoria", tipo: "verdura" },
+	{ nombre: "Plátano", tipo: "fruta" },
+];
+
+const agrupados = productos.reduce((acc, prod) => {
+	acc[prod.tipo] ??= [];
+	acc[prod.tipo].push(prod.nombre);
+	return acc;
+}, {});
+
+console.log(agrupados);
+// { fruta: ["Manzana", "Pera", "Plátano"], verdura: ["Lechuga", "Zanahoria"] }
+```
+
+<Aside type="caution" title="Pasa siempre valor inicial">
+	Si omites el segundo argumento de `reduce`, el acumulador toma el primer elemento y la iteración empieza desde el segundo. Pasar un valor inicial explícito (`0`, `[]`, `{}`) evita errores con arrays vacíos y hace el código más claro.
+</Aside>
+
+## Comprobar condiciones
+
+### `every()`
+
+Devuelve `true` si **todos** los elementos cumplen la condición:
+
+```js
+const edades = [18, 22, 35, 40];
+
+console.log(edades.every(e => e >= 18)); // true
+console.log(edades.every(e => e >= 21)); // false
+```
+
+### `some()`
+
+Devuelve `true` si **al menos uno** cumple:
+
+```js
+const notas = [4.5, 6, 3.2, 8, 5];
+
+console.log(notas.some(n => n >= 5)); // true
+console.log(notas.some(n => n >= 9)); // false
+```
+
+Ejemplo combinado:
+
+```js
+const alumnos = [
+	{ nombre: "Ana", aprobado: true },
+	{ nombre: "Luis", aprobado: false },
+	{ nombre: "Marta", aprobado: true },
+];
+
+const todosAprobaron = alumnos.every(a => a.aprobado);
+const algunoSuspenso = alumnos.some(a => !a.aprobado);
+
+console.log(todosAprobaron);   // false
+console.log(algunoSuspenso);   // true
+```
+
+## Ordenar
+
+### `sort()`
+
+Ordena **in-place** (muta el array). Sin callback ordena como strings (ojo con números):
+
+```js
+const frutas = ["pera", "manzana", "naranja", "kiwi"];
+frutas.sort();
+console.log(frutas); // ["kiwi", "manzana", "naranja", "pera"]
+```
+
+```js
+const nums = [10, 1, 21, 2];
+nums.sort();
+console.log(nums); // [1, 10, 2, 21] — ¡ordenación lexicográfica!
+
+nums.sort((a, b) => a - b);
+console.log(nums); // [1, 2, 10, 21] — numérica ascendente
+
+nums.sort((a, b) => b - a);
+console.log(nums); // [21, 10, 2, 1] — numérica descendente
+```
+
+Ordenar objetos por propiedad:
+
+```js
+const alumnos = [
+	{ nombre: "Carlos", nota: 7 },
+	{ nombre: "Ana", nota: 9 },
+	{ nombre: "Luis", nota: 5 },
+];
+
+alumnos.sort((a, b) => b.nota - a.nota);
+console.log(alumnos);
+// [{ nombre: "Ana", nota: 9 }, { nombre: "Carlos", nota: 7 }, { nombre: "Luis", nota: 5 }]
+```
+
+<Aside type="caution" title="sort muta">
+	`sort()` modifica el array original. Si necesitas preservarlo, haz una copia antes: `[...arr].sort(…)` o usa `toSorted()`.
+</Aside>
+
+### `reverse()`
+
+Invierte el array **in-place**:
+
+```js
+const letras = ["a", "b", "c"];
+letras.reverse();
+console.log(letras); // ["c", "b", "a"]
+```
+
+### `toSorted()`, `toReversed()` y `toSpliced()`
+
+Versiones **no destructivas** (ES2023). Devuelven un nuevo array sin tocar el original:
+
+```js
+const original = [3, 1, 4, 1, 5];
+
+const ordenado = original.toSorted((a, b) => a - b);
+console.log(ordenado); // [1, 1, 3, 4, 5]
+console.log(original); // [3, 1, 4, 1, 5] — intacto
+
+const invertido = original.toReversed();
+console.log(invertido); // [5, 1, 4, 1, 3]
+
+const sinSegundo = original.toSpliced(1, 1);
+console.log(sinSegundo); // [3, 4, 1, 5]
+console.log(original);   // [3, 1, 4, 1, 5] — intacto
+```
+
+## Iterar arrays
+
+### `forEach()`
+
+Ejecuta una función por cada elemento. **No devuelve nada** (siempre `undefined`); úsalo solo para efectos secundarios (logs, DOM, etc.):
+
+```js
+const tecnologias = ["HTML", "CSS", "JavaScript", "React", "Node.js"];
+
+tecnologias.forEach(tech => console.log(tech));
+
+tecnologias.forEach((tech, index) => {
+	console.log(`${index}: ${tech}`);
+});
+```
+
+<Aside type="tip" title="forEach vs map">
+	Si necesitas **transformar** y obtener un nuevo array, usa `map`. `forEach` no devuelve nada; usarlo para construir arrays con `push` es un antipatrón.
+</Aside>
+
+### `for...of`
+
+Forma idiomática de iterar cualquier iterable, incluidos arrays. Permite `break` y `continue`:
+
+```js
+const numeros = [10, 20, 30, 40, 50];
+
+for (const num of numeros) {
+	if (num > 30) break;
+	console.log(num);
+}
+// 10, 20, 30
+```
+
+### `for` clásico
+
+Útil cuando necesitas el **índice** o un incremento no secuencial:
+
+```js
+const tecnologias = ["HTML", "CSS", "JavaScript", "React", "Node.js"];
+
+for (let i = 0; i < tecnologias.length; i++) {
+	console.log(`${i}: ${tecnologias[i]}`);
+}
+```
+
+<Aside type="caution" title="Evita for...in con arrays">
+	`for...in` itera las **claves** (strings) de un objeto, incluyendo propiedades heredadas. Para arrays, siempre prefiere `for...of`, `forEach` o un `for` clásico.
+</Aside>
+
+## Encadenamiento de métodos
+
+La verdadera potencia aparece al encadenar:
+
+```js
+const pedidos = [
+	{ producto: "Camiseta", precio: 19.99, cantidad: 3 },
+	{ producto: "Pantalón", precio: 39.99, cantidad: 1 },
+	{ producto: "Gorra", precio: 9.99, cantidad: 5 },
+	{ producto: "Zapatillas", precio: 89.99, cantidad: 1 },
+];
+
+const resumen = pedidos
+	.filter(p => p.precio * p.cantidad > 20)
+	.map(p => ({
+		producto: p.producto,
+		total: +(p.precio * p.cantidad).toFixed(2),
+	}))
+	.toSorted((a, b) => b.total - a.total);
+
+console.log(resumen);
+// [
+//   { producto: "Zapatillas", total: 89.99 },
+//   { producto: "Camiseta",   total: 59.97 },
+//   { producto: "Gorra",      total: 49.95 },
+//   { producto: "Pantalón",   total: 39.99 }
+// ]
+```
+
+Otro ejemplo — obtener un string con los nombres únicos de alumnos aprobados:
+
+```js
+const examenes = [
+	{ alumno: "Ana", nota: 8 },
+	{ alumno: "Luis", nota: 4 },
+	{ alumno: "Ana", nota: 9 },
+	{ alumno: "Marta", nota: 6 },
+	{ alumno: "Luis", nota: 5 },
+];
+
+const aprobadosUnicos = [...new Set(
+	examenes
+		.filter(e => e.nota >= 5)
+		.map(e => e.alumno)
+)].join(", ");
+
+console.log(aprobadosUnicos); // "Ana, Marta, Luis"
+```
+
+## Resumen rápido
+
+<Tabs>
+	<TabItem label="Mutar">
+		```js
+		arr.push(x)         // añadir al final
+		arr.pop()            // eliminar del final
+		arr.unshift(x)       // añadir al inicio
+		arr.shift()          // eliminar del inicio
+		arr.splice(i, n, …)  // eliminar/insertar/reemplazar
+		arr.sort(fn)         // ordenar in-place
+		arr.reverse()        // invertir in-place
+		```
+	</TabItem>
+	<TabItem label="No mutar">
+		```js
+		arr.map(fn)          // transformar
+		arr.filter(fn)       // filtrar
+		arr.reduce(fn, ini)  // acumular
+		arr.slice(a, b)      // extraer porción
+		arr.concat(otro)     // unir
+		arr.flat(n)          // aplanar
+		arr.flatMap(fn)      // map + flat(1)
+		arr.toSorted(fn)     // sort sin mutar
+		arr.toReversed()     // reverse sin mutar
+		arr.toSpliced(i,n,…) // splice sin mutar
+		```
+	</TabItem>
+	<TabItem label="Buscar">
+		```js
+		arr.includes(x)      // ¿existe? → boolean
+		arr.indexOf(x)       // índice o -1
+		arr.find(fn)         // primer match o undefined
+		arr.findIndex(fn)    // índice del match o -1
+		arr.findLast(fn)     // último match
+		arr.findLastIndex(fn)// índice del último match
+		```
+	</TabItem>
+	<TabItem label="Comprobar">
+		```js
+		arr.every(fn)        // ¿todos cumplen?
+		arr.some(fn)         // ¿alguno cumple?
+		Array.isArray(val)   // ¿es array?
+		```
+	</TabItem>
+</Tabs>
+
+## Convención práctica
+
+<Steps>
+
+1. Prefiere métodos **inmutables** (`map`, `filter`, `toSorted`…) sobre los mutadores cuando no necesites modificar el array original.
+2. Usa **`find`** cuando busques un solo elemento y **`filter`** cuando necesites todos los que coincidan.
+3. Pasa siempre un **valor inicial** a `reduce` para evitar sorpresas con arrays vacíos.
+4. No uses `forEach` para construir arrays nuevos; para eso existe `map`.
+5. Encadena métodos para crear **pipelines** de datos legibles sin variables intermedias innecesarias.
+
+</Steps>
+
+## Siguientes pasos
+
+Documentación de referencia en **MDN** (español):
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Global_Objects/Array"
+		title="Array — referencia completa"
+		description="Índice de todos los métodos de Array con ejemplos interactivos."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Global_Objects/Array/map"
+		title="<code>Array.prototype.map()</code>"
+		description="Crear un nuevo array transformando cada elemento con una función."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce"
+		title="<code>Array.prototype.reduce()</code>"
+		description="Acumular valores de un array en un único resultado."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Global_Objects/Array/filter"
+		title="<code>Array.prototype.filter()</code>"
+		description="Filtrar elementos que cumplen una condición, devolviendo un array nuevo."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+<Aside type="tip" title="Ejemplos ejecutables">
+	En el repositorio [DID — carpeta `01-javascript`](https://github.com/gach24/DID/tree/main/01-javascript) tienes el código de muestra (`js/`), los **ejercicios** (`ejercicios/`) y un `index.html` para probarlo en el navegador (p. ej. con Live Server).
+</Aside>

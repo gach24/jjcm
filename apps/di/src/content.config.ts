@@ -15,6 +15,10 @@ const docPageExtendSchema = z.object({
       }),
     )
     .optional(),
+  sources: z.array(z.object({
+    author: z.string(),
+    url: z.url(),
+  })).optional(),
   author: z
     .object({
       name: z.string(),
