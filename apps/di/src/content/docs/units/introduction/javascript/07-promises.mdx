@@ -1,0 +1,762 @@
+---
+title: Promesas y async/await
+description: Promise — estados, resolve/reject, then/catch/finally, encadenamiento, métodos estáticos (all, allSettled, race, any), async functions, await y manejo de errores asíncronos.
+evaluations:
+  - id: RA1
+    statement: Genera interfaces gráficos de usuario mediante editores visuales utilizando las funcionalidades del editor y adaptando el código generado
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de interfaces gráficos.
+      - Se ha creado un interfaz gráfico utilizando las herramientas de un editor visual.
+    contents:
+      - Generación de interfaces de usuario
+sources:
+  - author: Fernando Herrera
+    url: https://cursos.devtalles.com/courses/javascript-moderno
+  - author: Juan Pablo De la torre Valdez
+    url: https://www.udemy.com/course/react-de-principiante-a-experto-creando-mas-de-10-aplicaciones/
+sidebar:
+  order: 7
+date: 2026-03-21
+updated: 2026-03-21
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+Una **Promesa** (`Promise`) es un objeto que representa el resultado **eventual** de una operación **asíncrona**: puede completarse con éxito o fallar. En lugar de bloquear el hilo, registras **qué hacer cuando termine** — con `.then()`, `.catch()` y `.finally()` — o con `await` dentro de funciones `async`. Esta pieza cubre ambos enfoques.
+
+<CardGrid stagger>
+	<Card title="Tres estados" icon="setting">
+		**pending**: aún no ha terminado. **fulfilled** (cumplida): éxito, hay un valor. **rejected** (rechazada): error, hay una razón (normalmente un `Error` o string).
+	</Card>
+	<Card title="Inmutable una vez settled" icon="document">
+		Tras pasar a fulfilled o rejected, la promesa **no vuelve atrás**. Los handlers que añadas después siguen recibiendo ese resultado (se ejecutan en la cola de microtareas).
+	</Card>
+	<Card title="Encadenamiento" icon="right-arrow">
+		`.then()` devuelve **una nueva promesa**. Eso permite encadenar transformaciones sin anidar callbacks ("callback hell").
+	</Card>
+	<Card title="APIs reales" icon="star">
+		`fetch`, `import()`, muchas APIs del navegador y de Node devuelven promesas. Entender `Promise` es el prerequisito para leer respuestas HTTP, cargar módulos al vuelo, etc.
+	</Card>
+	<Card title="async / await" icon="approve-check">
+		`async function` devuelve siempre una promesa. `await` **pausa** la función hasta que la promesa se resuelva. Combinados, permiten escribir código asíncrono que **se lee como síncrono**, sin `.then()` ni callbacks.
+	</Card>
+</CardGrid>
+
+## ¿Por qué existen las promesas?
+
+En operaciones que **tardan** (red, disco, temporizador), el motor no puede "esperar" bloqueando la UI del navegador. El patrón clásico era el **callback**:
+
+```js
+function cargarUsuario(id, callback) {
+	setTimeout(() => {
+		if (id > 0) callback(null, { id, nombre: "Ana" });
+		else callback(new Error("ID inválido"));
+	}, 100);
+}
+
+cargarUsuario(1, (err, user) => {
+	if (err) console.error(err);
+	else console.log(user);
+});
+```
+
+Las promesas **estandarizan** el contrato: un objeto con `.then(onFulfilled, onRejected)` y `.catch(onRejected)`, y permiten **componer** flujos con menos anidamiento.
+
+## Crear una promesa — `new Promise(executor)`
+
+El **executor** es una función que recibe `resolve` y `reject`. Se ejecuta **de forma síncrona** al construir la `Promise`:
+
+```js
+const miPromesa = new Promise((resolve, reject) => {
+	const exito = true;
+
+	if (exito) {
+		resolve("La operación fue exitosa");
+	} else {
+		reject(new Error("Hubo un error en la operación"));
+	}
+});
+```
+
+<Aside type="caution" title="Orden de ejecución">
+	El código **después** de crear la promesa sigue ejecutándose al instante; `resolve`/`reject` suelen llamarse **más tarde** (p. ej. dentro de `setTimeout` o al terminar una petición):
+
+	```js
+	miPromesa
+		.then(mensaje => console.log(mensaje))
+		.catch(error => console.error(error));
+
+	console.log("Esto se ejecuta antes de que la promesa se resuelva o rechace.");
+	```
+</Aside>
+
+### Ejemplo con retardo — `obtenerDatos`
+
+Versión ampliada del ejemplo del repositorio DID (`10-ejemplo.js`), con **rechazo explícito** y **timeout** más corto para practicar:
+
+```js
+function obtenerDatos(forzarError = false) {
+	return new Promise((resolve, reject) => {
+		setTimeout(() => {
+			const datos = ["JS", "TS", "React"];
+
+			if (forzarError || datos.length === 0) {
+				reject(new Error("No se encontraron datos"));
+				return;
+			}
+
+			resolve(datos);
+		}, 500);
+	});
+}
+
+obtenerDatos()
+	.then(lista => console.log("Datos:", lista))
+	.catch(err => console.error(err.message));
+```
+
+### Reglas del executor
+
+- Llama **solo una vez** a `resolve` **o** `reject` (la primera llamada "gana"; las siguientes se ignoran).
+- Si el executor **lanza** una excepción síncrona, la promesa se rechaza automáticamente con ese error.
+- Usa `reject` con instancias de `Error` cuando puedas: mejores stack traces y convención en equipos.
+
+```js
+const p = new Promise(() => {
+	throw new Error("fallo síncrono");
+});
+p.catch(e => console.log(e.message)); // "fallo síncrono"
+```
+
+## Consumir una promesa — `then`, `catch`, `finally`
+
+<Tabs>
+	<TabItem label="then / catch / finally">
+		```js
+		miPromesa
+			.then(resultado => console.log(resultado))
+			.catch(error => console.error(error))
+			.finally(() => console.log("Proceso terminado (éxito o error)"));
+		```
+
+		- **`then(onFulfilled, onRejected)`** — el segundo argumento es poco usado; suele preferirse `catch`.
+		- **`catch(onRejected)`** — equivalente a `.then(undefined, onRejected)`.
+		- **`finally(onFinally)`** — se ejecuta siempre; ideal para quitar spinners o cerrar recursos. No recibe el valor de éxito; si necesitas el resultado, hazlo en `then`.
+	</TabItem>
+	<TabItem label="then con dos argumentos">
+		```js
+		obtenerDatos()
+			.then(
+				lista => console.log("OK:", lista),
+				err => console.log("Fallo:", err.message),
+			);
+		```
+
+		Útil en casos muy puntuales. Ojo: un error **dentro** del `onFulfilled` no lo atrapa el `onRejected` del mismo `then`; para eso sirve un `then` posterior o `catch`.
+	</TabItem>
+</Tabs>
+
+## Encadenamiento y transformación
+
+Cada `.then()` puede **devolver un valor** o **otra promesa**. Lo que devuelvas se envuelve en una promesa nueva:
+
+```js
+function duplicarAsync(n) {
+	return new Promise(resolve => {
+		setTimeout(() => resolve(n * 2), 50);
+	});
+}
+
+Promise.resolve(3)
+	.then(n => duplicarAsync(n)) // devuelve Promise → se "aplana"
+	.then(n => n + 1)
+	.then(console.log); // 7
+```
+
+<Aside type="caution" title="Olvidar return en el then">
+	```js
+	// ❌ Bug clásico: el primer then no devuelve la promesa interna
+	fetch("/api/user")
+		.then(r => {
+			r.json(); // falta return
+		})
+		.then(data => console.log(data)); // data es undefined
+
+	// ✅ Correcto
+	fetch("/api/user")
+		.then(r => r.json())
+		.then(data => console.log(data));
+	```
+</Aside>
+
+## Errores y propagación
+
+Si lanzas en `then` o llamas a `reject`, la promesa resultante **se rechaza** y el error **baja** por la cadena hasta el primer `.catch()`:
+
+```js
+Promise.resolve(1)
+	.then(() => {
+		throw new Error("fallo en el paso 2");
+	})
+	.then(() => console.log("no llego aquí"))
+	.catch(e => console.log(e.message)); // "fallo en el paso 2"
+```
+
+**Rechazos no manejados** (sin `.catch()` ni `await` en `try/catch`) disparan el evento `unhandledrejection` en el navegador y pueden tumbar procesos en Node. En desarrollo, siempre termina la cadena con `.catch()` o usa `try/catch` con `await`.
+
+## Valores ya resueltos — `Promise.resolve` y `Promise.reject`
+
+No hace falta `new Promise` para valores que ya tienes:
+
+```js
+const ok = Promise.resolve(42);
+ok.then(console.log); // 42
+
+const fallo = Promise.reject(new Error("no"));
+fallo.catch(e => console.log(e.message));
+```
+
+Útil para **normalizar** APIs: una función que a veces devuelve un valor y a veces una promesa puede empezar con `return Promise.resolve(x)`.
+
+## Patrón promisificar — `setTimeout` y callbacks
+
+Para envolver APIs antiguas basadas en callback:
+
+```js
+function delay(ms) {
+	return new Promise(resolve => {
+		setTimeout(resolve, ms);
+	});
+}
+
+function leerArchivoSimulado(ruta) {
+	return new Promise((resolve, reject) => {
+		setTimeout(() => {
+			if (!ruta) reject(new Error("Ruta vacía"));
+			else resolve(`contenido de ${ruta}`);
+		}, 100);
+	});
+}
+
+async function demo() {
+	await delay(200);
+	const texto = await leerArchivoSimulado("datos.txt");
+	console.log(texto);
+}
+```
+
+## Combinar promesas — métodos estáticos
+
+### `Promise.all(iterable)`
+
+Espera a que **todas** se cumplan. Si **una** falla, el resultado es **rechazo** con esa razón (las demás pueden seguir en vuelo, pero ya no usas su éxito).
+
+```js
+const p1 = Promise.resolve(1);
+const p2 = new Promise(r => setTimeout(() => r(2), 50));
+const p3 = fetch("https://jsonplaceholder.typicode.com/users/1").then(r => r.json());
+
+const resultados = await Promise.all([p1, p2, p3]);
+console.log(resultados); // [1, 2, { id: 1, name: 'Leanne Graham', ... }]
+```
+
+Caso típico: varias peticiones en paralelo y necesitas **todas** las respuestas para seguir.
+
+### `Promise.allSettled(iterable)`
+
+Espera a que **terminen todas**, sin importar éxito o fallo. Cada elemento es `{ status: 'fulfilled', value }` o `{ status: 'rejected', reason }`.
+
+```js
+const intentos = [
+	fetch("https://jsonplaceholder.typicode.com/posts/1"),
+	fetch("https://jsonplaceholder.typicode.com/posts/999999"), // puede fallar según API
+];
+
+const settled = await Promise.allSettled(intentos);
+for (const s of settled) {
+	if (s.status === "fulfilled") console.log("HTTP OK", s.value.status);
+	else console.log("Falló", s.reason);
+}
+```
+
+Ideal para **paneles** o informes donde quieres ver el resultado de cada operación.
+
+### `Promise.race(iterable)`
+
+Se **resuelve o rechaza** con la **primera** promesa que se **settle** (cumpla o falle).
+
+```js
+function timeout(ms) {
+	return new Promise((_, reject) =>
+		setTimeout(() => reject(new Error(`Timeout ${ms}ms`)), ms),
+	);
+}
+
+const datos = await Promise.race([
+	fetch("https://jsonplaceholder.typicode.com/posts/1").then(r => r.json()),
+	timeout(3000),
+]);
+console.log(datos.title);
+```
+
+### `Promise.any(iterable)`
+
+Devuelve el **primer fulfilled**. Solo si **todas** fallan, rechaza con un **`AggregateError`** que agrupa los errores.
+
+```js
+const espejos = [
+	fetch("https://httpstat.us/500"), // falla
+	fetch("https://jsonplaceholder.typicode.com/posts/1"),
+];
+
+const res = await Promise.any(espejos);
+const post = await res.json();
+console.log(post.id); // 1
+```
+
+<Aside type="tip" title="Resumen mental">
+	- **`all`** — necesito **todo** o nada.
+	- **`allSettled`** — quiero **informe** de cada una.
+	- **`race`** — la **primera** que termine (éxito o error).
+	- **`any`** — la **primera** que **tenga éxito**; tolero fallos en el resto.
+</Aside>
+
+## Comparativa de métodos estáticos
+
+| Método | Éxito cuando… | Fallo cuando… |
+| --- | --- | --- |
+| `Promise.all` | Todas fulfilled | La primera rejection |
+| `Promise.allSettled` | Siempre (array de resultados) | Nunca rechaza el aggregate |
+| `Promise.race` | La primera settled (fulfilled o rejected) | La primera que sea rejected |
+| `Promise.any` | La primera fulfilled | Todas rejected → `AggregateError` |
+
+## `async` / `await`
+
+`async`/`await` es **azúcar sintáctico** sobre promesas. El modelo subyacente es el mismo: promesas, microtareas, resolve/reject. Pero la sintaxis se lee como código síncrono, eliminando la necesidad de `.then()` encadenados.
+
+### La palabra clave `async`
+
+Una función declarada con `async` **siempre devuelve una promesa**. Si retornas un valor, se envuelve automáticamente en `Promise.resolve()`:
+
+```js
+async function saludo() {
+	return "Hola Mundo";
+}
+
+saludo().then(msg => console.log(msg)); // "Hola Mundo"
+
+console.log(saludo() instanceof Promise); // true
+```
+
+Funciona igual con arrow functions y métodos:
+
+```js
+const saludar = async () => "Hola";
+
+const api = {
+	async obtenerVersion() {
+		return "2.0.1";
+	},
+};
+```
+
+<Aside type="tip" title="Si no usas await, ¿para qué async?">
+	Marcar una función como `async` sin usar `await` dentro solo tiene sentido si quieres garantizar que el valor de retorno sea una promesa (por compatibilidad de interfaz). En la mayoría de casos, si no hay `await`, no necesitas `async`.
+</Aside>
+
+### La palabra clave `await`
+
+`await` **pausa** la ejecución de la función `async` hasta que la promesa se resuelva o rechace. Devuelve el valor resuelto:
+
+```js
+function obtenerNumero() {
+	return new Promise(resolve => {
+		setTimeout(() => resolve(42), 1000);
+	});
+}
+
+async function mostrarNumero() {
+	console.log("Esperando...");
+	const numero = await obtenerNumero();
+	console.log("El número es:", numero); // El número es: 42
+}
+
+mostrarNumero();
+console.log("Esto se ejecuta antes del await");
+// "Esperando..."
+// "Esto se ejecuta antes del await"
+// (1s después) "El número es: 42"
+```
+
+<Aside type="caution" title="await solo dentro de async">
+	`await` solo puede usarse dentro de una función `async` (o en el top-level de un módulo ES — ver más abajo). Usarlo fuera produce un `SyntaxError`.
+</Aside>
+
+### Manejo de errores — `try / catch`
+
+Cuando una promesa es rechazada, `await` **lanza** ese error como una excepción. Se captura con `try/catch`, exactamente igual que un error síncrono:
+
+```js
+async function obtenerDatos() {
+	try {
+		const respuesta = await fetch("https://jsonplaceholder.typicode.com/posts/1");
+		const datos = await respuesta.json();
+		console.log("Post:", datos.title);
+	} catch (error) {
+		console.error("Error al cargar:", error.message);
+	} finally {
+		console.log("Petición terminada");
+	}
+}
+
+obtenerDatos();
+```
+
+Comparación directa del mismo flujo con ambas sintaxis:
+
+<Tabs>
+	<TabItem label="then / catch">
+		```js
+		function cargarUsuario(id) {
+			return fetch(`https://jsonplaceholder.typicode.com/users/${id}`)
+				.then(res => {
+					if (!res.ok) throw new Error(`HTTP ${res.status}`);
+					return res.json();
+				})
+				.then(user => {
+					console.log(user.name);
+					return user;
+				})
+				.catch(err => {
+					console.error("Fallo:", err.message);
+				});
+		}
+		```
+	</TabItem>
+	<TabItem label="async / await">
+		```js
+		async function cargarUsuario(id) {
+			try {
+				const res = await fetch(`https://jsonplaceholder.typicode.com/users/${id}`);
+				if (!res.ok) throw new Error(`HTTP ${res.status}`);
+				const user = await res.json();
+				console.log(user.name);
+				return user;
+			} catch (err) {
+				console.error("Fallo:", err.message);
+			}
+		}
+		```
+	</TabItem>
+</Tabs>
+
+### Ejecución en paralelo con `await`
+
+Un error frecuente es poner `await` secuencial cuando las operaciones son **independientes**:
+
+```js
+// ❌ Secuencial: cada await espera al anterior (lento)
+async function cargarTodo() {
+	const usuarios = await fetch("/api/users").then(r => r.json());
+	const posts = await fetch("/api/posts").then(r => r.json());
+	const comentarios = await fetch("/api/comments").then(r => r.json());
+	return { usuarios, posts, comentarios };
+}
+
+// ✅ Paralelo: las tres peticiones salen a la vez
+async function cargarTodo() {
+	const [usuarios, posts, comentarios] = await Promise.all([
+		fetch("/api/users").then(r => r.json()),
+		fetch("/api/posts").then(r => r.json()),
+		fetch("/api/comments").then(r => r.json()),
+	]);
+	return { usuarios, posts, comentarios };
+}
+```
+
+<Aside type="tip" title="Regla de oro">
+	Si una operación **no depende** del resultado de otra, lánzalas en paralelo con `Promise.all`. Solo usa `await` secuencial cuando el segundo paso **necesita** el resultado del primero.
+</Aside>
+
+### `await` en bucles
+
+Con `for...of` cada iteración espera a la anterior (secuencial). Para paralelizar, usa `Promise.all` con `map`:
+
+<Tabs>
+	<TabItem label="Secuencial">
+		```js
+		async function procesarSecuencial(urls) {
+			const resultados = [];
+			for (const url of urls) {
+				const res = await fetch(url);
+				resultados.push(await res.json());
+			}
+			return resultados;
+		}
+		```
+
+		Útil cuando cada petición depende de la anterior o cuando quieres **limitar** la concurrencia.
+	</TabItem>
+	<TabItem label="Paralelo">
+		```js
+		async function procesarParalelo(urls) {
+			const promesas = urls.map(url => fetch(url).then(r => r.json()));
+			return Promise.all(promesas);
+		}
+		```
+
+		Mucho más rápido si las peticiones son independientes.
+	</TabItem>
+</Tabs>
+
+<Aside type="caution" title="forEach y await no se llevan bien">
+	`forEach` **no espera** a las promesas. Cada callback `async` se lanza pero `forEach` no encadena los resultados:
+
+	```js
+	// ❌ Esto NO espera — los console.log salen desordenados
+	urls.forEach(async (url) => {
+		const data = await fetch(url).then(r => r.json());
+		console.log(data);
+	});
+
+	// ✅ Usa for...of para secuencial o Promise.all + map para paralelo
+	```
+</Aside>
+
+### Top-level `await`
+
+Desde ES2022, puedes usar `await` directamente en el nivel superior de un **módulo ES**, sin envolverlo en una función `async`:
+
+```js
+// config.js (módulo ES)
+const respuesta = await fetch("/api/config");
+export const config = await respuesta.json();
+```
+
+```js
+// main.js
+import { config } from "./config.js";
+console.log(config.apiUrl);
+```
+
+El módulo que importa `config.js` esperará automáticamente a que la promesa se resuelva antes de ejecutar su propio código.
+
+<Aside type="caution" title="Usa con moderación">
+	Top-level `await` **bloquea** la ejecución de los módulos que dependen de él. Si la operación es lenta, puede retrasar toda la cadena de importaciones.
+</Aside>
+
+### Ejemplo — reintentos con `async/await`
+
+Reescritura del ejemplo de reintentos con solo promesas, ahora con sintaxis `async`:
+
+```js
+function delay(ms) {
+	return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function fetchJson(url) {
+	const res = await fetch(url);
+	if (!res.ok) throw new Error(`HTTP ${res.status}`);
+	return res.json();
+}
+
+async function conReintentos(url, max = 3) {
+	for (let intento = 1; intento <= max; intento++) {
+		try {
+			return await fetchJson(url);
+		} catch (err) {
+			console.warn(`Intento ${intento} falló: ${err.message}`);
+			if (intento === max) throw err;
+			await delay(300 * intento);
+		}
+	}
+}
+
+try {
+	const post = await conReintentos("https://jsonplaceholder.typicode.com/posts/1");
+	console.log(post.title);
+} catch (e) {
+	console.error("Definitivamente falló:", e.message);
+}
+```
+
+### Ejemplo práctico — cargar y mostrar datos
+
+```js
+async function renderizarUsuarios() {
+	const contenedor = document.getElementById("usuarios");
+	contenedor.textContent = "Cargando...";
+
+	try {
+		const res = await fetch("https://jsonplaceholder.typicode.com/users");
+		if (!res.ok) throw new Error(`HTTP ${res.status}`);
+		const usuarios = await res.json();
+
+		contenedor.innerHTML = usuarios
+			.map(u => `<li><strong>${u.name}</strong> — ${u.email}</li>`)
+			.join("");
+	} catch (error) {
+		contenedor.textContent = `Error: ${error.message}`;
+	}
+}
+
+renderizarUsuarios();
+```
+
+## Errores frecuentes
+
+<Tabs>
+	<TabItem label="Evitar">
+		```js
+		// ❌ Rama sin resolve/reject → promesa en pending para siempre
+		new Promise(() => {
+			if (Math.random() > 0.5) {
+				/* olvidaste resolve() / reject() */
+			}
+		});
+
+		// ❌ then sin return al encadenar una promesa interna
+		getUserId()
+			.then(id => {
+				fetchUser(id); // debería ser: return fetchUser(id);
+			})
+			.then(user => console.log(user)); // undefined
+
+		// ❌ await secuencial cuando las operaciones son independientes
+		const a = await fetchA();
+		const b = await fetchB(); // espera a que fetchA termine sin necesidad
+
+		// ❌ forEach con async (no espera las promesas)
+		items.forEach(async item => await procesar(item));
+
+		// ❌ try/catch que silencia el error sin hacer nada útil
+		try { await fetchData(); } catch (e) { /* vacío */ }
+		```
+	</TabItem>
+	<TabItem label="Preferir">
+		```js
+		// ✅ Siempre settle: resolve o reject en cada camino
+		// ✅ return explícito en then cuando encadenas
+		// ✅ Promise.all para operaciones independientes
+		const [a, b] = await Promise.all([fetchA(), fetchB()]);
+
+		// ✅ for...of para iteración secuencial con await
+		for (const item of items) await procesar(item);
+
+		// ✅ Propagar o loggear errores en catch
+		try { await fetchData(); } catch (e) { console.error(e); throw e; }
+
+		// ✅ Terminar cadenas con .catch() en código fire-and-forget
+		```
+	</TabItem>
+</Tabs>
+
+## Resumen rápido
+
+<Tabs>
+	<TabItem label="Crear / consumir">
+		```js
+		new Promise((resolve, reject) => { /* ... */ })
+		p.then(v => {}).catch(e => {}).finally(() => {})
+		Promise.resolve(x)
+		Promise.reject(err)
+		```
+	</TabItem>
+	<TabItem label="async / await">
+		```js
+		async function fn() { /* siempre devuelve Promise */ }
+		const val = await promesa;          // pausa hasta settled
+		try { await p; } catch (e) { ... }  // captura rejection
+		// top-level await en módulos ES (ES2022)
+		```
+	</TabItem>
+	<TabItem label="Combinar">
+		```js
+		await Promise.all([p1, p2])        // todas o falla
+		await Promise.allSettled([p1, p2]) // informe de cada una
+		await Promise.race([p1, p2])       // la primera que settle
+		await Promise.any([p1, p2])        // primera fulfilled
+		```
+	</TabItem>
+</Tabs>
+
+## Convención práctica
+
+<Steps>
+
+1. Prefiere **`async/await`** sobre `.then()` para flujos con varios pasos secuenciales: se lee mucho mejor.
+2. Devuelve **promesas** desde funciones asíncronas; no aceptes callbacks cuando diseñes API nueva.
+3. Rechaza con **`Error`** (o subclases) y mensajes claros; evita `reject("string")`.
+4. Envuelve el `await` en **`try/catch`** y haz algo útil con el error (loggear, reintentar, propagar).
+5. Usa **`Promise.all`** para operaciones independientes en paralelo; `await` secuencial solo cuando un paso depende del anterior.
+6. **`race`** para timeouts; **`any`** para redundancia; **`allSettled`** cuando cada resultado cuenta aunque falle alguno.
+7. No dejes **rechazos sin manejar**; en apps reales conecta `unhandledrejection` en depuración.
+
+</Steps>
+
+## Siguientes pasos
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Global_Objects/Promise"
+		title="Promise — referencia MDN"
+		description="Estados, constructor, métodos de instancia y estáticos con detalle."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Guide/Using_promises"
+		title="Guía: usar promesas"
+		description="Patrones comunes y buenas prácticas desde la documentación oficial."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Global_Objects/Promise/all"
+		title="Promise.all"
+		description="Esperar múltiples promesas en paralelo."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Global_Objects/Promise/any"
+		title="Promise.any"
+		description="Primera promesa cumplida; AggregateError si todas fallan."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Statements/async_function"
+		title="async function — referencia"
+		description="Declaración de funciones asíncronas que devuelven promesas."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Operators/await"
+		title="await — referencia"
+		description="Pausar la ejecución de una función async hasta que la promesa se resuelva."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+<Aside type="tip" title="Ejemplos ejecutables">
+	En el repositorio [DID — `01-javascript`](https://github.com/gach24/DID/tree/main/01-javascript) tienes `js/10-ejemplo.js` (promesa básica y `obtenerDatos`), `js/11-ejemplo.js` (async/await) y los apartados **10. Promesas** y **11. async/await** en el `README.md`. Ábrelo con Live Server o integra el script como módulo para ver el orden síncrono vs asíncrono en consola.
+</Aside>
