@@ -87,16 +87,24 @@ let vacio = null;
 
 ### `symbol` y `bigint`
 
-```js
-let id = Symbol("id");
-let otro = Symbol("id");
-console.log(id === otro); // false — cada Symbol es único (salvo Symbol.for)
+Completan la lista de primitivos
 
-let numeroGrande = 1234567890123456789012345678901234567890n;
-```
-
-- **`Symbol`**: identificadores únicos (p. ej. claves de propiedad que no chocan con strings ajenos).
-- **`bigint`**: enteros arbitrarios; literales terminan en **`n`**.
+<CardGrid stagger>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Global_Objects/Symbol"
+		title="<code>Symbol</code>"
+		description="Valores únicos e inmutables (p. ej. claves de propiedad que no colisionan con strings)."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Global_Objects/BigInt"
+		title="<code>BigInt</code>"
+		description="Enteros de precisión arbitraria y literales con sufijo <code>n</code>."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
 
 ## `typeof`
 
@@ -141,10 +149,10 @@ Las **funciones** son objetos invocables; por eso puedes asignarlas, pasarlas co
 
 ## Valor vs referencia (idea práctica)
 
-- **Primitivos**: al asignar o pasar a una función, suele trabajarse con el **valor** (copia del contenido para los primitivos).
+- **Primitivos**: al asignar o pasar a una función, se copia el contenido.
 - **Objetos**: varias variables pueden apuntar al **mismo** objeto; mutar propiedades se ve en todas las referencias.
 
-```js
+```js {7, 9}
 let a = 1;
 let b = a;
 b = 2;
@@ -166,26 +174,6 @@ console.log(o1.x); // 2 — mismo objeto
 
 </Steps>
 
-## Comparar comprobaciones
-
-<Tabs>
-	<TabItem label="Primitivos">
-		```js
-		typeof edad === "number";
-		typeof nombre === "string";
-		typeof activo === "boolean";
-		typeof sinDefinir === "undefined";
-		valor === null;
-		```
-	</TabItem>
-	<TabItem label="Objetos y arrays">
-		```js
-		typeof fn === "function";
-		Array.isArray(lista);
-		lista instanceof Date; // si viene de new Date()
-		```
-	</TabItem>
-</Tabs>
 
 ## Siguientes pasos
 
@@ -203,13 +191,6 @@ Documentación de referencia en **MDN** (español):
 		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Operators/typeof"
 		title="Operador <code>typeof</code>"
 		description="Qué devuelve para cada tipo y casos especiales."
-		target="_blank"
-		rel="noopener noreferrer"
-	/>
-	<LinkCard
-		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Global_Objects/BigInt"
-		title="<code>BigInt</code>"
-		description="Enteros grandes y literales con sufijo <code>n</code>."
 		target="_blank"
 		rel="noopener noreferrer"
 	/>
