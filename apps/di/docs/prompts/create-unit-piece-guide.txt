@@ -1,0 +1,1 @@
+Crea una pieza de unidad en @apps/di/src/content/docs/units/introduction/javascript/02-types.mdx basandote en @apps/di/docs/workflows/create-unit-piece.md y @apps/di/.cursor/skills/create-unit-piece-guide sobre los tipos de javascript y basandote en la documentación anterior sobre types de @https://github.com/gach24/DID/tree/main/01-javascript
