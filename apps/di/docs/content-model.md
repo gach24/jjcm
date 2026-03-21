@@ -112,6 +112,8 @@ tableOfContents:
 ---
 ```
 
+Los campos opcionales `evaluations`, `author`, `date` y `updated` están definidos y validados con Zod en `src/content.config.ts` (extensión de `docsSchema`). Si aparecen en el frontmatter, deben respetar esa forma para que falle el build ante errores tipográficos o tipos incorrectos.
+
 ## Convenciones de naming
 
 - carpetas y slugs en **minúsculas**
