@@ -38,6 +38,7 @@ export default defineConfig({
           items: [
             {
               label: "[lucide:book-open] Introducción",
+              collapsed: true, 
               items: [
                 {
                   label: "[lucide:braces] JavaScript",
