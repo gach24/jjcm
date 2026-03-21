@@ -2,6 +2,8 @@
 
 This repository contains the teaching site for the **Desarrollo de Interfaces** module in vocational education, built with **Astro + Starlight**.
 
+The professional module **0488 — Desarrollo de interfaces** follows the **official Spanish FP curriculum** established in **Real Decreto 405/2023** (catálogo de títulos de Formación Profesional). The teaching extract used in this repository is identified as **BOE-A-2023-13221** and is stored at **`fp/boe/modulo_0488_desarrollo_de_interfaces_boe.pdf`**. Use that file for canonical wording of **resultados de aprendizaje**, **criterios de evaluación**, and scope when authoring or tagging didactic content.
+
 - The default language for content and functional documentation is **Spanish**.
 - The priority is **repo-first**: important knowledge should live here before it lives in editor rules.
 - Cursor consumes this knowledge base; it is not the source of truth.
@@ -16,6 +18,8 @@ When there is doubt or a conflict between instructions:
 4. `docs/style-guide.md`
 5. `docs/workflows/*.md`
 6. editor rules or skills
+
+For **curriculum alignment** (learning outcomes, evaluation criteria, BOE wording): prefer `fp/boe/modulo_0488_desarrollo_de_interfaces_boe.pdf` over informal notes. It does not replace legal advice, but it is the canonical curriculum reference in this repo.
 
 ## Documentation Policy
 
@@ -99,6 +103,7 @@ After editing:
 ## Quality Criteria
 
 - natural, clear, pedagogical Spanish;
+- where content maps to the official module, **alignment with RAs and criteria** in `fp/boe/modulo_0488_desarrollo_de_interfaces_boe.pdf`;
 - consistent titles and slugs;
 - minimal but useful frontmatter;
 - navigation that is easy to understand in Starlight;
