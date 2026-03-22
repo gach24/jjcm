@@ -13,11 +13,9 @@ The professional module **0488 — Desarrollo de interfaces** follows the **offi
 When there is doubt or a conflict between instructions:
 
 1. `AGENTS.md`
-2. `docs/architecture.md`
-3. `docs/content-model.md`
-4. `docs/style-guide.md`
-5. `docs/workflows/*.md`
-6. editor rules or skills
+2. `ai/` (context, rules, promps, workflows, architecture)
+3. `docs/` (architecture, content-model, style-guide, workflows)
+4. editor rules or skills
 
 For **curriculum alignment** (learning outcomes, evaluation criteria, BOE wording): prefer `fp/boe/modulo_0488_desarrollo_de_interfaces_boe.pdf` over informal notes. It does not replace legal advice, but it is the canonical curriculum reference in this repo.
 
@@ -64,6 +62,13 @@ src/content/docs/
   videos/
   proyecto/
   recursos/
+ai/
+  architecture/  # Mirror of docs/ for agents
+  context/       # Pedagogical and project context
+  promps/        # Prompt templates (e.g. generate-section)
+  rules/         # Global rules (e.g. 00-global-course-rule)
+  templates/     # MDX and Frontmatter templates
+  workflows/     # Step-by-step guides for AI tasks
 docs/
   architecture.md
   content-model.md
@@ -108,3 +113,10 @@ After editing:
 - minimal but useful frontmatter;
 - navigation that is easy to understand in Starlight;
 - no leftover starter content once it stops adding teaching value.
+
+## AI Specifics
+
+- **No YAML frontmatter in Skills**: Las skills en `.cursor/skills/` no necesitan bloque `---`. Su descripción se gestiona mediante el sistema de Cursor.
+- **Project Context**: Al generar ejemplos, consulta `ai/context/03-project-context.md`. Actualmente, el contexto preferente es **usuarios** (otros contextos como productos o pedidos están comentados y deben evitarse por ahora).
+- **Pedagogical Rules**: Sigue `ai/rules/00-global-course-rule.md`. No generes teoría aislada; conecta siempre con la construcción de interfaces reales y el ecosistema React.
+- **Prompting**: Usa las plantillas en `ai/promps/` (nota: se mantiene el nombre `promps` por consistencia en el repo) para mantener un tono y estructura uniformes.

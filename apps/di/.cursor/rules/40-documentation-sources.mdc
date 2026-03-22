@@ -2,8 +2,12 @@
 description: Fuentes de documentación autorizadas
 alwaysApply: true
 ---
+
+# Documentation sources
+
 Antes de proponer cambios en Astro, Starlight, Markdown/MDX o accesibilidad:
-1. Revisa `docs/reference-sources.md`
-2. Prioriza documentación oficial
-3. Ajusta cualquier recomendación a las versiones instaladas en `package.json`
-4. Si la tarea depende de una API concreta, evita responder solo por memoria
+
+1. Revisa `docs/reference-sources.md` y `ai/architecture/reference-sources.md`.
+2. Prioriza documentación oficial.
+3. Ajusta recomendaciones a las versiones instaladas en `package.json`.
+4. Si la tarea depende de una API concreta, evita responder solo por memoria.

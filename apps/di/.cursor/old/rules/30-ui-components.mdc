@@ -10,4 +10,9 @@ alwaysApply: false
 - Si un componente propio es necesario, que sea pequeño, presentacional y fácil de reutilizar.
 - No escondas información docente esencial dentro de componentes complejos.
 - Evita islands o lógica de cliente salvo necesidad clara.
-- Si un patrón visual se repite, extrae un componente o un bloque MDX reusable.
+- Si un patrón visual se repite varias veces, extrae un componente o un bloque MDX reusable.
+
+## Ejemplo
+
+- ❌ Crear un componente interactivo para mostrar una lista estática
+- ✅ Resolverlo con Markdown, `Card` o un componente Astro simple
