@@ -1,0 +1,551 @@
+---
+title: Funciones y arrow functions
+description: Declaración de funciones, expresiones de función, arrow functions, parámetros, valores de retorno, scope y closures en JavaScript.
+evaluations:
+  - id: RA1
+    statement: Genera interfaces gráficos de usuario mediante editores visuales utilizando las funcionalidades del editor y adaptando el código generado
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de interfaces gráficos.
+      - Se ha creado un interfaz gráfico utilizando las herramientas de un editor visual.
+    contents:
+      - Generación de interfaces de usuario
+sources:
+  - author: Fernando Herrera
+    url: https://cursos.devtalles.com/courses/javascript-moderno
+  - author: Juan Pablo De la torre Valdez
+    url: https://www.udemy.com/course/react-de-principiante-a-experto-creando-mas-de-10-aplicaciones/
+sidebar:
+  order: 3
+date: 2026-03-21
+updated: 2026-03-21
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+Las funciones son el mecanismo principal de **abstracción** en JavaScript. Permiten encapsular bloques de código, reutilizarlos y componer lógica compleja a partir de piezas pequeñas. En ES6 se añadieron las **arrow functions**, una sintaxis más concisa que además cambia el comportamiento de `this`.
+
+<CardGrid stagger>
+	<Card title="Declaración" icon="document">
+		La forma clásica: `function nombre() { … }`. Se eleva por **hoisting**, así que puedes invocarla antes de la línea donde aparece.
+	</Card>
+	<Card title="Expresión" icon="pencil">
+		Se asigna una función (anónima o con nombre) a una variable: `const fn = function() { … }`. **No** se eleva.
+	</Card>
+	<Card title="Arrow function" icon="right-arrow">
+		Sintaxis compacta introducida en ES6: `const fn = () => { … }`. **No** tiene su propio `this`, `arguments` ni `super`.
+	</Card>
+	<Card title="Callbacks" icon="setting">
+		Las funciones son **valores**: puedes pasarlas como argumento a otra función (callback) o devolverlas desde una función (higher-order function).
+	</Card>
+</CardGrid>
+
+## Declaración de función
+
+La palabra clave `function` seguida de un nombre, paréntesis con los parámetros y un cuerpo entre llaves.
+
+```js
+function saludar() {
+	console.log("¡Hola!");
+}
+
+saludar(); // ¡Hola!
+saludar(); // ¡Hola!
+```
+
+### Parámetros y argumentos
+
+Los **parámetros** son los nombres que declaras entre paréntesis; los **argumentos** son los valores que pasas al invocar.
+
+```js
+function sumar(a, b) {
+	console.log(a + b);
+}
+
+sumar(10, 20); // 30
+sumar(3, 7);   // 10
+```
+
+Si pasas más argumentos de los declarados, los extras se ignoran (pero están disponibles en `arguments`). Si pasas menos, los que faltan valen `undefined`.
+
+```js
+function mostrar(a, b) {
+	console.log(a, b);
+}
+
+mostrar(1);        // 1 undefined
+mostrar(1, 2, 3);  // 1 2  (el 3 se ignora)
+```
+
+### Valor de retorno
+
+Sin `return` explícito, una función devuelve `undefined`. Con `return`, el valor queda disponible para quien la invocó.
+
+```js
+function sumar(a, b) {
+	return a + b;
+}
+
+const resultado = sumar(5, 3);
+console.log(resultado); // 8
+console.log(sumar(10, 20)); // 30
+```
+
+<Aside type="caution" title="return detiene la ejecución">
+	Todo lo que escribas después de `return` dentro del mismo bloque **no se ejecutará**. Es un error común dejar lógica inalcanzable debajo de un `return`.
+</Aside>
+
+### Parámetros por defecto
+
+Desde ES6 puedes asignar valores por defecto directamente en la firma. Se usan cuando el argumento es `undefined` (o no se proporciona).
+
+```js
+function crearUsuario(nombre, rol = "visitante") {
+	return { nombre, rol };
+}
+
+console.log(crearUsuario("Ana"));            // { nombre: "Ana", rol: "visitante" }
+console.log(crearUsuario("Luis", "admin"));  // { nombre: "Luis", rol: "admin" }
+```
+
+### Parámetros rest (`...`)
+
+Recoge **todos** los argumentos restantes en un array real (a diferencia del pseudo-array `arguments`).
+
+```js
+function sumarTodos(...numeros) {
+	let total = 0;
+	for (const n of numeros) {
+		total += n;
+	}
+	return total;
+}
+
+console.log(sumarTodos(1, 2, 3));       // 6
+console.log(sumarTodos(10, 20, 30, 40)); // 100
+```
+
+Puedes combinarlo con parámetros normales, pero el rest siempre va al final.
+
+```js
+function registrar(accion, ...detalles) {
+	console.log(`[${accion}]`, detalles.join(", "));
+}
+
+registrar("LOGIN", "usuario: ana", "ip: 192.168.1.1");
+// [LOGIN] usuario: ana, ip: 192.168.1.1
+```
+
+### Hoisting
+
+Las declaraciones de función se elevan al principio de su scope. Esto significa que puedes llamarlas **antes** de la línea donde las escribes.
+
+```js {1}
+despedirse(); // "¡Adiós!"
+
+function despedirse() {
+	console.log("¡Adiós!");
+}
+```
+
+<Aside type="tip" title="¿Buena práctica?">
+	Aunque funciona, muchos equipos prefieren declarar las funciones **antes** de usarlas para facilitar la lectura de arriba a abajo.
+</Aside>
+
+## Expresión de función
+
+Cuando asignas una función a una variable o constante. Puede ser **anónima** o tener un nombre (útil para recursión o en stack traces).
+
+```js
+const resta = function (a, b) {
+	return a - b;
+};
+
+console.log(resta(10, 3)); // 7
+```
+
+```js
+const factorial = function fact(n) {
+	if (n <= 1) return 1;
+	return n * fact(n - 1);
+};
+
+console.log(factorial(5)); // 120
+```
+
+<Aside type="caution" title="Sin hoisting">
+	A diferencia de las declaraciones, las expresiones de función **no** se elevan. Si intentas usarlas antes de la línea de asignación, obtendrás un `ReferenceError` (con `let`/`const`) o `TypeError` (con `var`, porque vale `undefined` y `undefined` no es una función).
+</Aside>
+
+## Arrow functions
+
+Introducidas en **ES6**, ofrecen una sintaxis más corta y un comportamiento diferente con `this`. Son la forma preferida para callbacks y funciones cortas.
+
+### Sintaxis básica
+
+```js
+const sumar = (a, b) => {
+	return a + b;
+};
+
+console.log(sumar(4, 6)); // 10
+```
+
+### Retorno implícito
+
+Si el cuerpo es **una sola expresión**, puedes omitir las llaves y el `return`:
+
+```js
+const sumar = (a, b) => a + b;
+const doble = (n) => n * 2;
+
+console.log(sumar(3, 7)); // 10
+console.log(doble(5));     // 10
+```
+
+### Un solo parámetro
+
+Con un único parámetro puedes omitir los paréntesis (aunque incluirlos es igualmente válido):
+
+```js
+const cuadrado = x => x * x;
+
+console.log(cuadrado(4)); // 16
+console.log(cuadrado(9)); // 81
+```
+
+### Sin parámetros
+
+Si no hay parámetros, los paréntesis vacíos son obligatorios:
+
+```js
+const ahora = () => new Date().toLocaleTimeString();
+
+console.log(ahora());
+```
+
+### Retorno implícito de un objeto
+
+Si quieres devolver un objeto literal directamente, envuélvelo en paréntesis para que el motor no confunda las llaves con el cuerpo de la función:
+
+```js
+const crearPunto = (x, y) => ({ x, y });
+
+console.log(crearPunto(3, 7)); // { x: 3, y: 7 }
+```
+
+<Aside type="caution" title="Trampa frecuente">
+	`() => { x, y }` **no** devuelve un objeto; JavaScript interpreta las llaves como el cuerpo de la función y `x, y` como el operador coma. Usa siempre los paréntesis: `() => ({ x, y })`.
+</Aside>
+
+## Comparación de las tres formas
+
+<Tabs>
+	<TabItem label="Declaración">
+		```js
+		function saludar(nombre) {
+			return `Hola, ${nombre}`;
+		}
+
+		// ✔ Hoisting: se puede llamar antes de declararla
+		// ✔ Tiene this propio
+		// ✔ Puede ser generadora (function*)
+		```
+	</TabItem>
+	<TabItem label="Expresión">
+		```js
+		const saludar = function (nombre) {
+			return `Hola, ${nombre}`;
+		};
+
+		// ✘ Sin hoisting
+		// ✔ Tiene this propio
+		// ✔ Se puede asignar, pasar como argumento
+		```
+	</TabItem>
+	<TabItem label="Arrow">
+		```js
+		const saludar = (nombre) => `Hola, ${nombre}`;
+
+		// ✘ Sin hoisting
+		// ✘ No tiene this propio (hereda del scope exterior)
+		// ✘ No tiene arguments
+		// ✔ Sintaxis concisa, ideal para callbacks
+		```
+	</TabItem>
+</Tabs>
+
+## `this` en arrow functions
+
+La diferencia más relevante a nivel práctico. Las funciones clásicas crean su **propio** `this` según cómo se invocan. Las arrow functions **heredan** el `this` del scope que las rodea (léxico).
+
+```js
+const equipo = {
+	nombre: "Frontend",
+	miembros: ["Ana", "Luis", "Marta"],
+
+	listar() {
+		this.miembros.forEach((m) => {
+			console.log(`${m} pertenece a ${this.nombre}`);
+		});
+	},
+};
+
+equipo.listar();
+// Ana pertenece a Frontend
+// Luis pertenece a Frontend
+// Marta pertenece a Frontend
+```
+
+Si usaras una función clásica dentro del `forEach`, `this` no apuntaría a `equipo` y obtendrías `undefined` (en modo estricto).
+
+```js
+const equipo = {
+	nombre: "Frontend",
+	miembros: ["Ana", "Luis", "Marta"],
+
+	listar() {
+		this.miembros.forEach(function (m) {
+			console.log(`${m} pertenece a ${this.nombre}`);
+		});
+	},
+};
+
+equipo.listar();
+// Ana pertenece a undefined
+// Luis pertenece a undefined
+// Marta pertenece a undefined
+```
+
+<Aside type="tip" title="Regla práctica">
+	Usa **arrow functions** para callbacks y funciones internas. Usa **declaraciones o expresiones** cuando necesites un `this` propio (métodos de objeto, constructores, prototipos).
+</Aside>
+
+## Funciones como valores (first-class)
+
+En JavaScript las funciones son **objetos de primera clase**: puedes asignarlas a variables, guardarlas en arrays/objetos, pasarlas como argumento y devolverlas desde otras funciones.
+
+### Pasar como argumento (callback)
+
+```js
+function ejecutar(fn, a, b) {
+	return fn(a, b);
+}
+
+const sumar = (x, y) => x + y;
+const multiplicar = (x, y) => x * y;
+
+console.log(ejecutar(sumar, 3, 4));       // 7
+console.log(ejecutar(multiplicar, 3, 4)); // 12
+```
+
+### Devolver funciones (higher-order)
+
+```js
+function multiplicador(factor) {
+	return (numero) => numero * factor;
+}
+
+const doble = multiplicador(2);
+const triple = multiplicador(3);
+
+console.log(doble(5));  // 10
+console.log(triple(5)); // 15
+```
+
+`multiplicador` devuelve una arrow function que **recuerda** el valor de `factor` aunque `multiplicador` ya haya terminado de ejecutarse. Esto es un **closure**.
+
+## Scope y closures
+
+Cada función crea su propio **ámbito** (scope). Las variables declaradas dentro no son visibles fuera, pero la función sí puede acceder a las variables del scope que la contiene.
+
+```js
+function exterior() {
+	const mensaje = "Hola desde exterior";
+
+	function interior() {
+		console.log(mensaje);
+	}
+
+	interior();
+}
+
+exterior(); // "Hola desde exterior"
+```
+
+Un **closure** ocurre cuando una función interna **sigue accediendo** a las variables de la función externa incluso después de que esta haya terminado.
+
+```js
+function crearContador() {
+	let cuenta = 0;
+	return {
+		incrementar: () => ++cuenta,
+		valor: () => cuenta,
+	};
+}
+
+const contador = crearContador();
+contador.incrementar();
+contador.incrementar();
+contador.incrementar();
+console.log(contador.valor()); // 3
+```
+
+<Aside type="note" title="¿Por qué importan los closures?">
+	Son la base de patrones como módulos (antes de ES Modules), callbacks con estado, parcialización de funciones y memoización. Los verás en todas partes en JavaScript moderno.
+</Aside>
+
+## IIFE — Immediately Invoked Function Expression
+
+Patrón donde defines y ejecutas una función en la misma línea. Se usaba mucho para crear scopes aislados antes de que existieran `let`/`const` y los módulos ES.
+
+```js
+(function () {
+	const secreto = 42;
+	console.log("Ejecutada inmediatamente", secreto);
+})();
+
+// secreto no es accesible aquí
+```
+
+También funciona con arrow functions:
+
+```js
+(() => {
+	console.log("IIFE con arrow function");
+})();
+```
+
+<Aside type="tip" title="¿Sigue siendo útil?">
+	Con módulos ES y `let`/`const` rara vez lo necesitas, pero aparece en librerías, configuraciones de build (webpack, Rollup) y en código que debe ser compatible con navegadores antiguos.
+</Aside>
+
+## Buenas prácticas
+
+<Steps>
+
+1. Prefiere **funciones pequeñas** que hagan una sola cosa. Si necesitas un comentario para explicar qué hace un bloque, seguramente es candidato a ser una función.
+2. Usa **`const`** para declarar expresiones de función y arrow functions; así evitas reasignaciones accidentales.
+3. Usa **arrow functions** para callbacks y funciones cortas. Usa **declaraciones** para funciones de nivel superior o cuando necesites hoisting.
+4. Aprovecha los **parámetros por defecto** en lugar de comprobar `undefined` manualmente dentro del cuerpo.
+5. Prefiere **rest parameters** (`...args`) frente al pseudo-array `arguments`, que no es un array real y no existe en arrow functions.
+
+</Steps>
+
+## Ejemplos completos
+
+### Calcular el precio con descuento
+
+```js
+const calcularPrecio = (precio, descuento = 0) => {
+	const precioFinal = precio - precio * (descuento / 100);
+	return Math.round(precioFinal * 100) / 100;
+};
+
+console.log(calcularPrecio(100, 15)); // 85
+console.log(calcularPrecio(49.99));   // 49.99
+console.log(calcularPrecio(200, 50)); // 100
+```
+
+### Filtrar y transformar datos
+
+```js
+const usuarios = [
+	{ nombre: "Ana", edad: 28, activo: true },
+	{ nombre: "Luis", edad: 17, activo: true },
+	{ nombre: "Marta", edad: 34, activo: false },
+	{ nombre: "Carlos", edad: 22, activo: true },
+];
+
+const nombresActivosMayores = usuarios
+	.filter((u) => u.activo && u.edad >= 18)
+	.map((u) => u.nombre);
+
+console.log(nombresActivosMayores); // ["Ana", "Carlos"]
+```
+
+### Composición de funciones
+
+```js
+const trim = (s) => s.trim();
+const lower = (s) => s.toLowerCase();
+const guionizar = (s) => s.replace(/\s+/g, "-");
+
+const slugify = (texto) => guionizar(lower(trim(texto)));
+
+console.log(slugify("  Hola Mundo Cruel  ")); // "hola-mundo-cruel"
+```
+
+### Función genérica `pipe`
+
+```js
+const pipe =
+	(...fns) =>
+	(valor) =>
+		fns.reduce((acc, fn) => fn(acc), valor);
+
+const procesarTexto = pipe(trim, lower, guionizar);
+
+console.log(procesarTexto("  Hola Mundo Cruel  ")); // "hola-mundo-cruel"
+```
+
+## Siguientes pasos
+
+Documentación de referencia en **MDN** (español):
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Guide/Functions"
+		title="Guía de funciones"
+		description="Declaraciones, expresiones, parámetros, scope y closures."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Functions/Arrow_functions"
+		title="Arrow functions"
+		description="Sintaxis, retorno implícito, diferencias con funciones clásicas y comportamiento de <code>this</code>."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Functions/Default_parameters"
+		title="Parámetros por defecto"
+		description="Valores predeterminados en la firma de la función."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Functions/rest_parameters"
+		title="Parámetros rest"
+		description="Recoger argumentos sobrantes en un array real con <code>...args</code>."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Closures"
+		title="Closures"
+		description="Qué son, cómo funcionan y patrones de uso habituales."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+<Aside type="tip" title="Ejemplos ejecutables">
+	En el repositorio [DID — carpeta `01-javascript`](https://github.com/gach24/DID/tree/main/01-javascript) tienes el código de muestra (`js/`), los **ejercicios** (`ejercicios/`) y un `index.html` para probarlo en el navegador (p. ej. con Live Server).
+</Aside>

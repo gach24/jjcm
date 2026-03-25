@@ -10,8 +10,8 @@ export default defineConfig({
     starlight({
       title: "Desarrollo de Interfaces",
       logo: {
-        dark: "./src/assets/ion-logo.svg",
-        light: "./src/assets/ion-logo-light.svg",
+        dark: "./src/assets/logo-dark.png",
+        light: "./src/assets/logo-light.png",
       },
       social: [
         {
@@ -32,6 +32,41 @@ export default defineConfig({
         {
           label: "[box] Instalaciones",
           link: "/installations/",
+        },
+        {
+          label: "[lucide:book-open] Unidades",
+          items: [
+            {
+              label: "[lucide:book-open] Introducción",
+              collapsed: true, 
+              items: [
+                {
+                  label: "[lucide:braces] JavaScript",
+                  autogenerate: {
+                    directory: "units/introduction/javascript",
+                  },
+                },
+              ],
+            },
+            {
+              label: "[lucide:book-open] Informes",
+              collapsed: true, 
+                items: [
+                  {
+                    label: "[lucide:braces] Despliegue",
+                    autogenerate: {
+                      directory: "units/reports/environment/",
+                    },
+                  },
+                  {
+                    label: "[lucide:braces] App",
+                    autogenerate: {
+                      directory: "units/reports/sakila-app/",
+                    },
+                  },
+              ],
+            },
+          ],
         },
         {
           label: "[changelog] Changelog",

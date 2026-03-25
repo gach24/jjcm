@@ -6,9 +6,13 @@ alwaysApply: false
 
 # Astro + Starlight
 
-- Mantén `src/content.config.ts` compatible con `docsLoader()` y `docsSchema()`.
+- Mantén `src/content.config.ts` compatible con `docsLoader()` y `docsSchema()` salvo requisito real en contra.
 - Crea páginas del sitio en `src/content/docs/`.
-- Ajusta `astro.config.mjs` cuando un cambio afecte a la navegación o identidad del sitio.
+- Ajusta `astro.config.mjs` cuando un cambio afecte a la navegación o a la identidad del sitio.
 - Usa Markdown por defecto y MDX solo cuando haga falta composición o componentes.
 - Elimina restos del starter si ya no aportan valor docente.
-- Consulta `ai/architecture/architecture.md` para decisiones de diseño.
+
+## Ejemplo
+
+- ❌ Crear una colección nueva para páginas normales del curso
+- ✅ Mantener la colección `docs` y ordenar el contenido por carpetas

@@ -1,6 +1,9 @@
 ---
 import { Icon } from "astro-icon/components";
-import { type SidebarEntry } from "starlight-ion-theme/utils/navigation.js";
+import {
+  flattenSidebar,
+  type SidebarEntry,
+} from "starlight-ion-theme/utils/navigation.js";
 import Badge from "./Badge.astro";
 import { icons } from "ion:globals";
 
@@ -77,11 +80,13 @@ const { sublist, nested, nestedCount } = Astro.props;
               )}
             </a>
           ) : (
-            <details open>
-              <summary
-                style="pointer-events: none;"
-                class={nested ? "hidden" : ""}
-              >
+            <details
+              open={
+                flattenSidebar(entry.entries).some((i) => i.isCurrent) ||
+                !entry.collapsed
+              }
+            >
+              <summary>
                 <div class="group-label">
                   {icons && entry.label.includes("[") && (
                     <Icon
@@ -101,6 +106,12 @@ const { sublist, nested, nestedCount } = Astro.props;
                     </>
                   )}
                 </div>
+                <Icon
+                  name="lucide:chevron-right"
+                  class="caret sidebar-collapse-caret rtl:flip"
+                  aria-hidden="true"
+                  size="1.125rem"
+                />
               </summary>
               <Astro.self
                 sublist={entry.entries}
@@ -197,8 +208,19 @@ const { sublist, nested, nestedCount } = Astro.props;
       transition: transform 0.2s ease-in-out;
       flex-shrink: 0;
     }
+    .sidebar-collapse-caret {
+      color: var(--sl-color-gray-3);
+      opacity: 0.9;
+    }
+    summary:hover .sidebar-collapse-caret,
+    summary:focus-visible .sidebar-collapse-caret {
+      color: var(--sl-color-gray-1);
+    }
     :global([dir="rtl"]) .caret {
       transform: rotateZ(180deg);
+    }
+    :global([dir="rtl"]) [open] > summary .caret {
+      transform: rotateZ(270deg);
     }
     [open] > summary .caret {
       transform: rotateZ(90deg);

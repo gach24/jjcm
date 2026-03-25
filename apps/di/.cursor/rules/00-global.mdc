@@ -5,15 +5,10 @@ alwaysApply: true
 
 # Global repo rule
 
-- Lee `AGENTS.md` y la documentación relevante de `docs/` antes de cambios amplios.
-- Trata `AGENTS.md` + `docs/` como fuente de verdad; las reglas del editor solo derivan de ahí.
+- Lee `AGENTS.md` y `ai/` antes de cambios amplios.
+- Fuente de verdad: `AGENTS.md` > `ai/` > `docs/` > reglas del editor.
 - Mantén cambios pequeños, coherentes y compatibles con Astro + Starlight.
-- Usa español por defecto en contenido docente y documentación funcional del repo.
+- Usa español por defecto en contenido docente y documentación funcional.
 - No añadas dependencias ni abstracciones si Markdown, MDX y Starlight cubren el caso.
-- Si introduces una convención duradera, documéntala en `docs/`.
+- Si introduces una convención duradera, documéntala en `docs/` o `ai/`.
 - Si tocas contenido, estructura o configuración, valida con `npm run check` y `npm run build`.
-
-## Ejemplo
-
-- ❌ Guardar una convención solo en `.cursor/rules/`
-- ✅ Guardarla en `docs/` y resumirla aquí

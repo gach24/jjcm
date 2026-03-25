@@ -1,0 +1,191 @@
+---
+title: Fetch API
+description: Realización de peticiones HTTP de forma asíncrona en el navegador utilizando la Fetch API, promesas y async/await.
+evaluations:
+  - id: RA1
+    statement: Genera interfaces gráficos de usuario mediante editores visuales utilizando las funcionalidades del editor y adaptando el código generado
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de interfaces gráficos.
+      - Se ha creado un interfaz gráfico utilizando las herramientas de un editor visual.
+    contents:
+      - Generación de interfaces de usuario
+sources:
+  - author: Fernando Herrera
+    url: https://cursos.devtalles.com/courses/javascript-moderno
+  - author: Juan Pablo De la torre Valdez
+    url: https://www.udemy.com/course/react-de-principiante-a-experto-creando-mas-de-10-aplicaciones/
+sidebar:
+  order: 8
+date: 2026-03-22
+updated: 2026-03-22
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+La **Fetch API** proporciona una interfaz moderna para acceder y manipular partes del canal HTTP, como peticiones y respuestas. A diferencia de la antigua `XMLHttpRequest`, `fetch` utiliza **promesas**, lo que permite un manejo mucho más limpio y legible de la asincronía en las comunicaciones con servidores.
+
+<CardGrid stagger>
+	<Card title="Basado en Promesas" icon="setting">
+		`fetch()` devuelve una **Promise** que se resuelve en un objeto `Response`, facilitando el encadenamiento y el uso de `async/await`.
+	</Card>
+	<Card title="Objeto Response" icon="document">
+		No recibes los datos directamente; recibes una respuesta completa con estado HTTP, cabeceras y métodos para extraer el cuerpo (JSON, texto, etc.).
+	</Card>
+	<Card title="Estándar nativo" icon="approve-check">
+		Disponible en todos los navegadores modernos y en entornos como Node.js (v18+) sin necesidad de instalar librerías externas como Axios.
+	</Card>
+</CardGrid>
+
+## Uso básico (GET)
+
+Por defecto, `fetch` realiza una petición **GET**. El flujo típico implica dos pasos: esperar la respuesta y extraer los datos.
+
+```js
+fetch("https://jsonplaceholder.typicode.com/users/1")
+	.then(response => response.json()) // extrae el cuerpo como JSON
+	.then(user => console.log(user.name)) // "Leanne Graham"
+	.catch(error => console.error("Error de red:", error));
+```
+
+<Aside type="caution" title="El rechazo de fetch">
+	La promesa de `fetch` **solo se rechaza por errores de red** (p. ej. pérdida de conexión). Si el servidor responde con un error **404** o **500**, la promesa se resuelve correctamente (fulfilled). Debes verificar la propiedad `response.ok`.
+</Aside>
+
+## El objeto `Response`
+
+Cuando la promesa se resuelve, obtenemos un objeto de tipo `Response` con información útil:
+
+- **`ok`**: Booleano. `true` si el status está entre 200 y 299.
+- **`status`**: Código de estado HTTP (200, 404, 500, etc.).
+- **`statusText`**: Mensaje de estado (p. ej. "OK" o "Not Found").
+- **`headers`**: Cabeceras de la respuesta.
+
+### Métodos para extraer el cuerpo
+
+El cuerpo de la respuesta es un *stream* que solo se puede leer **una vez** mediante métodos que devuelven promesas:
+
+| Método | Uso |
+| --- | --- |
+| `.json()` | Parsea el cuerpo como un objeto JavaScript. |
+| `.text()` | Devuelve el cuerpo como una cadena de texto. |
+| `.blob()` | Para datos binarios (imágenes, archivos). |
+| `.formData()` | Para datos de formulario. |
+
+## Fetch con `async / await`
+
+En aplicaciones modernas, preferimos `async/await` por su legibilidad, especialmente al manejar errores con `try/catch`.
+
+```js
+async function obtenerUsuario(id) {
+	try {
+		const res = await fetch(`https://jsonplaceholder.typicode.com/users/${id}`);
+
+		if (!res.ok) {
+			throw new Error(`Error HTTP: ${res.status}`);
+		}
+
+		const user = await res.json();
+		return user;
+	} catch (error) {
+		console.error("No se pudo obtener el usuario:", error.message);
+	}
+}
+
+const user = await obtenerUsuario(1);
+console.log(user?.name);
+```
+
+## Configuración de la petición (POST, PUT, DELETE)
+
+Para realizar peticiones distintas a GET, pasamos un segundo argumento de configuración a `fetch`:
+
+```js {3-10}
+const nuevoUsuario = { name: "Germán", email: "german@example.com" };
+
+fetch("https://jsonplaceholder.typicode.com/users", {
+	method: "POST", // o 'PUT', 'DELETE', etc.
+	headers: {
+		"Content-Type": "application/json",
+		"Authorization": "Bearer token-secreto",
+	},
+	body: JSON.stringify(nuevoUsuario), // los datos deben ser un string
+})
+	.then(res => res.json())
+	.then(data => console.log("Usuario creado:", data));
+```
+
+
+<Aside type="tip" title="Separación de conceptos">
+	Es buena práctica encapsular las peticiones `fetch` en **servicios** o funciones auxiliares, en lugar de llamarlas directamente desde el componente de UI. Esto facilita el mantenimiento y las pruebas.
+</Aside>
+
+## Resumen rápido
+
+| Acción | Código clave |
+| --- | --- |
+| **GET básico** | `fetch(url).then(r => r.json())` |
+| **Validar éxito** | `if (!response.ok) throw new Error(...)` |
+| **Enviar JSON** | `method: 'POST', body: JSON.stringify(data)` |
+| **Cabeceras** | `headers: { 'Content-Type': 'application/json' }` |
+| **Errores** | `try { ... } catch (e) { ... }` con `await` |
+
+## Convención práctica
+
+<Steps>
+
+1. **Usa `async/await`**: Es el estándar de facto para peticiones asíncronas por su claridad.
+2. **Valida siempre `response.ok`**: No asumas que la promesa resuelta significa éxito del servidor.
+3. **Maneja el JSON con cuidado**: `res.json()` también puede fallar si el servidor devuelve un cuerpo mal formado.
+4. **Encapsula en servicios**: Mantén la lógica de red fuera de tus componentes de interfaz.
+5. **Considera la seguridad**: No expongas tokens de API en el código cliente (usa variables de entorno `.env`).
+
+</Steps>
+
+## Siguientes pasos
+
+Documentación oficial y guías:
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/API/Fetch_API/Using_Fetch"
+		title="Uso de Fetch (MDN)"
+		description="Guía completa sobre el uso de la API Fetch y sus opciones."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://javascript.info/fetch"
+		title="Fetch en JavaScript.info"
+		description="Explicación detallada con ejemplos interactivos de peticiones de red."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/HTTP/Status"
+		title="Códigos de estado HTTP"
+		description="Referencia de los códigos que puedes recibir en `response.status`."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+<Aside type="tip" title="Ejemplos ejecutables">
+	En el repositorio [DID — `01-javascript`](https://github.com/gach24/DID/tree/main/01-javascript) tienes `js/10-ejemplo.js` (promesa básica y `obtenerDatos`), `js/11-ejemplo.js` (async/await) y los apartados **10. Promesas** y **11. async/await** en el `README.md`. Ábrelo con Live Server o integra el script como módulo para ver el orden síncrono vs asíncrono en consola.
+</Aside>
+

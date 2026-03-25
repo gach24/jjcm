@@ -64,7 +64,7 @@ Las instrucciones editoriales y arquitectónicas viven primero en el repositorio
 
 ### Compatibilidad con Starlight
 
-Se mantiene `docsSchema()` y `docsLoader()` para no romper el modelo nativo de Starlight ni inventar colecciones sin necesidad.
+Se mantiene `docsLoader()` y `docsSchema({ extend: … })` (campos docentes opcionales en `src/content.config.ts`) para no romper el modelo nativo de Starlight ni inventar colecciones sin necesidad.
 
 ### Complejidad contenida
 

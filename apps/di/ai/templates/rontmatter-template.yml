@@ -1,0 +1,24 @@
+title: "{{TITLE}}"
+description: "{{DESCRIPTION}}"
+evaluations:
+  - id: "{{RA_ID}}"
+    statement: "{{RA_STATEMENT}}"
+    criteria:
+      - "{{CRITERION_1}}"
+    contents:
+      - "{{CONTENT_1}}"
+sources:
+  - author: "{{SOURCE_AUTHOR_1}}"
+    url: "{{SOURCE_URL_1}}"
+sidebar:
+  order: {{ORDER}}
+date: {{DATE}}
+updated: {{UPDATED}}
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24

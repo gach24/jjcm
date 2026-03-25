@@ -1,0 +1,176 @@
+---
+title: Creación de la aplicación
+description: Inicialización del proyecto React con Vite, limpieza de estructura y definición del layout base para la visualización de informes.
+evaluations:
+  - id: RA6
+    statement: Genera informes, utilizando herramientas y librerías, para incorporarlos a interfaces gráficos de usuario.
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de informes.
+      - Se ha creado una aplicación para la visualización de los informes.
+    contents:
+      - Inicialización con Vite
+      - Estructura de componentes React
+      - Integración de Lucide React y Axios
+sources:
+  - author: gach24
+    url: https://github.com/gach24/DID/tree/main/13-project-08
+sidebar:
+  order: 1
+date: 2026-03-23
+updated: 2026-03-23
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+Una vez configurado el entorno de **JasperReports Server**, el siguiente paso es construir la interfaz de usuario que consumirá esos informes. Utilizaremos **React** con **Vite** para crear una aplicación cliente ligera, moderna y funcional.
+
+<CardGrid stagger>
+	<Card title="Vite + React" icon="rocket">
+		Entorno de desarrollo rápido y optimizado para aplicaciones frontend modernas.
+	</Card>
+	<Card title="Lucide React" icon="pencil">
+		Set de iconos vectoriales para mejorar la experiencia visual de nuestra interfaz.
+	</Card>
+	<Card title="Axios" icon="random">
+		Librería para realizar peticiones HTTP a la API REST de JasperReports Server.
+	</Card>
+</CardGrid>
+
+## 🛠️ Inicialización del Proyecto
+
+Comenzaremos creando un proyecto base limpio y añadiendo las dependencias necesarias para la comunicación con el servidor de informes.
+
+<Steps>
+1.  **Crear el proyecto con Vite:**
+    Genera la estructura base seleccionando **React** y **TypeScript**.
+    ```bash
+    npm create vite@latest sakila-reports-client -- --template react-ts
+    cd sakila-reports-client
+    ```
+
+2.  **Instalar dependencias:**
+    Añadiremos `lucide-react` para la iconografía y `axios` para las llamadas al servidor.
+    ```bash
+    npm install lucide-react axios
+    ```
+
+3.  **Limpieza inicial:**
+    Elimina los archivos innecesarios para empezar desde cero con nuestra propia arquitectura.
+    - Borra `src/App.css`.
+    - Vacía el contenido de `src/index.css`.
+    - Reinicia `src/App.tsx` para que solo contenga un fragmento vacío.
+
+</Steps>
+
+## 🏗️ Estructura y Layout Base
+
+Nuestra aplicación seguirá un patrón clásico de **Panel de Control**: una barra lateral para el listado de informes y un área principal para la visualización.
+
+### Preparación del Estilo Global
+
+Añadiremos unas clases base en `src/index.css` para gestionar el layout flexible y el aspecto visual de los contenedores:
+
+```css
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.app-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 1.5rem;
+  height: calc(100vh - 4rem);
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+```
+
+### Componentes de Estructura
+
+Definiremos dos componentes principales en `src/App.tsx`: `Aside` (lateral) y `Main` (contenido).
+
+```tsx
+import { Aside } from './components/Aside';
+import { Main } from './components/Main';
+
+function App() {
+  return (
+    <div className="app-layout">
+      <Aside />
+      <Main />
+    </div>
+  );
+}
+
+export default App;
+```
+
+<Aside type="tip" title="Separación de responsabilidades">
+	Aunque al principio parezca tentador poner todo en `App.tsx`, crear los archivos `Aside.tsx` y `Main.tsx` en una carpeta `src/components` facilitará enormemente la gestión del estado y la lógica de los informes más adelante.
+</Aside>
+
+## 🧩 Aplicación en el proyecto
+
+La creación de esta aplicación es el punto de partida para integrar el sistema de informes en una solución de escritorio real. En este paso:
+
+- **Estandarizamos el acceso**: Preparamos la aplicación para autenticarse contra JRS.
+- **Definimos el visor**: Reservamos el espacio donde se renderizará el PDF o HTML devuelto por el servidor.
+- **Gestionamos la navegación**: El lateral se convertirá en un buscador dinámico de los informes disponibles en el repositorio.
+
+## Resumen rápido
+
+| Acción | Herramienta/Comando | Resultado |
+| :--- | :--- | :--- |
+| **Creación** | `npm create vite@latest` | Estructura base React + TS |
+| **Dependencias** | `lucide-react`, `axios` | Herramientas de UI y Red |
+| **Layout** | CSS Grid | División Aside / Main |
+
+## Convención práctica
+
+<Steps>
+1.  Usa siempre nombres de componentes en PascalCase (`Aside.tsx`, `Main.tsx`).
+2.  Mantén el estado de la aplicación (el reporte seleccionado) en el componente padre `App.tsx` para que ambos paneles puedan reaccionar a los cambios.
+
+</Steps>
+
+## Siguientes pasos
+
+Con la estructura base lista, procederemos a crear los componentes de la interfaz y el hook personalizado para conectar con JasperReports:
+
+<CardGrid>
+	<LinkCard
+		href="../environment/deploy"
+		title="Repaso del Entorno"
+		description="Asegúrate de que tu JRS está corriendo antes de continuar."
+	/>
+	<LinkCard
+		href="https://vitejs.dev/guide/"
+		title="Documentación de Vite"
+		description="Explora más sobre la configuración y optimización de Vite."
+		target="_blank"
+	/>
+</CardGrid>

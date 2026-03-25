@@ -1,0 +1,722 @@
+---
+title: Módulos en JavaScript
+description: Sistema de módulos ES — export, import, named exports, default exports, re-exportación, importación dinámica y patrones de organización.
+evaluations:
+  - id: RA1
+    statement: Genera interfaces gráficos de usuario mediante editores visuales utilizando las funcionalidades del editor y adaptando el código generado
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de interfaces gráficos.
+      - Se ha creado un interfaz gráfico utilizando las herramientas de un editor visual.
+    contents:
+      - Generación de interfaces de usuario
+sources:
+  - author: Fernando Herrera
+    url: https://cursos.devtalles.com/courses/javascript-moderno
+  - author: Juan Pablo De la torre Valdez
+    url: https://www.udemy.com/course/react-de-principiante-a-experto-creando-mas-de-10-aplicaciones/
+sidebar:
+  order: 6
+date: 2026-03-21
+updated: 2026-03-21
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+Los módulos permiten **dividir el código en archivos reutilizables**, cada uno con su propio ámbito. En lugar de cargar todo en un único script global, cada módulo **exporta** lo que quiere compartir e **importa** solo lo que necesita de otros. Esto es la base de cualquier proyecto JavaScript moderno, desde una app React hasta un servidor Node.
+
+<CardGrid stagger>
+	<Card title="Un archivo = un módulo" icon="document">
+		Cada archivo `.js` o `.mjs` cargado como módulo tiene su **propio scope**. Las variables declaradas dentro no contaminan el ámbito global ni colisionan con otros archivos.
+	</Card>
+	<Card title="export / import" icon="right-arrow">
+		La sintaxis `export` expone funciones, variables o clases. `import` las trae a otro archivo. Todo se resuelve **estáticamente** en tiempo de análisis, antes de ejecutar nada.
+	</Card>
+	<Card title="Strict mode automático" icon="warning">
+		Los módulos se ejecutan siempre en **modo estricto** (`"use strict"`), sin necesidad de declararlo. Esto previene errores silenciosos como variables globales implícitas.
+	</Card>
+	<Card title="Carga diferida" icon="star">
+		En el navegador, `<script type="module">` se comporta como `defer` por defecto: se descarga en paralelo y se ejecuta **después** de que el DOM esté listo.
+	</Card>
+</CardGrid>
+
+## Script clásico vs módulo
+
+Antes de ES2015, todo el JavaScript compartía un único scope global. Con módulos, cada archivo es un **mundo aislado**:
+
+| Característica | `<script>` clásico | `<script type="module">` |
+| --- | --- | --- |
+| Scope | Global (`window`) | Propio del módulo |
+| `this` en top-level | `window` | `undefined` |
+| Strict mode | Hay que declararlo | Automático |
+| Carga | Bloquea el parsing (salvo `defer`/`async`) | Diferida por defecto |
+| `import` / `export` | No disponible | Soportado |
+
+Para activar módulos en el navegador basta con añadir `type="module"` al script:
+
+```html
+<!-- index.html -->
+<script type="module" src="./main.js"></script>
+```
+
+<Aside type="caution" title="Servidor requerido">
+	Los módulos no funcionan abriendo el HTML con `file://`. Necesitas un servidor local (Live Server, Vite, `npx serve`, etc.) porque el navegador aplica políticas CORS a las importaciones.
+</Aside>
+
+## Exportar desde un módulo
+
+### Named exports (exportaciones con nombre)
+
+Puedes exportar cualquier declaración colocando `export` delante:
+
+```js
+// math.js
+export const PI = 3.1416;
+
+export function suma(a, b) {
+	return a + b;
+}
+
+export function resta(a, b) {
+	return a - b;
+}
+
+export class Calculadora {
+	static multiplicar(a, b) {
+		return a * b;
+	}
+}
+```
+
+También puedes declarar primero y exportar al final con una **lista de exportación**:
+
+```js
+// utils.js
+const LIMITE = 100;
+
+function validar(valor) {
+	return valor > 0 && valor <= LIMITE;
+}
+
+function formatear(valor) {
+	return valor.toFixed(2);
+}
+
+export { LIMITE, validar, formatear };
+```
+
+<Aside type="tip" title="¿Cuándo usar cada estilo?">
+	Exportar en la declaración es más directo cuando cada función es claramente pública. La lista de exportación al final funciona mejor cuando quieres que sea fácil ver de un vistazo **qué** expone el módulo, especialmente si tiene también funciones privadas internas.
+</Aside>
+
+### Renombrar al exportar
+
+Si el nombre interno no es el más adecuado para el consumidor, usa `as`:
+
+```js
+// string-helpers.js
+function _limpiarEspacios(texto) {
+	return texto.trim().replace(/\s+/g, " ");
+}
+
+function _aMayusculas(texto) {
+	return texto.toUpperCase();
+}
+
+export {
+	_limpiarEspacios as limpiar,
+	_aMayusculas as mayusculas,
+};
+```
+
+### Default export (exportación por defecto)
+
+Cada módulo puede tener **una sola** exportación por defecto. Se usa para el valor principal del archivo:
+
+```js
+// logger.js
+export default function log(mensaje) {
+	console.log(`[${new Date().toISOString()}] ${mensaje}`);
+}
+```
+
+```js
+// Persona.js
+export default class Persona {
+	constructor(nombre, edad) {
+		this.nombre = nombre;
+		this.edad = edad;
+	}
+
+	presentarse() {
+		return `Soy ${this.nombre}, tengo ${this.edad} años`;
+	}
+}
+```
+
+<Aside type="caution" title="Solo un default por archivo">
+	Si intentas poner dos `export default` en el mismo archivo, obtendrás un error de sintaxis. Si necesitas exportar varias cosas, usa named exports.
+</Aside>
+
+### Combinar default y named exports
+
+Es perfectamente válido (y habitual) tener ambos tipos en un mismo módulo:
+
+```js
+// math.js
+export const PI = 3.1416;
+export const E = 2.7182;
+
+export function suma(a, b) {
+	return a + b;
+}
+
+export default function resta(a, b) {
+	return a - b;
+}
+```
+
+## Importar en otro módulo
+
+### Importar named exports
+
+Se usan llaves `{}` para indicar exactamente **qué** quieres traer:
+
+```js
+// main.js
+import { PI, suma } from "./math.js";
+
+console.log(PI);          // 3.1416
+console.log(suma(2, 3));  // 5
+```
+
+<Aside type="caution" title="Los nombres deben coincidir">
+	Al importar named exports, el nombre dentro de `{}` debe ser **exactamente** el que se exportó. Si el módulo exporta `suma`, no puedes importarla como `{ add }` sin renombrar.
+</Aside>
+
+### Importar el default export
+
+El default se importa **sin llaves** y puedes darle el nombre que quieras:
+
+```js
+import resta from "./math.js";
+
+console.log(resta(10, 4)); // 6
+```
+
+```js
+import miResta from "./math.js";
+
+console.log(miResta(10, 4)); // 6
+```
+
+### Importar default + named juntos
+
+```js
+import resta, { PI, suma } from "./math.js";
+
+console.log(PI);           // 3.1416
+console.log(suma(2, 3));   // 5
+console.log(resta(5, 2));  // 3
+```
+
+### Renombrar al importar
+
+Usa `as` para evitar conflictos de nombres o mejorar la legibilidad:
+
+```js
+import { suma as add, resta as subtract } from "./math.js";
+
+console.log(add(3, 4));      // 7
+console.log(subtract(10, 3)); // 7
+```
+
+Ejemplo práctico — dos módulos exportan una función con el mismo nombre:
+
+```js
+import { formatear as formatearPrecio } from "./precios.js";
+import { formatear as formatearFecha } from "./fechas.js";
+
+console.log(formatearPrecio(19.999)); // "20.00 €"
+console.log(formatearFecha(new Date())); // "21/03/2026"
+```
+
+### Importar todo como namespace
+
+Con `* as` obtienes un objeto que contiene todas las exportaciones con nombre:
+
+```js
+import * as math from "./math.js";
+
+console.log(math.PI);          // 3.1416
+console.log(math.suma(2, 3));  // 5
+console.log(math.default(5, 2)); // 3 — el default queda en .default
+```
+
+<Aside type="tip" title="Cuándo usar namespace">
+	Es útil cuando un módulo exporta muchas cosas y quieres agruparlas bajo un nombre. Evita usarlo si solo necesitas una o dos funciones: importar solo lo necesario es más claro y favorece el _tree-shaking_.
+</Aside>
+
+### Importar solo por efectos secundarios
+
+Si un módulo ejecuta algo al cargarse (registrar un web component, añadir un polyfill, configurar algo global) y no necesitas ninguno de sus exports:
+
+```js
+import "./analytics.js";
+import "./polyfills.js";
+```
+
+## Re-exportar desde un módulo
+
+Los re-exports permiten crear un **archivo índice** que centraliza las exportaciones de varios módulos. Muy útil para organizar librerías o carpetas con muchos archivos:
+
+```js
+// validadores/email.js
+export function validarEmail(email) {
+	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+// validadores/telefono.js
+export function validarTelefono(tel) {
+	return /^\+?\d{9,15}$/.test(tel);
+}
+
+// validadores/edad.js
+export function validarEdad(edad) {
+	return Number.isInteger(edad) && edad >= 0 && edad <= 150;
+}
+```
+
+```js
+// validadores/index.js — archivo barril
+export { validarEmail } from "./email.js";
+export { validarTelefono } from "./telefono.js";
+export { validarEdad } from "./edad.js";
+```
+
+Ahora el consumidor importa todo desde un solo punto:
+
+```js
+import { validarEmail, validarTelefono, validarEdad } from "./validadores/index.js";
+
+console.log(validarEmail("ana@correo.com"));  // true
+console.log(validarTelefono("+34666123456")); // true
+console.log(validarEdad(25));                  // true
+```
+
+También puedes re-exportar renombrando o re-exportar todo:
+
+```js
+// Re-exportar con alias
+export { validarEmail as checkEmail } from "./email.js";
+
+// Re-exportar todo de un módulo
+export * from "./telefono.js";
+
+// Re-exportar el default de otro módulo como named
+export { default as Logger } from "./logger.js";
+```
+
+<Aside type="caution" title="Barrel files y rendimiento">
+	Los archivos barril (`index.js`) son cómodos, pero en proyectos grandes pueden dificultar el _tree-shaking_ si el bundler no los analiza bien. Úsalos con criterio: funcionan muy bien para agrupar utilidades, pero no metas cientos de módulos en un solo barril.
+</Aside>
+
+## Importación dinámica — `import()`
+
+Los `import` estáticos se resuelven antes de ejecutar el código. Pero a veces necesitas cargar un módulo **bajo demanda**: en respuesta a una acción del usuario, según una condición, o para mejorar el rendimiento de carga inicial.
+
+`import()` es una **función** que devuelve una **promesa** que se resuelve con el módulo:
+
+```js
+// Carga condicional
+const idioma = navigator.language.startsWith("es") ? "es" : "en";
+
+const traducciones = await import(`./i18n/${idioma}.js`);
+console.log(traducciones.saludo); // "Hola" o "Hello"
+```
+
+### Ejemplo con interacción del usuario
+
+```js
+document.getElementById("btn-exportar").addEventListener("click", async () => {
+	const { generarPDF } = await import("./pdf-generator.js");
+	generarPDF(document.getElementById("contenido"));
+});
+```
+
+### Acceder al default con import dinámico
+
+La promesa se resuelve con un objeto-módulo. El default export está en la propiedad `.default`:
+
+```js
+const modulo = await import("./logger.js");
+const log = modulo.default;
+
+log("Módulo cargado bajo demanda");
+```
+
+O desestructurando directamente:
+
+```js
+const { default: log, version } = await import("./logger.js");
+log("Versión: " + version);
+```
+
+<Aside type="tip" title="Code splitting">
+	Los bundlers como Vite, Webpack o Rollup detectan `import()` y generan automáticamente **chunks** separados. Así el navegador solo descarga el código cuando realmente se necesita, mejorando el tiempo de carga inicial.
+</Aside>
+
+## Top-level `await`
+
+Desde ES2022, puedes usar `await` directamente en el nivel superior de un módulo, sin necesidad de envolverlo en una función `async`:
+
+```js
+// config.js
+const respuesta = await fetch("/api/config");
+export const config = await respuesta.json();
+```
+
+```js
+// main.js
+import { config } from "./config.js";
+
+console.log(config.apiUrl);
+```
+
+El módulo que importa `config.js` esperará automáticamente a que la promesa se resuelva antes de ejecutar su propio código.
+
+<Aside type="caution" title="Usa con moderación">
+	Top-level `await` bloquea la ejecución de los módulos que dependen de él. Si la operación es lenta (una petición de red, por ejemplo), puede retrasar toda la cadena de importaciones. Úsalo para cosas que realmente deben estar listas antes de arrancar.
+</Aside>
+
+## ES Modules vs CommonJS
+
+En el ecosistema JavaScript conviven dos sistemas de módulos. Es importante reconocer ambos aunque en el navegador siempre usarás ES Modules:
+
+<Tabs>
+	<TabItem label="ES Modules (ESM)">
+		```js
+		// Exportar
+		export const PI = 3.1416;
+		export function suma(a, b) {
+			return a + b;
+		}
+		export default function resta(a, b) {
+			return a - b;
+		}
+
+		// Importar
+		import resta, { PI, suma } from "./math.js";
+		```
+
+		- Estándar del lenguaje (ES2015+)
+		- Análisis estático → tree-shaking
+		- Asíncrono por naturaleza
+		- Navegador + Node.js
+	</TabItem>
+	<TabItem label="CommonJS (CJS)">
+		```js
+		// Exportar
+		const PI = 3.1416;
+		function suma(a, b) {
+			return a + b;
+		}
+		function resta(a, b) {
+			return a - b;
+		}
+
+		module.exports = { PI, suma, resta };
+		// o: module.exports = resta; (para "default")
+
+		// Importar
+		const { PI, suma, resta } = require("./math.js");
+		```
+
+		- Sistema original de Node.js
+		- Análisis dinámico (en tiempo de ejecución)
+		- Síncrono
+		- Solo Node.js (no navegador nativo)
+	</TabItem>
+</Tabs>
+
+| Aspecto | ESM | CommonJS |
+| --- | --- | --- |
+| Sintaxis | `import` / `export` | `require()` / `module.exports` |
+| Análisis | Estático (en compilación) | Dinámico (en ejecución) |
+| Tree-shaking | Sí | Difícil |
+| Carga | Asíncrona | Síncrona |
+| Top-level `await` | Sí (ES2022) | No |
+| Navegador | Sí | No (necesita bundler) |
+| Node.js | Sí (`.mjs` o `"type": "module"`) | Sí (por defecto) |
+
+<Aside type="tip" title="¿Cuál usar?">
+	**Siempre ESM** en código nuevo. CommonJS sigue existiendo en el ecosistema Node porque muchas librerías lo usan, pero la tendencia es clara hacia ESM. Node.js soporta ESM de forma nativa desde la v12.
+</Aside>
+
+## Módulos en Node.js
+
+Para usar ESM en Node.js tienes dos opciones:
+
+<Tabs>
+	<TabItem label="Opción 1: package.json">
+		Añade `"type": "module"` al `package.json` del proyecto. Todos los `.js` se tratan como ESM:
+
+		```json
+		{
+			"name": "mi-proyecto",
+			"type": "module"
+		}
+		```
+
+		```js
+		// utils.js → se interpreta como ESM
+		export function saludar(nombre) {
+			return `Hola, ${nombre}`;
+		}
+		```
+	</TabItem>
+	<TabItem label="Opción 2: extensión .mjs">
+		Renombra los archivos a `.mjs`. Funciona sin modificar `package.json`:
+
+		```js
+		// utils.mjs → siempre ESM, sin importar package.json
+		export function saludar(nombre) {
+			return `Hola, ${nombre}`;
+		}
+		```
+	</TabItem>
+</Tabs>
+
+## Ejemplo completo — aplicación modular
+
+Veamos cómo organizar una mini-aplicación con varios módulos:
+
+```js
+// models/Producto.js
+export default class Producto {
+	constructor(nombre, precio, cantidad = 1) {
+		this.nombre = nombre;
+		this.precio = precio;
+		this.cantidad = cantidad;
+	}
+
+	get subtotal() {
+		return this.precio * this.cantidad;
+	}
+}
+```
+
+```js
+// services/carrito.js
+import Producto from "../models/Producto.js";
+
+const items = [];
+
+export function agregar(nombre, precio, cantidad) {
+	items.push(new Producto(nombre, precio, cantidad));
+}
+
+export function eliminar(nombre) {
+	const idx = items.findIndex(p => p.nombre === nombre);
+	if (idx !== -1) items.splice(idx, 1);
+}
+
+export function obtenerTotal() {
+	return items.reduce((acc, item) => acc + item.subtotal, 0);
+}
+
+export function listar() {
+	return [...items];
+}
+```
+
+```js
+// utils/formato.js
+export function moneda(valor, divisa = "EUR") {
+	return new Intl.NumberFormat("es-ES", {
+		style: "currency",
+		currency: divisa,
+	}).format(valor);
+}
+
+export function fecha(date = new Date()) {
+	return new Intl.DateTimeFormat("es-ES", {
+		dateStyle: "long",
+	}).format(date);
+}
+```
+
+```js
+// main.js
+import { agregar, obtenerTotal, listar } from "./services/carrito.js";
+import { moneda, fecha } from "./utils/formato.js";
+
+agregar("Teclado mecánico", 79.99, 1);
+agregar("Ratón gaming", 34.99, 2);
+agregar("Monitor 27\"", 249.99, 1);
+
+console.log(`Fecha: ${fecha()}`);
+console.log("--- Carrito ---");
+
+for (const item of listar()) {
+	console.log(`${item.nombre} x${item.cantidad} → ${moneda(item.subtotal)}`);
+}
+
+console.log(`Total: ${moneda(obtenerTotal())}`);
+// Fecha: 21 de marzo de 2026
+// --- Carrito ---
+// Teclado mecánico x1 → 79,99 €
+// Ratón gaming x2 → 69,98 €
+// Monitor 27" x1 → 249,99 €
+// Total: 399,96 €
+```
+
+## Patrones y errores comunes
+
+<Tabs>
+	<TabItem label="Errores frecuentes">
+		```js
+		// ❌ Olvidar type="module" en el HTML
+		<script src="./main.js"></script>
+		// SyntaxError: Cannot use import statement outside a module
+
+		// ❌ Importar named sin llaves
+		import suma from "./math.js"; // importa el DEFAULT, no "suma"
+
+		// ❌ Olvidar la extensión del archivo (en navegador)
+		import { suma } from "./math"; // Error 404 en el navegador
+
+		// ❌ Importación circular descontrolada
+		// a.js importa b.js, b.js importa a.js → valores undefined
+		```
+	</TabItem>
+	<TabItem label="Buenas prácticas">
+		```js
+		// ✅ Un concepto principal por módulo
+		// Persona.js exporta la clase Persona y helpers relacionados
+
+		// ✅ Nombrar archivos según lo que exportan
+		// carrito.js, logger.js, Producto.js
+
+		// ✅ Default para el export principal, named para auxiliares
+		export default class Carrito { /* ... */ }
+		export function calcularEnvio(peso) { /* ... */ }
+
+		// ✅ Incluir extensión en imports del navegador
+		import { suma } from "./math.js";
+
+		// ✅ Barrel files para carpetas con muchos módulos
+		// services/index.js → re-exporta todo
+		```
+	</TabItem>
+</Tabs>
+
+## Resumen rápido
+
+<Tabs>
+	<TabItem label="Exportar">
+		```js
+		export const x = 1;           // named en declaración
+		export function fn() {}        // named en declaración
+		export class Foo {}            // named en declaración
+		export { a, b };               // named en lista
+		export { a as alias };         // named con alias
+		export default function() {}   // default
+		export default class {}        // default
+		export { x } from "./otro.js"; // re-export
+		export * from "./otro.js";     // re-export todo
+		```
+	</TabItem>
+	<TabItem label="Importar">
+		```js
+		import { a, b } from "./mod.js";       // named
+		import { a as x } from "./mod.js";      // named con alias
+		import miDefault from "./mod.js";        // default
+		import def, { a } from "./mod.js";       // default + named
+		import * as mod from "./mod.js";         // namespace
+		import "./mod.js";                        // solo efectos secundarios
+		const mod = await import("./mod.js");    // dinámico
+		```
+	</TabItem>
+	<TabItem label="Node.js">
+		```json
+		// package.json → activa ESM para todo .js
+		{ "type": "module" }
+		```
+
+		```js
+		// O usa extensión .mjs para archivos individuales
+
+		// CommonJS (legacy)
+		const x = require("./mod");
+		module.exports = { x };
+		```
+	</TabItem>
+</Tabs>
+
+## Convención práctica
+
+<Steps>
+
+1. Usa **siempre ES Modules** (`import`/`export`) en código nuevo. Reserva CommonJS solo para compatibilidad con herramientas legacy.
+2. Incluye la **extensión del archivo** en los imports (`.js`) cuando trabajes en el navegador sin bundler. Con bundlers como Vite puedes omitirla.
+3. Usa **default export** para el concepto principal del archivo y **named exports** para utilidades secundarias.
+4. Crea **archivos barril** (`index.js`) para agrupar exportaciones de una carpeta, pero no abuses de ellos en proyectos muy grandes.
+5. Aprovecha `import()` dinámico para **code splitting**: carga módulos pesados solo cuando se necesiten.
+6. Prefiere **módulos pequeños y enfocados** (una responsabilidad) frente a archivos monolíticos de cientos de líneas.
+
+</Steps>
+
+## Siguientes pasos
+
+Documentación de referencia en **MDN** (español):
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Guide/Modules"
+		title="Guía de módulos JavaScript"
+		description="Introducción completa al sistema de módulos con ejemplos paso a paso."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Statements/import"
+		title="import — referencia"
+		description="Sintaxis completa de la declaración import: named, default, namespace y dinámica."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Statements/export"
+		title="export — referencia"
+		description="Todas las formas de exportar valores desde un módulo ES."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Operators/import"
+		title="import() — importación dinámica"
+		description="Cargar módulos bajo demanda con la función import()."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+<Aside type="tip" title="Ejemplos ejecutables">
+	En el repositorio [DID — carpeta `01-javascript`](https://github.com/gach24/DID/tree/main/01-javascript) tienes el código de muestra (`js/math.js`, `js/09-ejemplo.js`), los **ejercicios** (`ejercicios/`) y un `index.html` para probarlo en el navegador (p. ej. con Live Server).
+</Aside>

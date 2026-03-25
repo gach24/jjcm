@@ -1,0 +1,206 @@
+---
+title: Tipos de datos
+description: Tipos primitivos y valores objeto en JavaScript, typeof y diferencia entre valor y referencia.
+evaluations:
+  - id: RA1
+    statement: Genera interfaces gráficos de usuario mediante editores visuales utilizando las funcionalidades del editor y adaptando el código generado
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de interfaces gráficos.
+      - Se ha creado un interfaz gráfico utilizando las herramientas de un editor visual.
+    contents:
+      - Generación de interfaces de usuario
+sources:
+  - author: Fernando Herrera
+    url: https://cursos.devtalles.com/courses/javascript-moderno
+  - author: Juan Pablo De la torre Valdez
+    url: https://www.udemy.com/course/react-de-principiante-a-experto-creando-mas-de-10-aplicaciones/
+sidebar:
+  order: 2
+date: 2026-03-21
+updated: 2026-03-21
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+En tiempo de ejecución, cada valor en JavaScript tiene un **tipo**. El lenguaje es **dinámico**: no declaras tipos en el código fuente como en Java o C#, pero conviene conocer cómo se clasifican los valores y qué devuelve `typeof`.
+
+<CardGrid stagger>
+	<Card title="Primitivos" icon="document">
+		Siete tipos **primitivos**: inmutables en el sentido habitual de “no puedes cambiar el valor en sitio”; al reasignar, el identificador apunta a **otro** valor.
+	</Card>
+	<Card title="Objetos" icon="open-book">
+		Todo lo demás es **objeto** (objetos literales, arrays, funciones, fechas, `Map`, `Set`, …): se manipula por **referencia**.
+	</Card>
+	<Card title="typeof" icon="magnifier">
+		Operador unario que devuelve un **string** con el nombre del tipo (con el famoso caso especial de `null`).
+	</Card>
+</CardGrid>
+
+## Tipos primitivos
+
+Hay **siete**: `string`, `number`, `boolean`, `undefined`, `null`, `symbol` y `bigint`.
+
+### `string`, `number` y `boolean`
+
+```js
+let nombre = "Juan";
+let saludo = "Hola";
+let mensaje = `Bienvenido ${nombre}`;
+
+let edad = 25;
+let pi = 3.1416;
+let infinito = Infinity;
+let noNumero = NaN; // sigue siendo tipo "number"
+
+let activo = true;
+let mayor = false;
+```
+
+`number` agrupa enteros y coma flotante (IEEE 754). Valores especiales: `NaN`, `Infinity`, `-Infinity`.
+
+### `undefined` y `null`
+
+- **`undefined`**: variable declarada sin asignar, o propiedad inexistente, o función sin `return` explícito.
+- **`null`**: ausencia **intencional** de valor (suele asignarse a propósito).
+
+```js
+let x;
+console.log(x); // undefined
+
+let vacio = null;
+```
+
+<Aside type="caution" title="typeof null">
+	`typeof null === "object"` es un **error histórico** del lenguaje. Para comprobar `null`, usa `valor === null`.
+</Aside>
+
+### `symbol` y `bigint`
+
+Completan la lista de primitivos
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Global_Objects/Symbol"
+		title="<code>Symbol</code>"
+		description="Valores únicos e inmutables (p. ej. claves de propiedad que no colisionan con strings)."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Global_Objects/BigInt"
+		title="<code>BigInt</code>"
+		description="Enteros de precisión arbitraria y literales con sufijo <code>n</code>."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+## `typeof`
+
+```js
+typeof "hola";        // "string"
+typeof 42;            // "number"
+typeof true;          // "boolean"
+typeof undefined;     // "undefined"
+typeof null;          // "object"  ← peculiaridad
+typeof Symbol();      // "symbol"
+typeof 10n;           // "bigint"
+typeof {};            // "object"
+typeof [];            // "object"
+typeof function () {}; // "function"
+```
+
+Para arrays, `Array.isArray(valor)` es la forma fiable.
+
+## Valores objeto (no primitivos)
+
+Incluyen **objetos**, **arrays**, **funciones** y muchos tipos integrados:
+
+```js
+let persona = { nombre: "Ana", edad: 30 };
+
+let numeros = [1, 2, 3, 4];
+
+function saludar() {
+	return "Hola";
+}
+
+let hoy = new Date();
+let mapa = new Map();
+let conjunto = new Set([1, 2, 3]);
+```
+
+Las **funciones** son objetos invocables; por eso puedes asignarlas, pasarlas como argumentos y devolverlas.
+
+<Aside type="tip" title="Arrays">
+	Los arrays son **listas ordenadas por índice** (0, 1, 2, …). Si necesitas conjuntos sin duplicados, mira `Set`.
+</Aside>
+
+## Valor vs referencia (idea práctica)
+
+- **Primitivos**: al asignar o pasar a una función, se copia el contenido.
+- **Objetos**: varias variables pueden apuntar al **mismo** objeto; mutar propiedades se ve en todas las referencias.
+
+```js {7, 9}
+let a = 1;
+let b = a;
+b = 2;
+console.log(a); // 1
+
+const o1 = { x: 1 };
+const o2 = o1;
+o2.x = 2;
+console.log(o1.x); // 2 — mismo objeto
+```
+
+## Convención mental
+
+<Steps>
+
+1. Clasifica el valor: ¿primitivo u objeto?
+2. Si es objeto, piensa en **referencias** compartidas antes de mutar.
+3. Usa `typeof`, `=== null` y `Array.isArray` según lo que necesites comprobar.
+
+</Steps>
+
+
+## Siguientes pasos
+
+Documentación de referencia en **MDN** (español):
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Data_structures"
+		title="Tipos de datos y estructuras en JavaScript"
+		description="Primitivos, objetos y modelo de datos del lenguaje."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Operators/typeof"
+		title="Operador <code>typeof</code>"
+		description="Qué devuelve para cada tipo y casos especiales."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+<Aside type="tip" title="Ejemplos ejecutables">
+	En el repositorio [DID — `01-javascript`](https://github.com/gach24/DID/tree/main/01-javascript) tienes `js/10-ejemplo.js` (promesa básica y `obtenerDatos`), `js/11-ejemplo.js` (async/await) y los apartados **10. Promesas** y **11. async/await** en el `README.md`. Ábrelo con Live Server o integra el script como módulo para ver el orden síncrono vs asíncrono en consola.
+</Aside>
