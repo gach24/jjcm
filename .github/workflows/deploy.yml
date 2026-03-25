@@ -26,10 +26,9 @@ jobs:
           node-version: 24
           cache: pnpm
 
-      - name: Enable pnpm (corepack)
+      - name: Install pnpm globally
         run: |
-          corepack enable
-          corepack prepare pnpm@10.32.1 --activate
+          npm i -g pnpm@10.32.1
           pnpm --version
 
       - name: Install dependencies
