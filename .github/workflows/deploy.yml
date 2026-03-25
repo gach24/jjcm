@@ -18,32 +18,38 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout your repository using git
+      - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
       - name: Setup Node
         uses: actions/setup-node@v5
         with:
           node-version: 24
+          cache: pnpm
 
       - name: Install dependencies
-        run: npx -y pnpm@10.32.1 install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build di
-        run: npx -y pnpm@10.32.1 --filter ./apps/di build
+        run: pnpm --filter ./apps/di build
 
       - name: Prepare Pages artifact
-        shell: bash
         run: |
           rm -rf .pages
           mkdir -p .pages/di
           cp -R ./apps/di/dist/* .pages/di/
+          touch .pages/.nojekyll
           cat > .pages/index.html <<'EOF'
           <!doctype html>
           <meta charset="utf-8" />
           <meta http-equiv="refresh" content="0; url=/jjcm/di/" />
           <link rel="canonical" href="/jjcm/di/" />
           EOF
-          touch .pages/.nojekyll
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
@@ -60,5 +66,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
-
