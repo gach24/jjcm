@@ -23,9 +23,9 @@ For **curriculum alignment** (learning outcomes, evaluation criteria, BOE wordin
 
 Before making framework-specific changes, consult:
 
-- `aocs/reference-sources.md`
-- `docs/architecture.md`
-- `docs/content-model.md`
+- `ai/architecture/reference-sources.md`
+- `ai/architecture/architecture.md`
+- `ai/architecture/content-model.md`
 
 Use official documentation first.
 Match recommendations to installed dependency versions.
@@ -69,11 +69,6 @@ ai/
   rules/         # Global rules (e.g. 00-global-course-rule)
   templates/     # MDX and Frontmatter templates
   workflows/     # Step-by-step guides for AI tasks
-docs/
-  architecture.md
-  content-model.md
-  style-guide.md
-  workflows/
 .cursor/
   rules/
   skills/
