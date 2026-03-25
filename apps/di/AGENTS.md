@@ -23,7 +23,7 @@ For **curriculum alignment** (learning outcomes, evaluation criteria, BOE wordin
 
 Before making framework-specific changes, consult:
 
-- `docs/reference-sources.md`
+- `aocs/reference-sources.md`
 - `docs/architecture.md`
 - `docs/content-model.md`
 
