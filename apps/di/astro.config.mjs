@@ -4,8 +4,8 @@ import { ion } from "starlight-ion-theme";
 
 // https://astro.build/config
 export default defineConfig({
-  site: "https://gach24.github.io/di/",
-  base: "/di/",
+  site: "https://gach24.github.io/jjcm/di/",
+  base: "/jjcm/di/",
   integrations: [
     starlight({
       title: "Desarrollo de Interfaces",
@@ -46,6 +46,24 @@ export default defineConfig({
                     directory: "units/introduction/javascript",
                   },
                 },
+              ],
+            },
+            {
+              label: "[lucide:book-open] Informes",
+              collapsed: true, 
+                items: [
+                  {
+                    label: "[lucide:braces] Despliegue",
+                    autogenerate: {
+                      directory: "units/reports/environment/",
+                    },
+                  },
+                  {
+                    label: "[lucide:braces] App",
+                    autogenerate: {
+                      directory: "units/reports/sakila-app/",
+                    },
+                  },
               ],
             },
           ],
