@@ -4,8 +4,8 @@ import { ion } from "starlight-ion-theme";
 
 // https://astro.build/config
 export default defineConfig({
-  site: "https://gach24.github.io/di/",
-  base: "/di/",
+  site: "https://gach24.github.io/jjcm/di/",
+  base: "/jjcm/di/",
   integrations: [
     starlight({
       title: "Desarrollo de Interfaces",
