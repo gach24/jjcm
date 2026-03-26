@@ -52,7 +52,7 @@ Una vez configurado el entorno de **JasperReports Server**, el siguiente paso es
 	</Card>
 </CardGrid>
 
-## 🛠️ Inicialización del Proyecto
+## Inicialización del Proyecto
 
 Comenzaremos creando un proyecto base limpio y añadiendo las dependencias necesarias para la comunicación con el servidor de informes.
 
@@ -60,25 +60,74 @@ Comenzaremos creando un proyecto base limpio y añadiendo las dependencias neces
 1.  **Crear el proyecto con Vite:**
     Genera la estructura base seleccionando **React** y **TypeScript**.
     ```bash
-    npm create vite@latest sakila-reports-client -- --template react-ts
-    cd sakila-reports-client
+    npm create vite@latest reports-client-app -- --template react-ts
+    cd reports-client-app
     ```
 
 2.  **Instalar dependencias:**
     Añadiremos `lucide-react` para la iconografía y `axios` para las llamadas al servidor.
     ```bash
-    npm install lucide-react axios
+    npm install lucide-react axios tailwindcss @tailwindcss/vite
     ```
 
-3.  **Limpieza inicial:**
+3.  **Configurar Vite para Tailwind CSS:**
+    Añadiremos la configuración de Tailwind CSS a nuestro proyecto.    
+    ```diff lang="ts" title="vite.config.ts"
+      import { defineConfig } from 'vite';
+      import react from '@vitejs/plugin-react'; 
+    + import tailwindcss from '@tailwindcss/vite';
+
+      // https://vite.dev/config/
+      export default defineConfig({
+    -    plugins: [ react()],
+    +    plugins: [tailwindcss(), react()],
+      });
+    ```
+
+    Vacía el contenido de `src/index.css`. Y añade el siguente contenido
+    ```css title="src/index.css"
+    @import "tailwindcss"; 
+    ```	
+
+4.  **Limpieza inicial:**
     Elimina los archivos innecesarios para empezar desde cero con nuestra propia arquitectura.
     - Borra `src/App.css`.
-    - Vacía el contenido de `src/index.css`.
-    - Reinicia `src/App.tsx` para que solo contenga un fragmento vacío.
 
+    - Reinicia `src/App.tsx` para que solo contenga un fragmento con un título de prueba.
+    ```ts title="src/App.tsx" {4-6}
+    function App() {
+      return (
+        <>
+          <h1 className="text-3xl font-bold underline">
+            Hello world!
+          </h1>
+        </>
+      )
+    }
+
+    export default App;
+    ```
+
+5.  **Ejecutar la aplicación:**
+    Ejecuta la aplicación para verificar que todo está funcionando correctamente.
+    ```bash
+    npm run dev
+    ```
+
+    Ahora deberías poder ver el título de prueba en la pantalla.
+
+6.  **Hacer un commit de los cambios. (Opcional)** 
+    ```bash title="Terminal" "tu-repo-en-github.com"
+    git init
+    git add .
+    git commit -m "Initial app structure"
+    git branch -M main
+    git remote add origin tu-repo-en-github.com
+    git push -u origin main
+    ```
 </Steps>
 
-## 🏗️ Estructura y Layout Base
+## Estructura y Layout Base
 
 Nuestra aplicación seguirá un patrón clásico de **Panel de Control**: una barra lateral para el listado de informes y un área principal para la visualización.
 
@@ -133,7 +182,7 @@ export default App;
 	Aunque al principio parezca tentador poner todo en `App.tsx`, crear los archivos `Aside.tsx` y `Main.tsx` en una carpeta `src/components` facilitará enormemente la gestión del estado y la lógica de los informes más adelante.
 </Aside>
 
-## 🧩 Aplicación en el proyecto
+## Aplicación en el proyecto
 
 La creación de esta aplicación es el punto de partida para integrar el sistema de informes en una solución de escritorio real. En este paso:
 
