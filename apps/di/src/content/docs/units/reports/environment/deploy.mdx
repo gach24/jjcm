@@ -52,8 +52,7 @@ Para el desarrollo de informes en el módulo de Desarrollo de Interfaces, utiliz
 		Despliegue reproducible y aislado de todo el entorno con un único comando, evitando conflictos de puertos o dependencias locales.
 	</Card>
 </CardGrid>
-
-## 🏗️ Arquitectura del Stack
+## Arquitectura del Stack
 
 El entorno se compone de tres servicios principales que interactúan entre sí dentro de una red aislada de Docker:
 
@@ -61,7 +60,40 @@ El entorno se compone de tres servicios principales que interactúan entre sí d
 2.  **`jasperdb`**: Instancia de MariaDB que almacena la configuración de usuarios, roles y el repositorio de informes del servidor.
 3.  **`sakiladb`**: Base de datos MariaDB cargada con el esquema *Sakila* (una base de datos de ejemplo sobre alquiler de películas) para realizar consultas y generar informes reales.
 
-## 🚀 Instalación y Puesta en Marcha
+```mermaid
+flowchart TB
+  subgraph Host["Host (tu máquina)"]
+    direction TB
+
+    subgraph Desk["Herramientas de escritorio"]
+      direction LR
+      jaspersoft["Jaspersoft Studio"]
+      dbeaver["DBeaver"]
+      Browser["Navegador"]
+    end
+
+  
+    subgraph DockerNet["Red Docker"]
+      direction TB
+      jrs["Jasper Reports Server 8080"]
+      jasperdb[("jasperdb<br/>MariaDB :3306")]
+      sakiladb[("sakiladb<br/>MariaDB :3306")]
+    end
+  end
+
+
+
+  Browser -->|"Admin y visualización de informes en localhost:8080"| jrs
+  dbeaver -->|"localhost:3306 → sakiladb"| sakiladb
+  jaspersoft -->|"localhost:3306 → sakiladb"| sakiladb
+
+  jrs -->|"Solo red interna<br/>jasperdb:3306"| jasperdb
+  jrs -->|"Solo red interna<br/>sakiladb:3306"| sakiladb
+```
+
+Los contenedores se resuelven entre sí **por nombre de servicio** dentro de la red (`jrs`, `jasperdb`, `sakiladb`). Solo los puertos **mapeados al host** (`ports:` en `docker-compose`) son accesibles desde fuera de esa red; el tráfico entre `jrs` y las bases de datos no sale al host.
+
+## Instalación y Puesta en Marcha
 
 Sigue estos pasos para desplegar el entorno en tu máquina local.
 
@@ -105,7 +137,7 @@ Sigue estos pasos para desplegar el entorno en tu máquina local.
 	JasperReports Server es una aplicación Java que requiere recursos considerables. Asegúrate de tener al menos **2GB de RAM** disponibles para que el contenedor `jrs` funcione correctamente.
 </Aside>
 
-## 🌐 Acceso y Configuración
+## Acceso y Configuración
 
 Una vez que los servicios estén en marcha, puedes acceder a la consola de administración:
 
@@ -126,7 +158,7 @@ docker cp ./web.xml 12-project-07-jrs-1:/opt/bitnami/tomcat/webapps/jasperserver
 	Los datos se mantienen en volúmenes de Docker (`jasperdb_data`, `jrs_data`, `sakiladb_data`). Si quieres resetear el entorno completamente, usa el script `./clean.sh` incluido en el repo, pero ten en cuenta que perderás todos los informes creados.
 </Aside>
 
-## 🧩 Aplicación en el proyecto
+## Aplicación en el proyecto
 
 En este módulo, el entorno de JasperReports nos servirá para:
 
