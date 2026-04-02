@@ -134,7 +134,6 @@ Con el layout base validado, crea los dos componentes principales de UI. Separar
   - package.json
   - tsconfig.json
   - ...
-
 </FileTree>
 
 ### Sidebar
@@ -249,18 +248,22 @@ git push origin feat/layout-base
 
 ## Siguientes pasos
 
-Con el layout estable, el siguiente paso es crear un **hook** para conectar con el servidor de informes (y luego alimentar la UI con datos reales).
+Con el layout estable, el siguiente paso es configurar el proxy de desarrollo hacia Jasper Reports Server y una instancia de Axios para consumir la API REST (/rest_v2) sin bloqueos de CORS en el navegador.
 
 <CardGrid>
 	<LinkCard
-		href="../environment/deploy"
-		title="Repaso del Entorno"  
-		description="Asegúrate de que tu JRS está corriendo antes de continuar."
+		href="./03-axios-configuration"
+		title="Proxy de Vite y cliente Axios"
+		description="Configura el proxy de desarrollo hacia JasperReports Server y una instancia de Axios para consumir la API REST (/rest_v2) sin bloqueos de CORS en el navegador."
 	/>
-	<LinkCard
-		href="https://vitejs.dev/guide/"
-		title="Documentación de Vite"
-		description="Explora más sobre la configuración y optimización de Vite."
-		target="_blank"
-	/>
+</CardGrid>
+## Referencias
+
+<CardGrid>
+	<Card title="Documentación de Tailwind CSS" icon="open-book">
+		Utilidades, layout, theming e integración con Vite usada en el proyecto. Consulta la [documentación oficial de Tailwind CSS](https://tailwindcss.com/docs).
+	</Card>
+	<Card title="React — Tus primeros componentes" icon="open-book">
+		Cómo definir, anidar y componer componentes de interfaz. Guía en [react.dev — Your First Component](https://react.dev/learn/your-first-component).
+	</Card>
 </CardGrid>
