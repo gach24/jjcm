@@ -104,18 +104,33 @@ Crea el hook en `src/hooks/useReports.ts`. La instancia usa `baseURL: '/jasperse
   - index.css
   - vite.config.ts              # modificado
   - package.json
+  - .env                 # nuevo
   - tsconfig.json
   - ...
 </FileTree>
 
 <Aside type="caution" title="Credenciales en el cliente">
 	`Basic` con usuario y contraseña en el código es **aceptable solo como demo educativa**. En aplicaciones reales, evita exponer secretos en el frontend: token obtenido de forma segura, backend intermedio, etc.
+
+  ```env title=".env.local"
+  JASPER_REPORTS_SERVER_USER=admin
+  JASPER_REPORTS_SERVER_PASSWORD=admin
+  ```
+
+  El fichero `.env` se debe añadir al fichero `.gitignore` para que no se incluya en el repositorio.
+
+  ```gitignore title=".gitignore"
+  .env
+  ```
 </Aside>
 
 ```ts title="src/config/api/jasper-report-client.ts"
 import axios from 'axios';
+
+const USER = import.meta.env.JASPER_REPORTS_SERVER_USER;
+const PASSWORD = import.meta.env.JASPER_REPORTS_SERVER_PASSWORD;
 /**
- * Axios instance to make requests to the JasperReports server
+ * Axios instance to make requests to the Jasper Reports server
  */
 const jasperReportsClient = axios.create({
   // En desarrollo, Vite proxy maneja las peticiones a /jasperserver
@@ -127,7 +142,7 @@ const jasperReportsClient = axios.create({
      * Codifica las credenciales en Base64 para enviarlas en el header Authorization
      * btoa(`admin:admin`)
      */
-    Authorization: `Basic ${btoa(`admin:admin`)}`,
+    Authorization: `Basic ${btoa(`${USER}:${PASSWORD}`)}`,
   }
 });
 
