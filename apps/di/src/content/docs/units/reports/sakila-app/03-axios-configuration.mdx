@@ -89,22 +89,23 @@ El `configure` que elimina la cabecera `www-authenticate` de la respuesta proxif
 	El proxy de Vite **no existe en la build de producción**. En despliegue real necesitarás CORS bien configurado en el servidor, un proxy inverso (nginx, etc.) o un backend que reenvíe las peticiones.
 </Aside>
 
-## Paso 2 — Instancia de Axios y hook `useReports`
+## Paso 2 — Instancia de Axios
 
 Crea el hook en `src/hooks/useReports.ts`. La instancia usa `baseURL: '/jasperserver/rest_v2'`: en desarrollo Vite la completa contra el proxy; las rutas relativas del cliente coinciden con la API REST v2.
 
 <FileTree>
 - src/
   - config/                     # nuevo
-    - api/                      # nuevo
-      - jasper-report-client.ts # nuevo
+    - jasper-report-client.ts   # nuevo
+  - api/                        # nuevo
+    - jasper-reports.api.ts     # nuevo
   - components/
     - ...     
-  - App.tsx
+  - App.tsx                     # modificado
   - index.css
   - vite.config.ts              # modificado
   - package.json
-  - .env                 # nuevo
+  - .env                        # nuevo
   - tsconfig.json
   - ...
 </FileTree>
@@ -113,8 +114,8 @@ Crea el hook en `src/hooks/useReports.ts`. La instancia usa `baseURL: '/jasperse
 	`Basic` con usuario y contraseña en el código es **aceptable solo como demo educativa**. En aplicaciones reales, evita exponer secretos en el frontend: token obtenido de forma segura, backend intermedio, etc.
 
   ```env title=".env.local"
-  JASPER_REPORTS_SERVER_USER=admin
-  JASPER_REPORTS_SERVER_PASSWORD=admin
+  VITE_JASPER_REPORTS_SERVER_USER=admin
+  VITE_JASPER_REPORTS_SERVER_PASSWORD=admin
   ```
 
   El fichero `.env` se debe añadir al fichero `.gitignore` para que no se incluya en el repositorio.
@@ -124,7 +125,7 @@ Crea el hook en `src/hooks/useReports.ts`. La instancia usa `baseURL: '/jasperse
   ```
 </Aside>
 
-```ts title="src/config/api/jasper-report-client.ts"
+```ts title="src/config/jasper-reports-client.ts"
 import axios from 'axios';
 
 const USER = import.meta.env.JASPER_REPORTS_SERVER_USER;
@@ -149,12 +150,65 @@ const jasperReportsClient = axios.create({
 export default jasperReportsClient;
 ```
 
+## Paso 3 - Métodos de acceso a la API REST (I)
+
+En primer lugar, vamos a crear un método para comprobar si el servidor de JasperReports está disponible.
+
+```ts title="src/api/jasper-reports-api.ts"
+import httpClient from '../config/jasper-report-client';
+
+/**
+   * Login to the JasperReports server
+   * Only use to check if the server is available
+   * @returns True if the login is successful, false otherwise
+   */
+export const login = async () => {
+  try {
+    const response = await httpClient.get(`/serverInfo`);
+    return response.status === 200;
+  } catch (error: any) {
+    if (error.code === 'ERR_NETWORK' || error.message?.includes('ERR_CONNECTION_REFUSED')) {
+      console.error('Error de conexión: El servidor JasperReports no está disponible a través del proxy');
+    } else {
+      console.error('Error en login:', error.message);
+    }
+    return false;
+  }
+}
+```
+
+Una vez generado el método, vamos a crear otro método para obtener el listado de informes. Podríamos probar si funciona de forma manual sin realizar una batería de pruebas
+
+```diff lang="tsx" title="src/App.tsx"
+  import { Main, Sidebar } from './components';
+
++ import { login } from './api/jasper-report-api';
+
+  function App() {
+
++   login().then(console.log);
+
+    return (
+      <div className="app-layout">
+        <Sidebar />
+
+        <Main />
+      </div>
+    );
+  }
+
+  export default App;
+```
+
+
+
 ## Resumen rápido
 
 | Paso | Archivo / pieza | Función |
 | :--- | :--- | :--- |
 | **1** | `vite.config.ts` → `server.proxy` | Tunelizar `/jasperserver` → `http://localhost:8080` |
 | **2** | `axios.create` | Cliente REST con `baseURL` y Basic; funciones reutilizables |
+| **3** | `login` | Método para comprobar si el servidor de JasperReports está disponible |
 
 ## Convención práctica
 
@@ -165,8 +219,13 @@ export default jasperReportsClient;
 </Steps>
 
 ## Git y GitHub
-Cuando tengas el layout funcionando, guarda un commit con un mensaje claro y sube la rama.
+Cuando tengas el layout funcionando y el método `login` funcionando, guarda un commit con un mensaje claro y sube la rama.
 
+```bash title="Terminal"
+git add .
+git commit -m "Add login method"
+git push origin feat/axios-configuration-and-use-reports-hook
+```
 
 
 ## Siguientes pasos
