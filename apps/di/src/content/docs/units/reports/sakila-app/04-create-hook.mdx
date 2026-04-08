@@ -223,23 +223,23 @@ Añadiremos además algunas variables para controlar el estado de la carga de lo
 + import type { Report } from '../types/jasper-reports.types';
 
   export const useReports = () => {
-+    const [reports, setReports] = useState<Report[]>([]);
-+    const [loadingReports, setLoadingReports] = useState(false);
-+    const [errorLoadingReports, setErrorLoadingReports] = useState<string | null>(null);
++    const [reports, setReports]  = useState<Report[]>([]);
++    const [loading, setLoading]  = useState(false);
++    const [error, setError]      = useState<string | null>(null);
 
 +    useEffect(() => {
      let cancelled = false;
-+    setLoadingReports(true);
++    setLoading(true);
 
 +     getReports()
 +        .then((data) => {
 +          !cancelled && setReports(data);
 +        })
 +        .catch((e) => {
-+          !cancelled && setErrorLoadingReports(e.message);
++          !cancelled && setError(e.message);
 +        })
 +        .finally(() => {
-+          !cancelled && setLoadingReports(false);
++          !cancelled && setLoading(false);
 +        });
 
       return () => {
@@ -282,14 +282,9 @@ Integra `reports` en el `Sidebar` o en la vista principal, y extiende la API con
 
 <CardGrid>
 	<LinkCard
-		href="./03-axios-configuration"
-		title="Proxy y cliente Axios"
-		description="Revisa proxy, variables y cliente HTTP si falla getReports."
-	/>
-	<LinkCard
-		href="../environment/deploy"
-		title="Despliegue del entorno"
-		description="JasperReports Server y base Sakila para probar el listado real."
+		href="./05-create-context"
+		title="Creación del contexto"
+		description="Centraliza la carga de informes con Context API y consume el estado desde Sidebar."
 	/>
 </CardGrid>
 
