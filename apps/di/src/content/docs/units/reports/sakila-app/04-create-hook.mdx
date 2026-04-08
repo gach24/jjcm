@@ -223,8 +223,8 @@ Añadiremos además algunas variables para controlar el estado de la carga de lo
 + import type { Report } from '../types/jasper-reports.types';
 
   export const useReports = () => {
-+    const [reports, setReports]                         = useState<Report[]>([]);
-+    const [loadingReports, setLoadingReports]           = useState(false);
++    const [reports, setReports] = useState<Report[]>([]);
++    const [loadingReports, setLoadingReports] = useState(false);
 +    const [errorLoadingReports, setErrorLoadingReports] = useState<string | null>(null);
 
 +    useEffect(() => {
