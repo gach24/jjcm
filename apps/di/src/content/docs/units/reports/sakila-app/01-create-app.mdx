@@ -163,22 +163,22 @@ Añadiremos unas clases base en `src/index.css` para gestionar el layout flexibl
 
 ### Componentes de Estructura
 
-Definiremos dos componentes principales en `src/App.tsx`: `Aside` (lateral) y `Main` (contenido).
+Definiremos los dos fut componentes principales en `src/App.tsx`: `Aside` (lateral) y `Main` (contenido).
 
 ```tsx
-import { Aside } from './components/Aside';
-import { Main } from './components/Main';
+  function App() {
+    return (
+      <div className="app-layout">
+        {/* Sidebar Component */}
+        <div>Sidebar</div>
 
-function App() {
-  return (
-    <div className="app-layout">
-      <Aside />
-      <Main />
-    </div>
-  );
-}
+        {/* Main Component */}
+        <div>Main Content</div>
+      </div>
+    );
+  }
 
-export default App;
+  export default App;
 ```
 
 <Aside type="tip" title="Separación de responsabilidades">
