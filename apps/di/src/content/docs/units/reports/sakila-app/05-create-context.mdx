@@ -25,49 +25,60 @@ author:
       url: https://github.com/gach24
 ---
 
-import { Aside, Card, CardGrid, LinkCard, Steps, FileTree } from "@astrojs/starlight/components";
+import {
+  Aside,
+  Card,
+  CardGrid,
+  FileTree,
+  LinkCard,
+  Steps,
+} from "@astrojs/starlight/components";
 
 Hasta ahora ya tienes `getReports` y el hook `useReports`. El siguiente paso lógico es **evitar “prop drilling”** y dejar la carga de informes en un punto central para que cualquier componente (por ejemplo, `Sidebar`) pueda consumir el catálogo sin acoplarse a `App`.
 
 En esta sección se implementa esto con **Context API**: un `ReportsProvider` que llama a `useReports()` y expone `reports`, `loadingReports` y `errorLoadingReports` para la UI.
 
 <CardGrid stagger>
-	<Card title="Un solo fetch, múltiples consumidores" icon="rocket">
-		`useReports()` vive en el provider; `Sidebar` solo lee estado.
-	</Card>
-	<Card title="Estado con nombres de intención" icon="document">
-		`loadingReports` y `errorLoadingReports` son autoexplicativos en la UI.
-	</Card>
-	<Card title="Preparado para crecer" icon="external">
-		Mañana puedes añadir selección de informe, refresh, caching o paginado sin tocar todos los componentes.
-	</Card>
+  <Card title="Un solo fetch, múltiples consumidores" icon="rocket">
+    `useReports()` vive en el provider; `Sidebar` solo lee estado.
+  </Card>
+  <Card title="Estado con nombres de intención" icon="document">
+    `loadingReports` y `errorLoadingReports` son autoexplicativos en la UI.
+  </Card>
+  <Card title="Preparado para crecer" icon="external">
+    Mañana puedes añadir selección de informe, refresh, caching o paginado sin
+    tocar todos los componentes.
+  </Card>
 </CardGrid>
+
+<Aside type="tip" title="Creación de la rama para la nueva funcionalidad">
+  Quizás sea bueno crear una rama nueva para añadir la funcionalidad de
+  creación del contexto `ReportsContext`. 
+
+  ```bash title="Terminal" 
+  git checkout -b feat/create-context 
+  ```
+</Aside>
 
 ## Estructura de ficheros que vas a tocar/crear
 
 <FileTree>
-- src/
-  - context/                     # nuevo: contexto para compartir el estado
-    - reports.context.tsx
-  - types/                       # nuevo: tipo de datos para el estado compartido
-    - reports-state.types.ts     
-  - hooks/
-    - useReports.ts              # modificado: implementación de estados
-  - components/
-    - sidebar/
-      - Sidebar.tsx              # modificado: consume contexto
-  - main.tsx                     # modificado: envuelve App con el provider
-  - App.tsx                      # modificado: deja de llamar al hook
+  - src/ - context/ # nuevo: contexto para compartir el estado -
+  reports.context.tsx - types/ # nuevo: tipo de datos para el estado compartido
+  - reports-state.types.ts - hooks/ - useReports.ts # modificado: implementación
+  de estados - components/ - sidebar/ - Sidebar.tsx # modificado: consume
+  contexto - main.tsx # modificado: envuelve App con el provider - App.tsx #
+  modificado: deja de llamar al hook
 </FileTree>
 
 ## Pasos para replicar
 
 <Steps>
-1. Crea el tipo `ReportsState` para formalizar el estado compartido.
-2. Implementa `ReportsContext` y `ReportsProvider`.
-3. Actualiza `useReports` para devolver, `los informes`, `el estado de la petición` y `el error de la petición`.
-4. Envuelve `App` con `ReportsProvider` en `main.tsx`.
-5. Consume el contexto desde `Sidebar` y mapea los informes.
+  1. Crea el tipo `ReportsState` para formalizar el estado compartido. 2.
+  Implementa `ReportsContext` y `ReportsProvider`. 3. Actualiza `useReports`
+  para devolver, `los informes`, `el estado de la petición` y `el error de la
+  petición`. 4. Envuelve `App` con `ReportsProvider` en `main.tsx`. 5. Consume
+  el contexto desde `Sidebar` y mapea los informes.
 </Steps>
 
 ### Paso 1 — Define el contrato del contexto (`ReportsState`)
@@ -75,17 +86,18 @@ En esta sección se implementa esto con **Context API**: un `ReportsProvider` qu
 Crea `src/types/reports-state.types.ts`:
 
 ```ts title="src/types/reports-state.types.ts"
-import type { Report } from './jasper-reports.types';
+import type { Report } from "./jasper-reports.types";
 
 export interface ReportsState {
-	reports: Report[];
-	loadingReports: boolean;
-	errorLoadingReports: string | null;
+  reports: Report[];
+  loadingReports: boolean;
+  errorLoadingReports: string | null;
 }
 ```
 
 <Aside type="note" title="¿Por qué un tipo específico?">
-	Si mañana añades `selectedReportUri`, `reloadReports()` o `lastUpdatedAt`, el contrato está centralizado y TypeScript te obliga a actualizar consumidores.
+  Si mañana añades `selectedReportUri`, `reloadReports()` o `lastUpdatedAt`, el
+  contrato está centralizado y TypeScript te obliga a actualizar consumidores.
 </Aside>
 
 ### Paso 2 — Crea `ReportsContext` y su Provider
@@ -93,29 +105,33 @@ export interface ReportsState {
 Crea `src/context/reports.context.tsx` con un contexto tipado y un provider que llama al hook:
 
 ```tsx title="src/context/reports.context.tsx"
-import { createContext } from 'react';
-import type { ReportsState } from '../types/reports-state.types';
-import { useReports } from '../hooks/useReports';
+import { createContext } from "react";
 
-export const ReportsContext = createContext<ReportsState>({
-	reports: [],
-	loadingReports: false,
-	errorLoadingReports: null,
-});
+import { useReports } from "../hooks/useReports";
+import type { ReportsState } from "../types/reports-state.types";
 
-export const ReportsProvider = ({ children }: { children: React.ReactNode }) => {
-	const { reports, loadingReports, errorLoadingReports } = useReports();
+export const ReportsContext = createContext<ReportsState>({} as ReportsState);
 
-	return (
-		<ReportsContext.Provider value={{ reports, loadingReports, errorLoadingReports }}>
-			{children}
-		</ReportsContext.Provider>
-	);
+export const ReportsProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
+  const { reports, loadingReports, errorLoadingReports } = useReports();
+
+  return (
+    <ReportsContext.Provider
+      value={{ reports, loadingReports, errorLoadingReports }}
+    >
+      {children}
+    </ReportsContext.Provider>
+  );
 };
 ```
 
 <Aside type="tip" title="Decisión de diseño">
-	Este patrón (hook → provider → context) te evita duplicar lógica: sigues testeando la carga en `useReports`, y el provider solo compone.
+  Este patrón (hook → provider → context) te evita duplicar lógica: sigues
+  testeando la carga en `useReports`, y el provider solo compone.
 </Aside>
 
 ### Paso 3 — Ajusta `useReports` para que su retorno sea “UI-friendly”
@@ -123,41 +139,44 @@ export const ReportsProvider = ({ children }: { children: React.ReactNode }) => 
 Renombra estados para que sean más descriptivos y no colisionen con otros flags futuros:
 
 ```tsx title="src/hooks/useReports.ts" {7,8,12,19,22,32,33}
-  import { useEffect, useState } from 'react';
-  import { getReports } from '../api/jasper-report-api';
-  import type { Report } from '../types/jasper-reports.types';
+import { useEffect, useState } from "react";
 
-  export const useReports = () => {
-    const [reports, setReports] = useState<Report[]>([]);
-    const [loadingReports, setLoadingReports] = useState(false);
-    const [errorLoadingReports, setErrorLoadingReports] = useState<string | null>(null);
+import { getReports } from "../api/jasper-report-api";
+import type { Report } from "../types/jasper-reports.types";
 
-    useEffect(() => {
-      let cancelled = false;
-      setLoadingReports(true);
+export const useReports = () => {
+  const [reports, setReports] = useState<Report[]>([]);
+  const [loadingReports, setLoadingReports] = useState(false);
+  const [errorLoadingReports, setErrorLoadingReports] = useState<string | null>(
+    null
+  );
 
-      getReports()
-        .then((data) => {
-          !cancelled && setReports(data);
-        })
-        .catch((e) => {
-          !cancelled && setErrorLoadingReports(e.message);
-        })
-        .finally(() => {
-          !cancelled && setLoadingReports(false);
-        });
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingReports(true);
 
-      return () => {
-        cancelled = true;
-      };
-    }, []);
+    getReports()
+      .then((data) => {
+        !cancelled && setReports(data);
+      })
+      .catch((e) => {
+        !cancelled && setErrorLoadingReports(e.message);
+      })
+      .finally(() => {
+        !cancelled && setLoadingReports(false);
+      });
 
-    return {
-      reports,
-      loadingReports,
-      errorLoadingReports,
+    return () => {
+      cancelled = true;
     };
+  }, []);
+
+  return {
+    reports,
+    loadingReports,
+    errorLoadingReports,
   };
+};
 ```
 
 ### Paso 4 — Monta el Provider en `main.tsx`
@@ -169,10 +188,10 @@ Envuelve `App` para que todo el árbol pueda consumir el contexto:
   import { createRoot } from 'react-dom/client';
 
 + import { ReportsProvider } from './context/reports.context.tsx';
-  
+
   import './index.css';
   import App from './App.tsx';
- 
+
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
 +      <ReportsProvider>
@@ -208,7 +227,7 @@ Sustituye el “placeholder” por un `map` real y muestra un loader mientras ll
 
           <ul>
 +            {
-+              /* Si está cargando, muestra un loader */ 
++              /* Si está cargando, muestra un loader */
 +              loadingReports ? (
 +              <li>
 +                <Loader2 size={16} className="animate-spin" />
@@ -236,7 +255,9 @@ Sustituye el “placeholder” por un `map` real y muestra un loader mientras ll
 ```
 
 <Aside type="caution" title="Pequeño bug heredado del commit (corrígelo)">
-	Esa clase `text-(--text-muted)` no es una clase válida en Tailwind. Debería ser `text-[var(--text-muted)]` (con corchetes) o simplemente `text-muted` si tienes una clase utilitaria definida.
+  Esa clase `text-(--text-muted)` no es una clase válida en Tailwind. Debería
+  ser `text-[var(--text-muted)]` (con corchetes) o simplemente `text-muted` si
+  tienes una clase utilitaria definida.
 </Aside>
 
 ### Paso 6 — Limpia `App.tsx`
@@ -271,36 +292,48 @@ Una vez el estado vive en el contexto, `App` ya no tiene que llamar a `useReport
 
 ## Resumen rápido
 
-| Pieza | Responsabilidad |
-| :---- | :-------------- |
-| `ReportsState` | Contrato del estado compartido (TypeScript) |
+| Pieza             | Responsabilidad                                               |
+| :---------------- | :------------------------------------------------------------ |
+| `ReportsState`    | Contrato del estado compartido (TypeScript)                   |
 | `ReportsProvider` | Punto único de carga (`useReports`) y distribución del estado |
-| `main.tsx` | Montaje del provider en el árbol React |
-| `Sidebar` | UI: loader + `map` de `reports` |
+| `main.tsx`        | Montaje del provider en el árbol React                        |
+| `Sidebar`         | UI: loader + `map` de `reports`                               |
 
 ## Convención práctica
 
 <Steps>
-1. Si el estado se comparte “en vertical” (padre → nietos), usa props. Si se comparte “en horizontal” (muchos hermanos), usa context.
-2. Evita contextos “todo en uno”: mejor varios contextos pequeños (Reports, Auth, UI…) que un mega-objeto global.
-3. Mantén el provider cerca del root (`main.tsx`) si es transversal; si solo afecta a una ruta/pantalla, móntalo en esa pantalla.
+  1. Si el estado se comparte “en vertical” (padre → nietos), usa props. Si se
+  comparte “en horizontal” (muchos hermanos), usa context. 2. Evita contextos
+  “todo en uno”: mejor varios contextos pequeños (Reports, Auth, UI…) que un
+  mega-objeto global. 3. Mantén el provider cerca del root (`main.tsx`) si es
+  transversal; si solo afecta a una ruta/pantalla, móntalo en esa pantalla.
 </Steps>
+
+<Aside type="tip" title="Git y GitHub">
+  Cuando tengas el contexto `ReportsContext` funcionando, guarda un commit con un mensaje claro y sube la rama.
+
+  ```bash title="Terminal"
+  git add .
+  git commit -m "Add ReportsContext"
+  git push origin feat/create-context
+  ```
+</Aside>
 
 ## Siguientes pasos
 
 Añade interacción: selecciona un informe del `Sidebar`, guarda la selección en el contexto y renderiza en `Main` el visor/ejecutor (con `getReportExecution` y `getReportInputControls`).
 
 <CardGrid>
-	<LinkCard
-		href="./04-create-hook"
-		title="Hook useReports"
-		description="La carga HTTP vive en el hook; el contexto solo compone y comparte."
-	/>
-	<LinkCard
-		href="../environment/deploy"
-		title="Despliegue del entorno"
-		description="Necesitas JasperReports Server + Sakila para ver el catálogo real."
-	/>
+  <LinkCard
+    href="./04-create-hook"
+    title="Hook useReports"
+    description="La carga HTTP vive en el hook; el contexto solo compone y comparte."
+  />
+  <LinkCard
+    href="../environment/deploy"
+    title="Despliegue del entorno"
+    description="Necesitas JasperReports Server + Sakila para ver el catálogo real."
+  />
 </CardGrid>
 
 ## Referencias

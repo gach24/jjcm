@@ -39,7 +39,6 @@ import {
 
 En este paso dejaremos lista la **estructura visual mínima** de la app (sidebar + zona principal) para poder integrar después la lógica de informes sin pelearte con el UI.
 
-
 <Aside type="tip" title="Creación de una rama para el layout">
 
 Antes de tocar el layout, crea una rama específica. Mantiene `main` estable y te facilita revisar/mergear cuando todo compile.
@@ -51,7 +50,6 @@ git checkout -b feat/layout-base
 Trabajaremos en `feat/layout-base` hasta completar el layout. Cuando lo verifiques en local, lo integrarás en `main`.
 
 </Aside>
-
 
 ## Configuración del layout base
 
@@ -121,23 +119,13 @@ Ahora crea el esqueleto del layout en `src/App.tsx`. De momento son dos `<div>` 
 ```
 
 ## Componentes
+
 Con el layout base validado, crea los dos componentes principales de UI. Separarlos desde el principio evita que `App.tsx` se convierta en un “God component” cuando empieces con el estado de reportes.
 
 <FileTree>
-- src/
-  - components/           **nuevo**
-    - sidebar/           
-      - index.tsx
-      - sidebar.tsx
-    - main/
-      - index.tsx
-      - main.tsx
-  - App.tsx
-  - index.css
-  - vite.config.ts
-  - package.json
-  - tsconfig.json
-  - ...
+  - src/ - components/ **nuevo** - sidebar/ - index.tsx - sidebar.tsx - main/ -
+  index.tsx - main.tsx - App.tsx - index.css - vite.config.ts - package.json -
+  tsconfig.json - ...
 </FileTree>
 
 ### Sidebar
@@ -150,8 +138,7 @@ import { FileText } from "lucide-react";
 export const Sidebar = () => {
   return (
     <aside className="flex flex-col border-r border-white/5">
-      <header 
-        className="p-6 flex justify-between items-center border-b border-white/5">
+      <header className="p-6 flex justify-between items-center border-b border-white/5">
         <h1 className="flex items-center gap-3 font-bold text-lg">
           <FileText className="text-primary" />
 
@@ -183,7 +170,7 @@ export const Sidebar = () => {
 Crea la zona principal en `src/components/main/Main.tsx`. Este componente será el “lienzo” donde renderizarás el reporte seleccionado.
 
 ```tsx {12-21} title="src/components/main/Main.tsx"
-import { Play, FileText } from "lucide-react";
+import { FileText, Play } from "lucide-react";
 
 export const Main = () => {
   return (
@@ -210,6 +197,7 @@ export const Main = () => {
 ```
 
 ## Utilización de los componentes
+
 Sustituye los placeholders de `App.tsx` por los componentes reales (`Sidebar` y `Main`).
 
 ```diff lang="tsx" title="src/App.tsx"
@@ -229,8 +217,8 @@ Sustituye los placeholders de `App.tsx` por los componentes reales (`Sidebar` y 
 
   export default App;
 ```
+<Aside type="tip" title="Git y GitHub">
 
-## Git y GitHub
 Cuando tengas el layout funcionando, guarda un commit con un mensaje claro y sube la rama.
 
 ```bash title="Terminal"
@@ -238,16 +226,6 @@ git add .
 git commit -m "Add layout and components"
 git push origin feat/layout-base
 ```
-
-<Aside type="tip" title="Probar la aplicación e integrar en la rama principal">
-	Antes de integrar, verifica que la app arranca y que el layout se ve correctamente. Si todo está bien, fusiona la rama en `main` y sube los cambios.
-
-  ```bash title="Terminal"
-  git checkout main
-  git merge feat/layout-base
-  git push origin main
-  ```
-
 </Aside>
 
 ## Siguientes pasos
@@ -255,19 +233,23 @@ git push origin feat/layout-base
 Con el layout estable, el siguiente paso es configurar el proxy de desarrollo hacia Jasper Reports Server y una instancia de Axios para consumir la API REST (/rest_v2) sin bloqueos de CORS en el navegador.
 
 <CardGrid>
-	<LinkCard
-		href="./03-axios-configuration"
-		title="Proxy de Vite y cliente Axios"
-		description="Configura el proxy de desarrollo hacia JasperReports Server y una instancia de Axios para consumir la API REST (/rest_v2) sin bloqueos de CORS en el navegador."
-	/>
+  <LinkCard
+    href="./03-axios-configuration"
+    title="Proxy de Vite y cliente Axios"
+    description="Configura el proxy de desarrollo hacia JasperReports Server y una instancia de Axios para consumir la API REST (/rest_v2) sin bloqueos de CORS en el navegador."
+  />
 </CardGrid>
+
 ## Referencias
 
 <CardGrid>
-	<Card title="Documentación de Tailwind CSS" icon="open-book">
-		Utilidades, layout, theming e integración con Vite usada en el proyecto. Consulta la [documentación oficial de Tailwind CSS](https://tailwindcss.com/docs).
-	</Card>
-	<Card title="React — Tus primeros componentes" icon="open-book">
-		Cómo definir, anidar y componer componentes de interfaz. Guía en [react.dev — Your First Component](https://react.dev/learn/your-first-component).
-	</Card>
+  <Card title="Documentación de Tailwind CSS" icon="open-book">
+    Utilidades, layout, theming e integración con Vite usada en el proyecto.
+    Consulta la [documentación oficial de Tailwind
+    CSS](https://tailwindcss.com/docs).
+  </Card>
+  <Card title="React — Tus primeros componentes" icon="open-book">
+    Cómo definir, anidar y componer componentes de interfaz. Guía en [react.dev
+    — Your First Component](https://react.dev/learn/your-first-component).
+  </Card>
 </CardGrid>

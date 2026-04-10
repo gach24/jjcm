@@ -25,12 +25,12 @@ author:
 ---
 
 import {
-	Aside,
-	Card,
-	CardGrid,
-	LinkCard,
-	Steps,
+  Aside,
+  Card,
+  CardGrid,
   FileTree,
+  LinkCard,
+  Steps,
 } from "@astrojs/starlight/components";
 
 La integración con JasperReports Server conviene **separarla en dos capas**:
@@ -41,30 +41,43 @@ La integración con JasperReports Server conviene **separarla en dos capas**:
 Esta sección implementa **`getReports`** y el hook mínimo que lo consume.
 
 <CardGrid stagger>
-	<Card title="API = sin React" icon="document">
-		Peticiones y tipos de datos; fácil de llamar desde pruebas o desde otro hook más adelante.
-	</Card>
-	<Card title="Hook = UI-ready" icon="rocket">
-		`useState` + `useEffect` exponen `reports` listo para mapear en el `Sidebar` o una tabla.
-	</Card>
-	<Card title="Mismo endpoint JRS" icon="external">
-		`/resources?type=reportUnit&recursive=true` → `resourceLookup` en el JSON de respuesta.
-	</Card>
+  <Card title="API = sin React" icon="document">
+    Peticiones y tipos de datos; fácil de llamar desde pruebas o desde otro hook
+    más adelante.
+  </Card>
+  <Card title="Hook = UI-ready" icon="rocket">
+    `useState` + `useEffect` exponen `reports` listo para mapear en el `Sidebar`
+    o una tabla.
+  </Card>
+  <Card title="Mismo endpoint JRS" icon="external">
+    `/resources?type=reportUnit&recursive=true` → `resourceLookup` en el JSON de
+    respuesta.
+  </Card>
 </CardGrid>
+
+<Aside type="tip" title="Creación de la rama para la nueva funcionalidad">
+  Quizás sea bueno crear una rama nueva para añadir la funcionalidad de
+  creación del hook `useReports`. 
+
+  ```bash title="Terminal" 
+  git checkout -b feat/create-hook 
+  ```
+</Aside>
 
 ## Creación del hook y los tipos de datos necesarios
 
 <FileTree>
-- src/
-  - config/                     
-  - api/          
-  - components/ 
-  - hooks/                      # nuevo
-    - useReports.ts
-  - types/                      # nuevo
-    - jasper-reports.types.ts
-  - App.tsx                     
-  - ...
+  - src/ 
+    - config/ 
+    - api/ # nuevo: Implementación de getReports()
+      - jasper-report-api.ts 
+    - components/ 
+    - hooks/ # nuevo 
+      - useReports.ts 
+    - types/ # nuevo 
+      - jasper-reports.types.ts 
+    - App.tsx 
+    - ...
 </FileTree>
 
 ### Paso 1 — `getReports` en la capa API
@@ -72,7 +85,7 @@ Esta sección implementa **`getReports`** y el hook mínimo que lo consume.
 Añade (o completa) en **`src/api/jasper-report-api.ts`** la función que devuelve el listado de unidades de informe: `GET` con `Accept: application/json` y retorno de `data.resourceLookup`.
 
 ```ts title="src/api/jasper-report-api.ts"
-import httpClient from '../config/jasper-report-client';
+import httpClient from "../config/jasper-report-client";
 
 // ... login() u otras funciones ya definidas ...
 
@@ -81,68 +94,75 @@ import httpClient from '../config/jasper-report-client';
  * (unidades de informe, recursivo).
  */
 export const getReports = async (): Promise<unknown[]> => {
-	const { data } = await httpClient.get('/resources?type=reportUnit&recursive=true', {
-		headers: {
-			Accept: 'application/json',
-		},
-	});
-	return data.resourceLookup ?? [];
+  const { data } = await httpClient.get(
+    "/resources?type=reportUnit&recursive=true",
+    {
+      headers: {
+        Accept: "application/json",
+      },
+    }
+  );
+  return data.resourceLookup ?? [];
 };
 ```
 
 <Aside type="note" title="Ruta del cliente Axios">
-	El import `../config/jasper-report-client` debe coincidir con el **nombre real** del fichero donde creaste `axios.create` en [el apartado de proxy y Axios](./03-axios-configuration). Si ahí usaste otro nombre (por ejemplo `jasper-reports-client.ts`), ajusta solo la ruta.
+  El import `../config/jasper-report-client` debe coincidir con el **nombre
+  real** del fichero donde creaste `axios.create` en [el apartado de proxy y
+  Axios](./03-axios-configuration). Si ahí usaste otro nombre (por ejemplo
+  `jasper-reports-client.ts`), ajusta solo la ruta.
 </Aside>
-
 
 ## Paso 2 — Hook `useReports`
 
 Crea **`src/hooks/useReports.ts`** importando `getReports` desde la API. El flujo habitual es: estado inicial vacío, **un efecto sin dependencias** que llama a `getReports` al montar, y `return { reports }`.
 
 ```tsx title="src/hooks/useReports.ts"
-import { useEffect, useState } from 'react';
-import { getReports } from '../api/jasper-report-api';
+import { useEffect, useState } from "react";
+
+import { getReports } from "../api/jasper-report-api";
 
 export const useReports = () => {
-	const [reports, setReports] = useState<unknown[]>([]);
+  const [reports, setReports] = useState<unknown[]>([]);
 
-	useEffect(() => {
-		let cancelled = false;
+  useEffect(() => {
+    let cancelled = false;
 
-		getReports()
-			.then((data) => {
-				if (!cancelled) {
-					setReports(data);
-				}
-			})
-			.catch((e) => {
-				console.error(e);
-			});
+    getReports()
+      .then((data) => {
+        if (!cancelled) {
+          setReports(data);
+        }
+      })
+      .catch((e) => {
+        console.error(e);
+      });
 
-		return () => {
-			cancelled = true;
-		};
-	}, []);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-	return {
-		reports,
-	};
+  return {
+    reports,
+  };
 };
 ```
 
 <Aside type="note" title="Estado, tipos y desmontaje">
   cancelled evita un problema típico de async + React:
 
-  El useEffect llama a getReports() (asíncrono).
-  La promesa puede resolver después de que el componente ya se desmontó (el usuario salió de la pantalla, cambió de ruta, etc.) o después de que el efecto se limpió porque cambió algo y se volvió a ejecutar.
-  Si en el .then haces setReports(data) en ese caso, React te avisará con algo como "Can't perform a state update on an unmounted component" y en general estás actualizando estado de un componente que ya no debería reaccionar a esa petición vieja.
-  El flag funciona así:
+El useEffect llama a getReports() (asíncrono).
+La promesa puede resolver después de que el componente ya se desmontó (el usuario salió de la pantalla, cambió de ruta, etc.) o después de que el efecto se limpió porque cambió algo y se volvió a ejecutar.
+Si en el .then haces setReports(data) en ese caso, React te avisará con algo como "Can't perform a state update on an unmounted component" y en general estás actualizando estado de un componente que ya no debería reaccionar a esa petición vieja.
+El flag funciona así:
 
-  Al cleanup del efecto `return () => { cancelled = true }`, marcas que esa "versión" del efecto ya no es válida.
-  En el .then, solo llamas setReports si !cancelled: es decir, si el efecto no se limpió todavía.
-  En resumen: no actualizas el estado si la petición llegó tarde o el efecto ya se canceló.
+Al cleanup del efecto `return () => { cancelled = true }`, marcas que esa "versión" del efecto ya no es válida.
+En el .then, solo llamas setReports si !cancelled: es decir, si el efecto no se limpió todavía.
+En resumen: no actualizas el estado si la petición llegó tarde o el efecto ya se canceló.
 
-  Nota: esto no aborta la petición HTTP (sigue en red); solo ignora el resultado. Para cancelar de verdad usarías AbortController en el fetch/axios.
+Nota: esto no aborta la petición HTTP (sigue en red); solo ignora el resultado. Para cancelar de verdad usarías AbortController en el fetch/axios.
+
 </Aside>
 
 ### Paso 3 — Prueba rápida del hook en el componente principal
@@ -180,14 +200,14 @@ Mediante `Paste JSON as Code` podemos realizar el tipado de los datos.
 
 ```ts title="src/types/jasper-reports.types.ts"
 export interface Report {
-  version:        number;
+  version: number;
   permissionMask: number;
-  creationDate:   Date;
-  updateDate:     Date;
-  label:          string;
-  description:    string;
-  uri:            string;
-  resourceType:   string;
+  creationDate: Date;
+  updateDate: Date;
+  label: string;
+  description: string;
+  uri: string;
+  resourceType: string;
 }
 ```
 
@@ -263,35 +283,49 @@ Añadiremos además algunas variables para controlar el estado de la carga de lo
 
 ## Resumen rápido
 
-| Pieza | Responsabilidad |
-| :---- | :-------------- |
-| `getReports` | `GET` recursivo de `reportUnit` → `resourceLookup` |
+| Pieza        | Responsabilidad                                                  |
+| :----------- | :--------------------------------------------------------------- |
+| `getReports` | `GET` recursivo de `reportUnit` → `resourceLookup`               |
 | `useReports` | Estado `reports`, carga en montaje, objeto de retorno para la UI |
 
 ## Convención práctica
 
 <Steps>
-1. Mantén **funciones HTTP** en `api/` y **estado** en `hooks/` (o en slices si más adelante usas un store).
-2. **No** dejes promesas sin `.catch` en producción: al menos registra el error y opcionalmente muestra feedback en UI.
-3. Si añades filtros o refresco manual, pasa de `[]` a dependencias bien definidas (`[deps]`) o extrae la carga a una función `reload()` para no disparar peticiones en bucle.
+  1. Mantén **funciones HTTP** en `api/` y **estado** en `hooks/` (o en slices
+  si más adelante usas un store). 2. **No** dejes promesas sin `.catch` en
+  producción: al menos registra el error y opcionalmente muestra feedback en UI.
+  3. Si añades filtros o refresco manual, pasa de `[]` a dependencias bien
+  definidas (`[deps]`) o extrae la carga a una función `reload()` para no
+  disparar peticiones en bucle.
 </Steps>
+
+<Aside type="tip" title="Git y GitHub">
+  Cuando tengas el hook `useReports` funcionando, guarda un commit con un mensaje claro y sube la rama.
+
+  ```bash title="Terminal"
+  git add .
+  git commit -m "Add useReports hook"
+  git push origin feat/create-hook
+  ```
+</Aside>
 
 ## Siguientes pasos
 
 Integra `reports` en el `Sidebar` o en la vista principal, y extiende la API con ejecución de informes o controles de entrada según necesites.
 
 <CardGrid>
-	<LinkCard
-		href="./05-create-context"
-		title="Creación del contexto"
-		description="Centraliza la carga de informes con Context API y consume el estado desde Sidebar."
-	/>
+  <LinkCard
+    href="./05-create-context"
+    title="Creación del contexto"
+    description="Centraliza la carga de informes con Context API y consume el estado desde Sidebar."
+  />
 </CardGrid>
 
 ## Referencias
 
 <CardGrid>
-	<Card title="Sincronizar con efectos" icon="open-book">
-		Guía oficial: [Synchronizing with Effects](https://react.dev/learn/synchronizing-with-effects) (React).
-	</Card>
+  <Card title="Sincronizar con efectos" icon="open-book">
+    Guía oficial: [Synchronizing with
+    Effects](https://react.dev/learn/synchronizing-with-effects) (React).
+  </Card>
 </CardGrid>
