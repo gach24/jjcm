@@ -56,15 +56,6 @@ El último commit del proyecto de referencia hace tres cosas clave:
   </Card>
 </CardGrid>
 
-<Aside type="tip" title="Creación de la rama para la nueva funcionalidad">
-  Quizás sea bueno crear una rama nueva para añadir la funcionalidad de
-  carga de informe. 
-
-  ```bash title="Terminal" 
-  git checkout -b feat/load-report 
-  ```
-</Aside>
-
 ## Estructura de ficheros que vas a tocar
 
 <FileTree>
@@ -88,7 +79,7 @@ El último commit del proyecto de referencia hace tres cosas clave:
 ## Pasos para replicar el último commit
 
 <Steps>
-1. Renombra Implementación de `getReportUrl()` y tipa su retorno como `Promise<string>` (blob URL).
+1. Implementa la función `getReportUrl()` y tipa su retorno como `Promise<string>` (blob URL).
 2. Amplía `ReportsState` con selección y ejecución (`selectedReport`, `load`, `reportUrl`, flags de carga/error).
 3. Implementa en `useReports` el flujo “seleccionar → ejecutar → renderizar”.
 4. Actualiza `Sidebar` para emitir `setSelectedReport(report)` al hacer click.
@@ -317,7 +308,7 @@ Añade en `src/index.css`:
 + }
 ```
 
-## 🧩 Aplicación en el proyecto
+## Aplicación en el proyecto
 
 - Separas claramente **dos cargas**: `loadingReports` (catálogo) y `loadingReport` (ejecución). Esto evita UI confusa.
 - La selección de informe se convierte en un **evento de dominio** (`setSelectedReport`) y el hook decide qué hacer (ejecutar + generar URL).
@@ -341,12 +332,6 @@ Añade en `src/index.css`:
   3. Mantén las “acciones” (`load`) en el hook/context y “render” en componentes: menos acoplamiento, más testabilidad.
 </Steps>
 
-## Posibles mejoras
-
-
-- Renderiza `errorLoadingReport` y añade un botón “Reintentar”.
-- Añade `format` (pdf/html/xls) y parámetros (controles de entrada) con `getReportInputControls`.
-- Guarda el último reporte seleccionado (localStorage) para que la app recuerde la selección.
 
 <Aside type="tip" title="Git y GitHub">
   Cuando tengas la carga de informe funcionando, guarda un commit con un mensaje claro y sube la rama.
@@ -354,24 +339,18 @@ Añade en `src/index.css`:
   ```bash title="Terminal"
   git add .
   git commit -m "Add load report functionality"
-  git push origin feat/load-report
+  git push
+  git checkout main
+  git merge feat/develop-app
+  git push origin main
   ```
 </Aside>
 
-## Siguientes pasos
+## Posibles mejoras
 
-<CardGrid>
-  <LinkCard
-    href="./05-create-context"
-    title="Contexto ReportsContext"
-    description="Base para compartir estado y acciones sin prop drilling."
-  />
-  <LinkCard
-    href="./04-create-hook"
-    title="Hook useReports"
-    description="De la carga del catálogo a la ejecución del informe."
-  />
-</CardGrid>
+- Renderiza `errorLoadingReport` y añade un botón “Reintentar”.
+- Añade `format` (pdf/html/xls) y parámetros (controles de entrada) con `getReportInputControls`.
+- Guarda el último reporte seleccionado (localStorage) para que la app recuerde la selección.
 
 ## Referencias
 

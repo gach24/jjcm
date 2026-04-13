@@ -55,15 +55,6 @@ Esta sección implementa **`getReports`** y el hook mínimo que lo consume.
   </Card>
 </CardGrid>
 
-<Aside type="tip" title="Creación de la rama para la nueva funcionalidad">
-  Quizás sea bueno crear una rama nueva para añadir la funcionalidad de
-  creación del hook `useReports`. 
-
-  ```bash title="Terminal" 
-  git checkout -b feat/create-hook 
-  ```
-</Aside>
-
 ## Creación del hook y los tipos de datos necesarios
 
 <FileTree>
@@ -275,6 +266,64 @@ Añadiremos además algunas variables para controlar el estado de la carga de lo
   };
 ```
 
+
+## Paso 6 — Prueba de los reports en el sidebar
+
+Modifica el componente `Sidebar` para que muestre el listado de informes.
+
+```diff lang="tsx" title="src/components/sidebar/Sidebar.tsx"
++ import { useContext } from 'react';
++ import { ChevronRight, FileText, Loader2 } from 'lucide-react';
++ import { ReportsContext } from '../../context/reports.context';
+
+export const Sidebar = () => {
++  const { reports, loadingReports, setSelectedReport, selectedReport } = useContext(ReportsContext);
+
+
+  return (
+    <aside className="flex flex-col border-r border-white/5">
+      <header className="p-6 flex justify-between items-center border-b border-white/5">
+        <h1 className="flex items-center gap-3 font-bold text-lg">
+          <FileText className="text-primary" />
+
+          <span>Sakila Reports App</span>
+        </h1>
+      </header>
+      <nav className="flex-1 overflow-y-auto p-6">
+        <h3 className="text-xs uppercase tracking-wider text-muted mb-4">
+          Reportes Disponibles
+        </h3>
+        <ul>
++          { 
++            loadingReports ? (
++              <li>
++                <Loader2 size={16} className="animate-spin" />
++              </li>
++            ) : (
++              reports.map((report) => (
++                <li key={report.uri} 
++                  className={`cursor-pointer p-2 hover:bg-white/10 flex justify-between items-center ${selectedReport?.uri === report.uri ? 'bg-white/10' : ''}`} 
++                  onClick={() => setSelectedReport(report)} >
++
++                  <div className="flex flex-col gap-0.5">
++                    <span className="truncate font-medium">{report.label}</span>
++                    <span className="truncate text-xs text-muted">{report.description}</span>
++                  </div>
++                  <ChevronRight size={16} className="text-(--text-muted)" />
++                </li>
++              ))
++            )
++          }
+          
+        </ul>
+      </nav>
+    </aside>
+  );
+};
+```
+
+Ahora ya podemos ver el listado de informes en el sidebar.
+
 ## Aplicación en el proyecto
 
 - El **módulo API** concentra URLs y cabeceras de JasperReports; si cambia la versión de `rest_v2`, tocas **un sitio**.
@@ -305,7 +354,6 @@ Añadiremos además algunas variables para controlar el estado de la carga de lo
   ```bash title="Terminal"
   git add .
   git commit -m "Add useReports hook"
-  git push origin feat/create-hook
   ```
 </Aside>
 
@@ -325,7 +373,6 @@ Integra `reports` en el `Sidebar` o en la vista principal, y extiende la API con
 
 <CardGrid>
   <Card title="Sincronizar con efectos" icon="open-book">
-    Guía oficial: [Synchronizing with
-    Effects](https://react.dev/learn/synchronizing-with-effects) (React).
+    Guía oficial: [Synchronizing with Effects](https://react.dev/learn/synchronizing-with-effects) (React).
   </Card>
 </CardGrid>

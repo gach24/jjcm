@@ -51,15 +51,6 @@ En esta sección se implementa esto con **Context API**: un `ReportsProvider` qu
   </Card>
 </CardGrid>
 
-<Aside type="tip" title="Creación de la rama para la nueva funcionalidad">
-  Quizás sea bueno crear una rama nueva para añadir la funcionalidad de
-  creación del contexto `ReportsContext`. 
-
-  ```bash title="Terminal" 
-  git checkout -b feat/create-context 
-  ```
-</Aside>
-
 ## Estructura de ficheros que vas a tocar/crear
 
 <FileTree>
@@ -315,7 +306,6 @@ Una vez el estado vive en el contexto, `App` ya no tiene que llamar a `useReport
   ```bash title="Terminal"
   git add .
   git commit -m "Add ReportsContext"
-  git push origin feat/create-context
   ```
 </Aside>
 
