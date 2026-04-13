@@ -1,0 +1,254 @@
+---
+title: Layout y componentes
+description: Configura el layout base (Sidebar/Main) y crea los componentes iniciales de la UI.
+evaluations:
+  - id: RA6
+    statement: Genera informes.
+    criteria:
+      - "Se ha configurado el layout de la aplicación."
+
+    contents:
+      - "Layout de la aplicación"
+sources:
+  - author: gach24
+    url: https://github.com/gach24/DID/tree/main/12-project-07
+sidebar:
+  order: 2
+date: 2026-03-27
+updated: 2026-03-27
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+  Aside,
+  Card,
+  CardGrid,
+  FileTree,
+  LinkCard,
+  Steps,
+  TabItem,
+  Tabs,
+} from "@astrojs/starlight/components";
+
+En este paso dejaremos lista la **estructura visual mínima** de la app (sidebar + zona principal) para poder integrar después la lógica de informes sin pelearte con el UI.
+
+<Aside type="tip" title="Creación de una rama para el layout">
+
+Antes de tocar el layout, crea una rama específica. Mantiene `main` estable y te facilita revisar/mergear cuando todo compile.
+
+```bash title="Terminal"
+git checkout -b feat/develop-app
+```
+
+Trabajaremos en `feat/develop-app` hasta completar la primera versión de la aplicación. Cuando lo verifiques en local, lo integrarás en `main`.
+
+</Aside>
+
+## Configuración del layout base
+
+### Estilos base
+
+Añade estilos base en `src/index.css`. La idea es definir variables CSS (paleta + dimensiones) y una rejilla simple para dividir **Sidebar / Main**.
+
+```css title="src/index.css"
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --bg-main: #0f172a;
+    --bg-card: #1e293b;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --accent: #38bdf8;
+    --sidebar-width: 300px;
+
+    color-scheme: dark;
+    color: var(--text-main);
+    background-color: var(--bg-main);
+  }
+
+  button {
+    border-radius: 8px;
+    border: 1px solid transparent;
+    padding: 0.6em 1.2em;
+    font-size: 1em;
+    font-weight: 500;
+    font-family: inherit;
+    background-color: var(--primary);
+    color: white;
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+}
+
+@layer components {
+  .app-layout {
+    display: grid;
+    grid-template-columns: var(--sidebar-width) 1fr;
+    height: 100vh;
+    background-color: var(--bg-main);
+  }
+}
+```
+
+### Layout base (Sidebar y Main)
+
+Ahora crea el esqueleto del layout en `src/App.tsx`. De momento son dos `<div>` “placeholder” para confirmar que la rejilla funciona.
+
+```diff lang="tsx" title="src/App.tsx"
+  function App() {
+    return (
++      <div className="app-layout">
++        <div>Sidebar</div>
++
++        <div>Main Content</div>
++      </div>
+    );
+  }
+
+  export default App;
+```
+
+## Componentes
+
+Con el layout base validado, crea los dos componentes principales de UI. Separarlos desde el principio evita que `App.tsx` se convierta en un “God component” cuando empieces con el estado de reportes.
+
+<FileTree>
+  - src/ - components/ **nuevo** - sidebar/ - index.tsx - sidebar.tsx - main/ -
+  index.tsx - main.tsx - App.tsx - index.css - vite.config.ts - package.json -
+  tsconfig.json - ...
+</FileTree>
+
+### Sidebar
+
+Crea el componente de la barra lateral en `src/components/sidebar/Sidebar.tsx`. Aquí irá el listado de reportes disponibles (por ahora, contenido de ejemplo).
+
+```tsx {20-26} title="src/components/sidebar/Sidebar.tsx"
+import { FileText } from "lucide-react";
+
+export const Sidebar = () => {
+  return (
+    <aside className="flex flex-col border-r border-white/5">
+      <header className="p-6 flex justify-between items-center border-b border-white/5">
+        <h1 className="flex items-center gap-3 font-bold text-lg">
+          <FileText className="text-primary" />
+
+          <span>Sakila Reports App</span>
+        </h1>
+      </header>
+      <nav className="flex-1 overflow-y-auto p-6">
+        <h3 className="text-xs uppercase tracking-wider text-muted mb-4">
+          Reportes Disponibles
+        </h3>
+
+        <ul>
+          {/* TODO: Add reports here */}
+          <li className="cursor-pointer p-2 hover:bg-white/10">
+            <div className="flex flex-col gap-0.5">
+              <span className="truncate font-medium">Reporte 1</span>
+              <span className="truncate text-xs text-muted">Descripción</span>
+            </div>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+  );
+};
+```
+
+### Main
+
+Crea la zona principal en `src/components/main/Main.tsx`. Este componente será el “lienzo” donde renderizarás el reporte seleccionado.
+
+```tsx {12-21} title="src/components/main/Main.tsx"
+import { FileText, Play } from "lucide-react";
+
+export const Main = () => {
+  return (
+    <main className="flex flex-col overflow-hidden">
+      <header className="px-10 py-4 bg-slate-800/70 border border-white/10">
+        <button className="flex items-center gap-2">
+          <Play size={16} /> Re-ejecutar
+        </button>
+      </header>
+
+      {/* TODO: Add report view here */}
+      <section className="flex-1 p-8 overflow-hidden relative flex">
+        <div className="flex flex-col items-center gap-4 m-auto text-center">
+          <FileText size={64} className="text-muted" strokeWidth={1} />
+          <h3>Vista Previa del Reporte</h3>
+          <p>
+            Selecciona un reporte de la lista de la izquierda para visualizarlo.
+          </p>
+        </div>
+      </section>
+    </main>
+  );
+};
+```
+
+## Utilización de los componentes
+
+Sustituye los placeholders de `App.tsx` por los componentes reales (`Sidebar` y `Main`).
+
+```diff lang="tsx" title="src/App.tsx"
++ import { Main, Sidebar } from './components';
+
+  function App() {
+    return (
+      <div className="app-layout">
+-       <div>Sidebar</div>
++       <Sidebar />
+
+-       <div>Main Content</div>
++       <Main />
+      </div>
+    );
+  }
+
+  export default App;
+```
+<Aside type="tip" title="Git y GitHub">
+
+Cuando tengas el layout funcionando, guarda un commit con un mensaje claro y sube la rama.
+
+```bash title="Terminal"
+git add .
+git commit -m "Add layout and components"
+```
+</Aside>
+
+## Siguientes pasos
+
+Con el layout estable, el siguiente paso es configurar el proxy de desarrollo hacia Jasper Reports Server y una instancia de Axios para consumir la API REST (/rest_v2) sin bloqueos de CORS en el navegador.
+
+<CardGrid>
+  <LinkCard
+    href="./03-axios-configuration"
+    title="Proxy de Vite y cliente Axios"
+    description="Configura el proxy de desarrollo hacia JasperReports Server y una instancia de Axios para consumir la API REST (/rest_v2) sin bloqueos de CORS en el navegador."
+  />
+</CardGrid>
+
+## Referencias
+
+<CardGrid>
+  <Card title="Documentación de Tailwind CSS" icon="open-book">
+    Utilidades, layout, theming e integración con Vite usada en el proyecto.
+    Consulta la [documentación oficial de Tailwind
+    CSS](https://tailwindcss.com/docs).
+  </Card>
+  <Card title="React — Tus primeros componentes" icon="open-book">
+    Cómo definir, anidar y componer componentes de interfaz. Guía en [react.dev
+    — Your First Component](https://react.dev/learn/your-first-component).
+  </Card>
+</CardGrid>

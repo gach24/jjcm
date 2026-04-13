@@ -2,7 +2,7 @@ Genera una sección completa en MDX para Astro Starlight.
 
 Toma como ejemplos: 
 - @apps/di/src/content/docs/units/introduction/javascript/02-types.mdx
-- @apps/di/src/content/docs/units/introduction/javascript/
+- @apps/di/src/content/docs/units/reports/sakila-app/05-create-context.mdx
 
 Tema: {{TEMA}}
 

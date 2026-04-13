@@ -8,9 +8,9 @@ description: Creates a practice guide page for this teaching repo. Use when the 
 ## Read first
 
 - `AGENTS.md`
-- `docs/content-model.md`
-- `docs/style-guide.md`
-- `docs/workflows/create-practice.md`
+- `ai/architecture/content-model.md`
+- `ai/architecture/style-guide.md`
+- `ai/workflows/create-practice.md`
 
 ## Workflow
 

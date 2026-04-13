@@ -1,5 +1,6 @@
 import starlight from "@astrojs/starlight";
 import { defineConfig } from "astro/config";
+import starlightClientMermaid from "@pasqal-io/starlight-client-mermaid";
 import { ion } from "starlight-ion-theme";
 
 // https://astro.build/config
@@ -88,6 +89,7 @@ export default defineConfig({
       lastUpdated: true,
       pagination: false,
       plugins: [
+        starlightClientMermaid(),
         ion({
           icons: {
             iconDir: "./src/icons",

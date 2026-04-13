@@ -29,30 +29,36 @@ author:
 ---
 
 import {
-	Aside,
-	Card,
-	CardGrid,
-	LinkCard,
-	Steps,
-	TabItem,
-	Tabs,
+  Aside,
+  Card,
+  CardGrid,
+  LinkCard,
+  Steps,
+  TabItem,
+  Tabs,
 } from "@astrojs/starlight/components";
 
 Una vez configurado el entorno de **JasperReports Server**, el siguiente paso es construir la interfaz de usuario que consumirá esos informes. Utilizaremos **React** con **Vite** para crear una aplicación cliente ligera, moderna y funcional.
 
 <CardGrid stagger>
-	<Card title="Vite + React" icon="rocket">
-		Entorno de desarrollo rápido y optimizado para aplicaciones frontend modernas.
-	</Card>
-	<Card title="Lucide React" icon="pencil">
-		Set de iconos vectoriales para mejorar la experiencia visual de nuestra interfaz.
-	</Card>
-	<Card title="Axios" icon="random">
-		Librería para realizar peticiones HTTP a la API REST de JasperReports Server.
-	</Card>
+  <Card title="Vite + React" icon="rocket">
+    Entorno de desarrollo rápido y optimizado para aplicaciones frontend
+    modernas.
+  </Card>
+  <Card title="Lucide React" icon="pencil">
+    Set de iconos vectoriales para mejorar la experiencia visual de nuestra
+    interfaz.
+  </Card>
+  <Card title="Axios" icon="random">
+    Librería para realizar peticiones HTTP a la API REST de JasperReports
+    Server.
+  </Card>
+  <Card title="Tailwind CSS" icon="css">
+    Framework de CSS para estilizar la interfaz de usuario.
+  </Card>
 </CardGrid>
 
-## 🛠️ Inicialización del Proyecto
+## Inicialización del Proyecto
 
 Comenzaremos creando un proyecto base limpio y añadiendo las dependencias necesarias para la comunicación con el servidor de informes.
 
@@ -60,25 +66,80 @@ Comenzaremos creando un proyecto base limpio y añadiendo las dependencias neces
 1.  **Crear el proyecto con Vite:**
     Genera la estructura base seleccionando **React** y **TypeScript**.
     ```bash
-    npm create vite@latest sakila-reports-client -- --template react-ts
-    cd sakila-reports-client
+    npm create vite@latest reports-client-app -- --template react-ts
+    cd reports-client-app
     ```
 
 2.  **Instalar dependencias:**
     Añadiremos `lucide-react` para la iconografía y `axios` para las llamadas al servidor.
+
     ```bash
-    npm install lucide-react axios
+    npm install lucide-react axios tailwindcss @tailwindcss/vite
     ```
 
-3.  **Limpieza inicial:**
+3.  **Configurar Vite para Tailwind CSS:**
+    Añadiremos la configuración de Tailwind CSS a nuestro proyecto.
+
+    ```diff lang="ts" title="vite.config.ts"
+      import { defineConfig } from 'vite';
+      import react from '@vitejs/plugin-react';
+    + import tailwindcss from '@tailwindcss/vite';
+
+      // https://vite.dev/config/
+      export default defineConfig({
+    -    plugins: [ react()],
+    +    plugins: [tailwindcss(), react()],
+      });
+    ```
+
+    Vacía el contenido de `src/index.css`. Y añade el siguente contenido
+
+    ```css title="src/index.css"
+    @import "tailwindcss";
+    ```
+
+4.  **Limpieza inicial:**
     Elimina los archivos innecesarios para empezar desde cero con nuestra propia arquitectura.
+
     - Borra `src/App.css`.
-    - Vacía el contenido de `src/index.css`.
-    - Reinicia `src/App.tsx` para que solo contenga un fragmento vacío.
 
-</Steps>
+    - Reinicia `src/App.tsx` para que solo contenga un fragmento con un título de prueba.
 
-## 🏗️ Estructura y Layout Base
+    ```ts title="src/App.tsx" {4-6}
+    function App() {
+      return (
+        <>
+          <h1 className="text-3xl font-bold underline">
+            Hello world!
+          </h1>
+        </>
+      )
+    }
+
+    export default App;
+    ```
+
+5.  **Ejecutar la aplicación:**
+    Ejecuta la aplicación para verificar que todo está funcionando correctamente.
+
+    ```bash
+    npm run dev
+    ```
+
+    Ahora deberías poder ver el título de prueba en la pantalla.
+
+6.  **Hacer un commit de los cambios. (Opcional)**
+    `bash title="Terminal" "tu-repo-en-github.com"
+    git init
+    git add .
+    git commit -m "Initial app structure"
+    git branch -M main
+    git remote add origin tu-repo-en-github.com
+    git push -u origin main
+    `
+    </Steps>
+
+## Estructura y Layout Base
 
 Nuestra aplicación seguirá un patrón clásico de **Panel de Control**: una barra lateral para el listado de informes y un área principal para la visualización.
 
@@ -111,17 +172,17 @@ Añadiremos unas clases base en `src/index.css` para gestionar el layout flexibl
 
 ### Componentes de Estructura
 
-Definiremos dos componentes principales en `src/App.tsx`: `Aside` (lateral) y `Main` (contenido).
+Definiremos los dos fut componentes principales en `src/App.tsx`: `Aside` (lateral) y `Main` (contenido).
 
 ```tsx
-import { Aside } from './components/Aside';
-import { Main } from './components/Main';
-
 function App() {
   return (
     <div className="app-layout">
-      <Aside />
-      <Main />
+      {/* Sidebar Component */}
+      <div>Sidebar</div>
+
+      {/* Main Component */}
+      <div>Main Content</div>
     </div>
   );
 }
@@ -130,10 +191,12 @@ export default App;
 ```
 
 <Aside type="tip" title="Separación de responsabilidades">
-	Aunque al principio parezca tentador poner todo en `App.tsx`, crear los archivos `Aside.tsx` y `Main.tsx` en una carpeta `src/components` facilitará enormemente la gestión del estado y la lógica de los informes más adelante.
+  Aunque al principio parezca tentador poner todo en `App.tsx`, crear los
+  archivos `Aside.tsx` y `Main.tsx` en una carpeta `src/components` facilitará
+  enormemente la gestión del estado y la lógica de los informes más adelante.
 </Aside>
 
-## 🧩 Aplicación en el proyecto
+## Aplicación en el proyecto
 
 La creación de esta aplicación es el punto de partida para integrar el sistema de informes en una solución de escritorio real. En este paso:
 
@@ -143,11 +206,11 @@ La creación de esta aplicación es el punto de partida para integrar el sistema
 
 ## Resumen rápido
 
-| Acción | Herramienta/Comando | Resultado |
-| :--- | :--- | :--- |
-| **Creación** | `npm create vite@latest` | Estructura base React + TS |
-| **Dependencias** | `lucide-react`, `axios` | Herramientas de UI y Red |
-| **Layout** | CSS Grid | División Aside / Main |
+| Acción           | Herramienta/Comando      | Resultado                  |
+| :--------------- | :----------------------- | :------------------------- |
+| **Creación**     | `npm create vite@latest` | Estructura base React + TS |
+| **Dependencias** | `lucide-react`, `axios`  | Herramientas de UI y Red   |
+| **Layout**       | CSS Grid                 | División Aside / Main      |
 
 ## Convención práctica
 
@@ -162,15 +225,23 @@ La creación de esta aplicación es el punto de partida para integrar el sistema
 Con la estructura base lista, procederemos a crear los componentes de la interfaz y el hook personalizado para conectar con JasperReports:
 
 <CardGrid>
-	<LinkCard
-		href="../environment/deploy"
-		title="Repaso del Entorno"
-		description="Asegúrate de que tu JRS está corriendo antes de continuar."
-	/>
-	<LinkCard
-		href="https://vitejs.dev/guide/"
-		title="Documentación de Vite"
-		description="Explora más sobre la configuración y optimización de Vite."
-		target="_blank"
-	/>
+  <LinkCard
+    href="../../environment/deploy"
+    title="Repaso del Entorno"
+    description="Asegúrate de que tu JRS está corriendo antes de continuar. Abre la guía de despliegue de la unidad."
+  />
+  <LinkCard
+    href="./02-layout"
+    title="Layout y componentes"
+    description="Sidebar, zona principal y estructura de carpetas."
+  />
+</CardGrid>
+
+## Referencias
+
+<CardGrid>
+  <Card title="Documentación de Vite" icon="open-book">
+    Explora configuración y optimización del entorno de desarrollo en la [guía
+    oficial de Vite](https://vitejs.dev/guide/).
+  </Card>
 </CardGrid>

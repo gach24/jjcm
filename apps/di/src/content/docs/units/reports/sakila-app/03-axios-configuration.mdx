@@ -1,0 +1,246 @@
+---
+title: Proxy de Vite y cliente Axios
+description: Configura el proxy de desarrollo hacia JasperReports Server y una instancia de Axios para consumir la API REST (/rest_v2) sin bloqueos de CORS en el navegador.
+evaluations:
+  - id: RA6
+    statement: Genera informes, utilizando herramientas y librerías, para incorporarlos a interfaces gráficos de usuario.
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de informes.
+      - Se ha configurado el acceso a la API REST del servidor de informes.
+    contents:
+      - Proxy de desarrollo en Vite
+      - Cliente HTTP (Axios) y autenticación
+      - Hook useReports
+sources:
+  - author: gach24
+    url: https://github.com/gach24/DID/tree/main/13-project-08
+sidebar:
+  order: 3
+date: 2026-04-02
+updated: 2026-04-02
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+  Aside,
+  Card,
+  CardGrid,
+  FileTree,
+  LinkCard,
+  Steps,
+} from "@astrojs/starlight/components";
+
+La API REST de **JasperReports Server** vive en otro origen (`http://localhost:8080`) que el de Vite (`http://localhost:5173`). El navegador aplica **CORS**: una petición directa desde React fallaría. En desarrollo resolvemos el problema en **dos pasos**: (1) **proxy** en Vite para que el navegador hable solo con el origen de Vite; (2) **Axios** con `baseURL` y cabeceras hacia `/jasperserver/rest_v2`.
+
+<CardGrid stagger>
+  <Card title="Proxy en Vite" icon="external">
+    Redirige `/jasperserver/*` al JRS real. El navegador cree que todo es mismo
+    origen (dev server).
+  </Card>
+  <Card title="Axios" icon="random">
+    Cliente HTTP reutilizable: `baseURL`, cabeceras comunes (p. ej.
+    `Authorization`) y funciones del hook.
+  </Card>
+</CardGrid>
+
+
+## Paso 1 — Proxy hacia JasperReports Server
+
+Añade en `vite.config.ts` un `server.proxy` que enrute las peticiones que empiecen por `/jasperserver` hacia tu instancia de JRS (por defecto en este módulo, `http://localhost:8080`).
+
+El `configure` que elimina la cabecera `www-authenticate` de la respuesta proxificada evita que el navegador dispare un cuadro de diálogo de autenticación HTTP nativo cuando trabajas con **Basic** desde JavaScript.
+
+```diff lang="ts" title="vite.config.ts"
+   export default defineConfig({
+     plugins: [tailwindcss(), react()],
++    server: {
++      proxy: {
++        '/jasperserver': {
++          target: 'http://localhost:8080',
++          changeOrigin: true,
++          secure: false,
++          configure: (proxy) => {
++            proxy.on('proxyRes', (proxyRes) => {
++              if (proxyRes.headers['www-authenticate']) {
++                delete proxyRes.headers['www-authenticate'];
++              }
++            });
++          },
++        },
++      },
++    },
+   });
+```
+
+<Aside type="caution" title="Solo en desarrollo">
+  El proxy de Vite **no existe en la build de producción**. En despliegue real
+  necesitarás CORS bien configurado en el servidor, un proxy inverso (nginx,
+  etc.) o un backend que reenvíe las peticiones.
+</Aside>
+
+## Paso 2 — Instancia de Axios
+
+Crea el hook en `src/hooks/useReports.ts`. La instancia usa `baseURL: '/jasperserver/rest_v2'`: en desarrollo Vite la completa contra el proxy; las rutas relativas del cliente coinciden con la API REST v2.
+
+<FileTree>
+  - src/ - config/ # nuevo - jasper-report-client.ts # nuevo - api/ # nuevo -
+  jasper-reports.api.ts # nuevo - components/ - ... - App.tsx # modificado -
+  index.css - vite.config.ts # modificado - package.json - .env # nuevo -
+  tsconfig.json - ...
+</FileTree>
+
+<Aside type="caution" title="Credenciales en el cliente">
+	`Basic` con usuario y contraseña en el código es **aceptable solo como demo educativa**. En aplicaciones reales, evita exponer secretos en el frontend: token obtenido de forma segura, backend intermedio, etc.
+
+```env title=".env.local"
+VITE_JASPER_REPORTS_SERVER_USER=admin
+VITE_JASPER_REPORTS_SERVER_PASSWORD=admin
+```
+
+El fichero `.env` se debe añadir al fichero `.gitignore` para que no se incluya en el repositorio.
+
+```gitignore title=".gitignore"
+.env
+```
+
+</Aside>
+
+```ts title="src/config/jasper-reports-client.ts"
+import axios from "axios";
+
+const USER = import.meta.env.JASPER_REPORTS_SERVER_USER;
+const PASSWORD = import.meta.env.JASPER_REPORTS_SERVER_PASSWORD;
+/**
+ * Axios instance to make requests to the Jasper Reports server
+ */
+const jasperReportsClient = axios.create({
+  // En desarrollo, Vite proxy maneja las peticiones a /jasperserver
+  // En producción, puedes configurar baseURL si es necesario
+  // baseURL: import.meta.env.DEV ? '/jasperserver/rest_v2' : import.meta.env.VITE_BASE_URL,
+  baseURL: "/jasperserver/rest_v2",
+  headers: {
+    /*
+     * Codifica las credenciales en Base64 para enviarlas en el header Authorization
+     * btoa(`admin:admin`)
+     */
+    Authorization: `Basic ${btoa(`${USER}:${PASSWORD}`)}`,
+  },
+});
+
+export default jasperReportsClient;
+```
+
+## Paso 3 - Métodos de acceso a la API REST (I)
+
+En primer lugar, vamos a crear un método para comprobar si el servidor de JasperReports está disponible.
+
+```ts title="src/api/jasper-reports-api.ts"
+import httpClient from "../config/jasper-report-client";
+
+/**
+ * Login to the JasperReports server
+ * Only use to check if the server is available
+ * @returns True if the login is successful, false otherwise
+ */
+export const login = async () => {
+  try {
+    const response = await httpClient.get(`/serverInfo`);
+    return response.status === 200;
+  } catch (error: any) {
+    if (
+      error.code === "ERR_NETWORK" ||
+      error.message?.includes("ERR_CONNECTION_REFUSED")
+    ) {
+      console.error(
+        "Error de conexión: El servidor JasperReports no está disponible a través del proxy"
+      );
+    } else {
+      console.error("Error en login:", error.message);
+    }
+    return false;
+  }
+};
+```
+
+Una vez generado el método, vamos a crear otro método para obtener el listado de informes. Podríamos probar si funciona de forma manual sin realizar una batería de pruebas
+
+```diff lang="tsx" title="src/App.tsx"
+  import { Main, Sidebar } from './components';
+
++ import { login } from './api/jasper-report-api';
+
+  function App() {
+
++   login().then(console.log);
+
+    return (
+      <div className="app-layout">
+        <Sidebar />
+
+        <Main />
+      </div>
+    );
+  }
+
+  export default App;
+```
+
+## Resumen rápido
+
+| Paso  | Archivo / pieza                   | Función                                                               |
+| :---- | :-------------------------------- | :-------------------------------------------------------------------- |
+| **1** | `vite.config.ts` → `server.proxy` | Tunelizar `/jasperserver` → `http://localhost:8080`                   |
+| **2** | `axios.create`                    | Cliente REST con `baseURL` y Basic; funciones reutilizables           |
+| **3** | `login`                           | Método para comprobar si el servidor de JasperReports está disponible |
+
+## Convención práctica
+
+<Steps>
+  1. **Reinicia** `npm run dev` tras cambiar el proxy en `vite.config.ts`. 2.
+  **Comprueba** que JRS responde en `http://localhost:8080/jasperserver/` antes
+  de depurar el frontend. 3. **Centraliza** las llamadas a JRS en el hook (o en
+  un módulo `api/`) en lugar de dispersar `axios.get` por los componentes.
+</Steps>
+
+<Aside type="tip" title="Git y GitHub">
+
+  Cuando tengas el layout funcionando y el método `login` funcionando, guarda un commit con un mensaje claro y sube la rama.
+
+  ```bash title="Terminal"
+  git add .
+  git commit -m "Add login method"
+  ```
+
+</Aside>
+
+## Siguientes pasos
+
+Genera el hook `useReports` en `src/hooks/useReports.ts`. Este hook se encargará de gestionar las llamadas a la API REST de Jasper Reports Server.
+
+<CardGrid>
+  <LinkCard
+    href="./04-create-hook"
+    title="Creación del hook"
+    description="Creación del hook para gestionar las llamadas a la API REST de Jasper Reports Server."
+  />
+</CardGrid>
+
+## Referencias
+
+<CardGrid>
+  <Card title="Documentación de Axios" icon="random">
+    Instancias, interceptores y manejo de errores. Consulta la [introducción a
+    Axios](https://axios-http.com/docs/intro).
+  </Card>
+  <Card title="Documentación de Vite" icon="open-book">
+    Configuración del servidor de desarrollo y opciones de build. Guía en
+    [vitejs.dev/guide](https://vitejs.dev/guide/).
+  </Card>
+</CardGrid>

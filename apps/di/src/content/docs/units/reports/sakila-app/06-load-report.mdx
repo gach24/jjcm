@@ -1,0 +1,367 @@
+---
+title: Cargar y visualizar un informe
+description: Selecciona un informe en el Sidebar, ejecútalo contra JasperReports Server y muéstralo en `Main` con un `iframe`.
+evaluations:
+  - id: RA6
+    statement: Genera informes, utilizando herramientas y librerías, para incorporarlos a interfaces gráficos de usuario.
+    criteria:
+      - Se ha configurado el acceso a la API REST del servidor de informes.
+      - Se han mostrado los informes en la interfaz con feedback de carga y errores.
+    contents:
+      - Estado compartido para selección y ejecución de informes
+      - "`blob:` URL para incrustar el PDF generado"
+      - "UX: loading, disabled states y vista vacía"
+sidebar:
+  order: 6
+date: 2026-04-10
+updated: 2026-04-10
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+  Aside,
+  Card,
+  CardGrid,
+  FileTree,
+  LinkCard,
+  Steps,
+} from "@astrojs/starlight/components";
+
+Ya tienes el catálogo de informes cargado en `Sidebar` y compartido con `ReportsContext`. El siguiente salto es **cargar el informe seleccionado** (PDF) desde JasperReports Server y renderizarlo en el área principal (`Main`) como una vista previa.
+
+El último commit del proyecto de referencia hace tres cosas clave:
+
+- Añade **selección de informe** desde `Sidebar`.
+- Ejecuta el informe (descarga `blob`) y genera una **URL `blob:`** reutilizable en un `iframe`.
+- Introduce **estado de carga y error** específico para la ejecución del informe (`loadingReport`, `errorLoadingReport`), separado de la carga del listado.
+
+<CardGrid stagger>
+  <Card title="Selección → ejecución automática" icon="rocket">
+    Al cambiar `selectedReport`, se re-ejecuta el informe y se actualiza
+    `reportUrl`.
+  </Card>
+  <Card title="PDF embebido con blob URL" icon="document">
+    `getReportUrl()` devuelve `blob:` para incrustar sin tener que montar un
+    servidor de ficheros.
+  </Card>
+  <Card title="UX correcta" icon="external">
+    Estado vacío + botón deshabilitado + spinner durante la carga.
+  </Card>
+</CardGrid>
+
+## Estructura de ficheros que vas a tocar
+
+<FileTree>
+  - src/ 
+    - api/ 
+      - jasper-report-api.ts # modificado: Implementación de getReportUrl()
+    - hooks/ 
+      - useReports.ts # modificado: selección + ejecución de blob URLs
+    - context/ 
+    - reports.context.tsx # expone todo el hook en el contexto
+    - components/ 
+      - sidebar/ 
+        - Sidebar.tsx # onClick → setSelectedReport(report) 
+      - main/ 
+        - Main.tsx # iframe / spinner / botón re-ejecutar 
+    - types/ 
+        - reports-state.types.ts # amplía contrato con nuevos estados/acciones 
+    - index.css # modificado: estilos para .report-iframe
+</FileTree>
+
+## Pasos para replicar el último commit
+
+<Steps>
+1. Implementa la función `getReportUrl()` y tipa su retorno como `Promise<string>` (blob URL).
+2. Amplía `ReportsState` con selección y ejecución (`selectedReport`, `load`, `reportUrl`, flags de carga/error).
+3. Implementa en `useReports` el flujo “seleccionar → ejecutar → renderizar”.
+4. Actualiza `Sidebar` para emitir `setSelectedReport(report)` al hacer click.
+5. Actualiza `Main` para: botón de re-ejecución + estados (loading / iframe / empty state).
+6. Añade estilo `report-iframe` para que el visor quede integrado en el layout.
+</Steps>
+
+### Paso 1 — API: `getReportUrl()` devuelve una URL `blob:`
+
+En `src/api/jasper-report-api.ts` renombra y ajusta la función que ejecuta el informe:
+
+```diff lang="ts" title="src/api/jasper-report-api.ts"
+
+// ... login() u otras funciones ya definidas ...
+
+export const getReportUrl = async (
+	reportPath: string,
+	format = "pdf",
+	params?: Record<string, any>
+): Promise<string> => {
+   const response = await httpClient.get(`/reports${reportPath}.${format}`, {
+     responseType: 'blob',
+     params: params
+     params,
+   });
+ 
+	return URL.createObjectURL(response.data);
+};
+```
+
+<Aside type="note" title="¿Por qué devolver string?">
+  La UI suele querer algo embebible (`iframe src=`) o descargable (`a href=`).
+  Una `blob:` URL cubre ambos casos.
+</Aside>
+
+### Paso 2 — Tipos: amplía `ReportsState`
+
+Actualiza `src/types/reports-state.types.ts` para incluir el estado y las acciones nuevas:
+
+```diff lang="ts" title="src/types/reports-state.types.ts"
+ export interface ReportsState {
+
+	// Data (list)
+	reports: Report[];
+	loadingReports: boolean;
+	errorLoadingReports: string | null;
+
++	// Data (execution)
++	reportUrl: string | null;
++	loadingReport: boolean;
++	errorLoadingReport: string | null;
++
++	selectedReport: Report | null;
++
++	// Actions
++	setSelectedReport: (report: Report) => void;
++	reload: () => Promise<void>;
+ }
+```
+
+### Paso 3 — Hook: selección + ejecución + revocación de blob URLs
+
+Implementa en `src/hooks/useReports.ts`:
+
+- `selectedReport` como driver de ejecución.
+- `load()` como acción manual (para “Re-ejecutar”).
+- `reportUrl` como `blob:` URL (revocando la anterior para no filtrar memoria).
+
+```diff lang="ts" title="src/hooks/useReports.ts"
+ import { useCallback, useEffect, useState } from "react";
+-import { getReports } from "../api/jasper-report-api";
++import { getReport, getReports } from "../api/jasper-report-api";
+
+ export const useReports = () => {
+ 	// ... listado (reports/loadingReports/errorLoadingReports) ...
++
++	const [selectedReport, setSelectedReport] = useState<Report | null>(null);
++
++	const [loadingReport, setLoadingReport] = useState(false);
++	const [errorLoadingReport, setErrorLoadingReport] = useState<string | null>(null);
++	const [reportUrl, setReportUrl] = useState<string | null>(null);
++
++	const load = useCallback(async () => {
++		if (!selectedReport) return;
++
++		setLoadingReport(true);
++		setErrorLoadingReport(null);
++
++		try {
++			const url = await getReport(selectedReport.uri);
++			setReportUrl((prev) => {
++				if (prev) URL.revokeObjectURL(prev);
++				return url;
++			});
++		} catch (e: any) {
++			setErrorLoadingReport(e?.message ?? String(e));
++		} finally {
++			setLoadingReport(false);
++		}
++	}, [selectedReport]);
++
++	useEffect(() => {
++		void load();
++	}, [load]);
+
+ 	return {
+ 		// ... list ...
+
+
++    reportUrl,
++    loadingReport,
++    errorLoadingReport,
+
++    selectedReport,
+
++    // Functions
++    /** Updates the selected report (will trigger execution via the effect). */
++    setSelectedReport,
++
++    /** Alias for `load()` (re-execute selected report). */
++    reload: load,
+ 	};
+};
+```
+
+<Aside type="caution" title="Importante: revocar blob URLs">
+  Si no haces `URL.revokeObjectURL(prev)`, cada ejecución deja un blob “vivo” en
+  memoria. En sesiones largas, se nota.
+</Aside>
+
+### Paso 4 — Context: expón el hook completo
+
+En `src/context/reports.context.tsx`, en vez de mapear campo a campo, expón todo el retorno del hook:
+
+```diff lang="tsx" title="src/context/reports.context.tsx"
+-export const ReportsContext = createContext<ReportsState>({
+-  reports: [],
+-  loadingReports: false,
+-  errorLoadingReports: null,
+-});
++export const ReportsContext = createContext<ReportsState>({} as ReportsState);
+
+ export const ReportsProvider = ({ children }: { children: React.ReactNode }) => {
+-  const { reports, loadingReports, errorLoadingReports } = useReports();
+   return (
+-    <ReportsContext.Provider value={{ reports, loadingReports, errorLoadingReports }}>
++    <ReportsContext.Provider value={{ ...useReports() }}>
+       {children}
+     </ReportsContext.Provider>
+   );
+ };
+```
+
+### Paso 5 — Sidebar: click para seleccionar el reporte
+
+En `src/components/sidebar/Sidebar.tsx`:
+
+```diff lang="tsx" title="src/components/sidebar/Sidebar.tsx"
+-const { reports, loadingReports } = useContext(ReportsContext);
++const { reports, loadingReports, setSelectedReport } = useContext(ReportsContext);
+
+ {reports.map((report) => (
+ 	<li
+ 		key={report.uri}
+ 		className="cursor-pointer p-2 hover:bg-white/10 flex justify-between items-center"
++		onClick={() => setSelectedReport(report)}
+ 	>
+ 		{/* ... */}
+ 	</li>
+ ))}
+```
+
+<Aside type="caution" title="Bug pequeño en el commit de referencia">
+  Esa clase `text-(--text-muted)` no es válida. Cámbiala por
+  `text-[var(--text-muted)]` o por la clase que uses en tu tema (`text-muted`).
+</Aside>
+
+### Paso 6 — Main: estados + visor con iframe
+
+En `src/components/main/Main.tsx`:
+
+```diff title="src/components/main/Main.tsx"
++const { reportUrl, loadingReport, selectedReport, load } = useContext(ReportsContext);
++
+ <button
+ 	className="flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
++	onClick={() => void reload()}
++	disabled={!selectedReport}
++	title={!selectedReport ? "No hay reporte seleccionado" : "Re-ejecutar reporte"}
+ >
+ 	<Play size={16} /> Re-ejecutar
+ </button>
+
+ {loadingReport ? (
+ 	<div className="flex flex-col items-center gap-4 m-auto text-center">
+ 		<Loader2 size={64} className="text-muted" strokeWidth={1} />
+ 		<h3>Cargando reporte...</h3>
+ 	</div>
+ ) : reportUrl ? (
+ 	<iframe src={reportUrl} title="Report Viewer" className="report-iframe" />
+ ) : (
+ 	<div className="flex flex-col items-center gap-4 m-auto text-center">
+ 		<FileText size={64} className="text-muted" strokeWidth={1} />
+ 		<h3>Vista Previa del Reporte</h3>
+ 		<p>Selecciona un reporte de la lista de la izquierda para visualizarlo.</p>
+ 	</div>
+ )}
+```
+
+<Aside type="tip" title="Error de ejecución">
+  El commit crea `errorLoadingReport` pero todavía no lo muestra. Una  refactorización fácil que se propone  es renderizar un estado de error en `Main` (con botón “Reintentar” → `reload()`).
+</Aside>
+
+### Paso 7 — CSS: estilo para el visor
+
+Añade en `src/index.css`:
+
+```diff title="src/index.css"
++ .report-iframe {
++ 	width: 100%;
++ 	height: 100%;
++ 	border: none;
++ 	border-radius: 12px;
++ 	background: white;
++ 	box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5);
++ }
+```
+
+## Aplicación en el proyecto
+
+- Separas claramente **dos cargas**: `loadingReports` (catálogo) y `loadingReport` (ejecución). Esto evita UI confusa.
+- La selección de informe se convierte en un **evento de dominio** (`setSelectedReport`) y el hook decide qué hacer (ejecutar + generar URL).
+- La UI deja de “saber HTTP”: `Main` solo necesita `reportUrl` para renderizar.
+
+## Resumen rápido
+
+| Objetivo            | Dónde queda                                   |
+| :------------------ | :-------------------------------------------- |
+| Seleccionar reporte | `Sidebar` → `setSelectedReport(report)`       |
+| Ejecutar reporte    | `useReports.load()` → `getReport(uri)`        |
+| Visualizar PDF      | `Main` con `iframe src={reportUrl}`           |
+| Evitar leaks        | `URL.revokeObjectURL(prev)` en `setReportUrl` |
+
+## Convención práctica
+
+<Steps>
+  1. Nombra flags por “qué se está cargando” (`loadingReports` vs
+  `loadingReport`) para que el render sea trivial. 
+  2. Si usas `blob:` URLs, **revócalas** al reemplazarlas (y opcionalmente al desmontar). 
+  3. Mantén las “acciones” (`load`) en el hook/context y “render” en componentes: menos acoplamiento, más testabilidad.
+</Steps>
+
+
+<Aside type="tip" title="Git y GitHub">
+  Cuando tengas la carga de informe funcionando, guarda un commit con un mensaje claro y sube la rama.
+
+  ```bash title="Terminal"
+  git add .
+  git commit -m "Add load report functionality"
+  git push
+  git checkout main
+  git merge feat/develop-app
+  git push origin main
+  ```
+</Aside>
+
+## Posibles mejoras
+
+- Renderiza `errorLoadingReport` y añade un botón “Reintentar”.
+- Añade `format` (pdf/html/xls) y parámetros (controles de entrada) con `getReportInputControls`.
+- Guarda el último reporte seleccionado (localStorage) para que la app recuerde la selección.
+
+## Referencias
+
+<CardGrid>
+  <Card title="React Context" icon="open-book">
+    Cuando necesitas compartir datos entre componentes sin pasarlos por props en
+    cada nivel. Guía oficial: [Passing Data Deeply with
+    Context](https://react.dev/learn/passing-data-deeply-with-context)
+  </Card>
+  <Card title="Fetch (blobs) en MDN" icon="open-book">
+    Para entender `Blob`, `responseType` y cuándo te conviene `object URL`.
+    Referencia: [Blob](https://developer.mozilla.org/en-US/docs/Web/API/Blob)
+  </Card>
+</CardGrid>
