@@ -1,0 +1,332 @@
+---
+title: Doc comments y tags
+description: Cómo documentar código TypeScript con comentarios JSDoc/TSDoc para que TypeDoc genere una referencia útil.
+sources:
+  - author: TypeDoc
+    url: https://typedoc.org/documents/Doc_Comments.html
+  - author: TypeDoc
+    url: https://typedoc.org/documents/Tags.html
+sidebar:
+  order: 2
+date: 2026-04-21
+updated: 2026-04-21
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import { Aside, Card, CardGrid, LinkCard, Steps, TabItem, Tabs } from "@astrojs/starlight/components";
+
+TypeDoc extrae documentación de los **doc comments** (`/** ... */`) que escribes junto al código. Si no hay comentarios, la salida se limita a firmas y tipos: correcta, pero sin contexto. Esta sección explica cómo escribir comentarios que TypeDoc convierta en documentación **realmente útil**.
+
+<CardGrid stagger>
+	<Card title="Sintaxis" icon="document">
+		Comentarios `/** */` sobre exports: funciones, clases, interfaces, tipos, enums y variables.
+	</Card>
+	<Card title="Tags" icon="setting">
+		Etiquetas como `@param`, `@returns` o `@example` que estructuran la información dentro del comentario.
+	</Card>
+	<Card title="Markdown" icon="open-book">
+		El texto libre dentro de un doc comment acepta **Markdown**: negrita, listas, enlaces, bloques de código, etc.
+	</Card>
+</CardGrid>
+
+## Anatomía de un doc comment
+
+Un comentario de documentación tiene tres partes:
+
+1. **Resumen** — la primera línea o párrafo (TypeDoc lo usa como descripción corta en índices).
+2. **Cuerpo** — párrafos adicionales con explicación, contexto o notas.
+3. **Tags** — etiquetas estructuradas (`@param`, `@returns`, etc.) que TypeDoc parsea de forma especial.
+
+```ts
+/**
+ * Calcula el precio final aplicando un porcentaje de descuento.
+ *
+ * Si el descuento es mayor que 100 o negativo, lanza un error.
+ *
+ * @param price - Precio original (sin descuento).
+ * @param discount - Porcentaje de descuento (0–100).
+ * @returns El precio con el descuento aplicado.
+ *
+ * @example
+ * ```ts
+ * calculateDiscount(100, 25); // 75
+ * ```
+ */
+export function calculateDiscount(price: number, discount: number): number {
+	if (discount < 0 || discount > 100) {
+		throw new RangeError("Discount must be between 0 and 100");
+	}
+	return price * (1 - discount / 100);
+}
+```
+
+<Aside type="tip" title="Primera línea = resumen">
+	TypeDoc usa el primer párrafo como **summary** en listas e índices. Mantenlo en una frase corta y directa; el detalle va en el cuerpo.
+</Aside>
+
+## Comentarios con Markdown
+
+Dentro de `/** */` puedes usar Markdown estándar:
+
+```ts
+/**
+ * Cliente HTTP para la API de informes.
+ *
+ * Funcionalidades principales:
+ * - Listar informes disponibles
+ * - Ejecutar un informe con parámetros
+ * - Descargar el resultado en **PDF** o **HTML**
+ *
+ * > Este cliente asume que el servidor está desplegado
+ * > y accesible en la URL configurada en `.env`.
+ *
+ * Véase también {@link ReportConfig} para las opciones de ejecución.
+ */
+export class ReportsClient {
+	// ...
+}
+```
+
+TypeDoc renderiza todo esto a HTML con sintaxis highlighting en los bloques de código.
+
+<Aside type="caution" title="Bloques de código indentados">
+	TypeDoc **solo** reconoce bloques de código con triple backtick (fenced). Los bloques por indentación (4 espacios) no se procesan correctamente y las tags dentro de ellos se parsearán como tags reales.
+</Aside>
+
+## Tags principales
+
+### Tags de bloque (block tags)
+
+Se escriben al inicio de una línea dentro del comentario:
+
+| Tag | Para qué sirve | Ejemplo |
+| :--- | :--- | :--- |
+| `@param name` | Documenta un parámetro | `@param id - Identificador del usuario.` |
+| `@returns` | Documenta el valor de retorno | `@returns La lista de informes.` |
+| `@throws` | Documenta errores lanzados | `@throws {RangeError} Si el rango es inválido.` |
+| `@example` | Bloque de ejemplo (código) | Ver ejemplo abajo |
+| `@remarks` | Notas adicionales separadas del resumen | Contexto de diseño, trade-offs |
+| `@see` | Referencias cruzadas | `@see {@link OtraClase}` |
+| `@deprecated` | Marca como obsoleto | `@deprecated Usa calculateTotal en su lugar.` |
+| `@typeParam T` | Documenta un parámetro genérico | `@typeParam T - Tipo del elemento.` |
+| `@defaultValue` | Valor por defecto de una propiedad | `@defaultValue 3000` |
+
+### Tags inline
+
+Se usan **dentro** del texto del comentario, entre llaves:
+
+| Tag | Uso |
+| :--- | :--- |
+| `{@link NombreSimbolo}` | Enlace a otro símbolo documentado |
+| `{@inheritDoc NombreSimbolo}` | Hereda la documentación de otro símbolo |
+| `{@label NOMBRE}` | Etiqueta un overload para referenciarlo |
+
+### Tags modificadoras (modifier tags)
+
+Cambian el **comportamiento** de TypeDoc sobre el símbolo, sin texto adicional:
+
+| Tag | Efecto |
+| :--- | :--- |
+| `@public` | Fuerza visibilidad pública |
+| `@protected` | Fuerza visibilidad protegida |
+| `@private` | Fuerza visibilidad privada |
+| `@internal` | Excluye del output (con `excludeInternal: true`) |
+| `@hidden` | Oculta completamente del output |
+| `@ignore` | Igual que `@hidden` |
+
+## Ejemplos prácticos por tipo de símbolo
+
+<Tabs>
+	<TabItem label="Función">
+		```ts
+		/**
+		 * Normaliza una URI de informe eliminando el prefijo del servidor.
+		 *
+		 * @param uri - URI completa (p. ej. `/reports/Sakila/ListaActores`).
+		 * @returns La URI relativa sin prefijo.
+		 *
+		 * @example
+		 * ```ts
+		 * normalizeUri("/reports/Sakila/ListaActores");
+		 * // → "Sakila/ListaActores"
+		 * ```
+		 */
+		export function normalizeUri(uri: string): string {
+			return uri.replace(/^\/reports\//, "");
+		}
+		```
+	</TabItem>
+	<TabItem label="Interfaz">
+		```ts
+		/**
+		 * Configuración para ejecutar un informe en JasperReports.
+		 *
+		 * @remarks
+		 * Los parámetros del informe se pasan como pares clave-valor
+		 * y dependen del diseño del `.jrxml`.
+		 */
+		export interface ReportConfig {
+			/** URI del informe en el servidor. */
+			uri: string;
+
+			/** Formato de salida solicitado. */
+			format: "pdf" | "html" | "csv";
+
+			/**
+			 * Parámetros de entrada del informe.
+			 * @defaultValue `{}`
+			 */
+			params?: Record<string, string>;
+		}
+		```
+	</TabItem>
+	<TabItem label="Clase">
+		```ts
+		/**
+		 * Servicio que gestiona la caché de informes descargados.
+		 *
+		 * @remarks
+		 * Almacena en memoria los blobs de informes ya ejecutados
+		 * para evitar llamadas repetidas al servidor.
+		 *
+		 * @example
+		 * ```ts
+		 * const cache = new ReportCache();
+		 * cache.set("actors-pdf", blob);
+		 * cache.get("actors-pdf"); // Blob
+		 * ```
+		 */
+		export class ReportCache {
+			/** Mapa interno de URI → Blob. */
+			private store = new Map<string, Blob>();
+
+			/**
+			 * Almacena un resultado de informe.
+			 * @param key - Clave única (normalmente `uri-format`).
+			 * @param data - Blob con el contenido del informe.
+			 */
+			set(key: string, data: Blob): void {
+				this.store.set(key, data);
+			}
+
+			/**
+			 * Recupera un informe cacheado.
+			 * @param key - Clave del informe.
+			 * @returns El Blob si existe, `undefined` si no.
+			 */
+			get(key: string): Blob | undefined {
+				return this.store.get(key);
+			}
+		}
+		```
+	</TabItem>
+	<TabItem label="Enum / Type">
+		```ts
+		/**
+		 * Formatos de exportación soportados por el visor de informes.
+		 *
+		 * @see {@link ReportConfig.format}
+		 */
+		export enum ExportFormat {
+			/** Documento PDF (por defecto). */
+			PDF = "pdf",
+			/** HTML renderizado en iframe. */
+			HTML = "html",
+			/** CSV para importar en hojas de cálculo. */
+			CSV = "csv",
+		}
+
+		/**
+		 * Estado de la petición de un informe.
+		 *
+		 * - `idle`: sin petición activa.
+		 * - `loading`: petición en curso.
+		 * - `error`: la última petición falló.
+		 * - `success`: informe listo para mostrar.
+		 */
+		export type ReportStatus = "idle" | "loading" | "error" | "success";
+		```
+	</TabItem>
+</Tabs>
+
+## Buenas prácticas
+
+<Steps>
+	1. **Documenta lo exportado, no lo interno.** Si un helper es privado y trivial, no necesita doc comment. Si es público, sí.
+	2. **Resumen en una frase.** La primera línea del comentario es lo que aparece en índices. Sé directo: "Obtiene la lista de informes", no "Esta función se encarga de obtener…".
+	3. **`@param` con guión** (`@param name - descripción`). Es la convención TSDoc y TypeDoc lo parsea mejor que sin guión.
+	4. **`@example` con bloque de código.** Un ejemplo ejecutable vale más que un párrafo de explicación. Usa triple backtick con `ts` dentro del tag.
+	5. **`@internal` para lo que no es API.** Mejor que dejar funciones "flotando" en la documentación. Combínalo con `excludeInternal: true` en la config.
+	6. **No repitas la firma.** TypeDoc ya muestra tipos y nombres de parámetros. El comentario debe añadir **intención**, no repetir "price es un number".
+	7. **Documenta propiedades de interfaces/types.** Un `/** */` corto sobre cada propiedad hace que la tabla generada sea legible sin ir al código.
+	8. **Usa `{@link}` para referencias cruzadas.** Crea navegación interna entre tipos relacionados y evita que la documentación sea una lista plana.
+</Steps>
+
+<Aside type="caution" title="Comentarios // y /* */ normales">
+	TypeDoc **ignora** los comentarios de línea (`//`) y los de bloque normales (`/* */`). Solo procesa `/** */`. Si documentas con `//` no aparecerá en la salida.
+</Aside>
+
+## 🧩 Aplicación en el proyecto
+
+En el contexto de este módulo:
+
+- **Servicios y API clients** (`src/services/`, `src/api/`): son los candidatos principales. Documenta cada función pública con `@param`, `@returns` y un `@example`.
+- **Types e interfaces** (`src/types/`): documenta cada propiedad. Es lo que más se consulta en la documentación generada.
+- **Hooks** (`src/hooks/`): un resumen de qué hace el hook, qué devuelve y un ejemplo de uso en un componente.
+- **Utilidades** (`src/lib/`, `src/utils/`): `@param`, `@returns`, `@throws` y `@example`. Si una utilidad es interna, márcala con `@internal`.
+
+El objetivo es que `npm run docs:api` genere una referencia donde **cualquier persona del equipo pueda entender qué hace cada módulo sin leer la implementación**.
+
+## Resumen rápido
+
+| Qué | Cómo |
+| :--- | :--- |
+| Comentario documentable | `/** ... */` sobre un export |
+| Resumen | Primer párrafo (una frase clara) |
+| Parámetros | `@param name - descripción` |
+| Retorno | `@returns descripción` |
+| Ejemplo | `@example` + bloque de código |
+| Referencia cruzada | `{@link Simbolo}` inline |
+| Excluir de la doc | `@internal` + `excludeInternal: true` |
+
+## Convención práctica
+
+<Steps>
+	1. Antes de hacer commit, revisa que los **exports públicos nuevos** tengan al menos resumen + `@param` + `@returns`.
+	2. Ejecuta `npm run docs:api` y abre el HTML. Si algo se lee mal o falta contexto, ajusta el comentario.
+	3. No documentes getters/setters triviales ni re-exports que solo agrupan (el índice ya los muestra).
+	4. Usa `@deprecated` en vez de borrar: da tiempo a los consumidores a migrar y TypeDoc lo marca visualmente.
+</Steps>
+
+## Referencias
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://typedoc.org/documents/Doc_Comments.html"
+		title="Doc Comments — TypeDoc"
+		description="Referencia completa de sintaxis de comentarios, Markdown y bloques de código."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://typedoc.org/documents/Tags.html"
+		title="Tags — TypeDoc"
+		description="Lista oficial de block tags, inline tags y modifier tags soportados."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://tsdoc.org/"
+		title="TSDoc"
+		description="Estándar de comentarios para TypeScript en el que se basa TypeDoc."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>

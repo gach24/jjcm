@@ -1,0 +1,160 @@
+---
+title: Introducción a TypeDoc
+description: Genera documentación técnica (HTML/Markdown) para programas TypeScript a partir del código y sus doc comments.
+sources:
+  - author: TypeDoc
+    url: https://typedoc.org/
+  - author: TypeDoc
+    url: https://typedoc.org/documents/Overview.html
+sidebar:
+  order: 1
+date: 2026-04-21
+updated: 2026-04-21
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import { Aside, Card, CardGrid, LinkCard, Steps } from "@astrojs/starlight/components";
+
+TypeDoc es la forma más directa de **convertir un programa TypeScript en documentación navegable** sin escribirla a mano: analiza exports, tipos y doc comments (JSDoc/TSDoc) y genera un sitio (HTML) o ficheros (Markdown).
+
+<CardGrid stagger>
+	<Card title="Objetivo" icon="document">
+		Que tu código sea la fuente de verdad: APIs, tipos, utilidades, módulos y contratos.
+	</Card>
+	<Card title="Qué necesitas" icon="open-book">
+		Un proyecto TypeScript con exports públicos y comentarios útiles en los símbolos importantes.
+	</Card>
+	<Card title="Qué obtienes" icon="rocket">
+		Un output versionable (o publicable) con índice, navegación y enlaces entre tipos.
+	</Card>
+</CardGrid>
+
+## Qué documenta TypeDoc (y qué no)
+
+- **Documenta**: símbolos **exportados** (funciones, clases, tipos, interfaces, enums, etc.) y lo que TypeScript sabe de ellos.
+- **No “adivina” intención**: si un módulo no exporta nada o no tiene comentarios, el resultado será pobre aunque el código sea bueno.
+
+<Aside type="tip" title="Regla simple">
+	Documenta **lo que otros van a consumir**: APIs públicas, helpers reutilizables, contratos (types/interfaces) y módulos “de borde” (p. ej. capa de API, CLI, adaptadores).
+</Aside>
+
+## Instalación y primera generación
+
+En un proyecto Node/TS:
+
+```bash
+npm i -D typedoc
+```
+
+Generación mínima (HTML):
+
+```bash
+npx typedoc --entryPoints src/index.ts --out docs/api
+```
+
+<Aside type="caution" title="Entry points: piensa en “lo público”">
+	Si documentas un **programa** (no una librería), tu `src/index.ts` debería exportar el “contrato” que quieres enseñar: comandos, servicios, modelos, utilidades. Evita que el entry point sea solo código de arranque sin exports.
+</Aside>
+
+## Configuración típica (`typedoc.json`)
+
+Cuando ya te funciona el comando, pásalo a config para que sea reproducible:
+
+```json title="typedoc.json"
+{
+  "entryPoints": ["src/index.ts"],
+  "out": "docs/api",
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "readme": "none"
+}
+```
+
+Y lo normal es añadir un script:
+
+```json title="package.json"
+{
+  "scripts": {
+    "docs:api": "typedoc"
+  }
+}
+```
+
+<Aside type="note" title="Sobre globs y rutas">
+	Si usas globs, TypeDoc los acepta, pero **no uses separadores Windows** (`\`) en `entryPoints`: usa siempre `/`.
+</Aside>
+
+## Documentos extra en Markdown (guías, decisiones, uso)
+
+TypeDoc puede incluir Markdown “externo” para complementar el API reference con guías:
+
+- “Cómo ejecutar el programa”
+- “Arquitectura (capas/módulos)”
+- “Decisiones y trade-offs”
+- “Convenciones del proyecto”
+
+La idea práctica: **TypeDoc para el “qué” (API)** y Markdown para el **“cómo/por qué”**.
+
+## 🧩 Aplicación en el proyecto
+
+En este módulo, lo vas a usar como parte del entregable de documentación técnica:
+
+- **React**: documenta utilidades compartidas (p. ej. `src/lib/`, `src/services/`, `src/types/`) y deja fuera componentes puramente UI si no aportan como API.
+- **Electron** (si aplica): documenta el puente (IPC), tipos compartidos y contratos entre `main`/`renderer`.
+- **Informes / integración**: documenta clientes HTTP, modelos de datos y helpers (normalización, validación, mapeos).
+
+El resultado esperado es una documentación que permita a otra persona **entender qué módulos existen y qué exponen** sin abrir el IDE.
+
+## Resumen rápido
+
+- **Instala**: `npm i -D typedoc`
+- **Genera**: `npx typedoc --entryPoints src/index.ts --out docs/api`
+- **Fija convención**: crea `typedoc.json` y un script `docs:api`
+
+## Convención práctica
+
+<Steps>
+	1. Define un **entry point público** (o varios) que exporte lo importante y oculte el arranque.
+	2. Marca como “no público” lo que no debe salir: `excludePrivate`, `excludeProtected`, `excludeInternal`.
+	3. Mantén `readme: "none"` si tu README no es parte del API reference, y crea guías aparte si las necesitas.
+	4. Asegura que el output (`docs/api`) encaja con tu estructura de despliegue/publicación (GitHub Pages, artefacto de CI, etc.).
+</Steps>
+
+## Referencias
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://typedoc.org/documents/External_Documents.html"
+		title="Documentos externos (Markdown)"
+		description="Incluye guías y documentos complementarios dentro del output de TypeDoc."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://typedoc.org/api/interfaces/Configuration.TypeDocOptionMap.html"
+		title="Opciones de configuración"
+		description="Referencia completa de opciones (entryPoints, exclude*, outputs, etc.)."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://typedoc.org/example/documents/Markdown_Showcase.html"
+		title="Markdown en comentarios"
+		description="Qué soporta TypeDoc al renderizar Markdown desde doc comments."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+## Siguientes pasos
+
+- [Doc comments y tags](./02-use-typedoc.mdx)
+
