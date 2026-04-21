@@ -1,14 +1,14 @@
 name: Deploy to GitHub Pages
 
 on:
-  # Trigger the workflow every time you push to the `main` branch
-  # Using a different branch name? Replace `main` with your branch’s name
   push:
     branches: [main]
-  # Allows you to run this workflow manually from the Actions tab on GitHub.
   workflow_dispatch:
 
-# Allow this job to clone the repo and create a page deployment
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
 permissions:
   contents: read
   pages: write
@@ -18,14 +18,43 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout your repository using git
+      - name: Checkout
         uses: actions/checkout@v4
-      - name: Install, build, and upload your site
-        uses: withastro/action@v2
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          path: ./apps/docs # The root location of your Astro project inside the repository. (optional)
-          node-version: 24 # The specific version of Node that should be used to build your site.
-          # package-manager: pnpm@latest # The Node package manager that should be used to install dependencies and build your site. Automatically detected based on your lockfile. (optional)
+          version: 10.32.1
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build di
+        run: pnpm --filter ./apps/di build
+
+      - name: Prepare Pages artifact
+        run: |
+          rm -rf .pages
+          mkdir -p .pages/di
+          cp -R ./apps/di/dist/* .pages/di/
+          touch .pages/.nojekyll
+          cat > .pages/index.html <<'EOF'
+          <!doctype html>
+          <meta charset="utf-8" />
+          <meta http-equiv="refresh" content="0; url=/jjcm/di/" />
+          <link rel="canonical" href="/jjcm/di/" />
+          EOF
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .pages
 
   deploy:
     needs: build
