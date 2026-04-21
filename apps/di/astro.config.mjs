@@ -67,6 +67,18 @@ export default defineConfig({
                   },
               ],
             },
+            {
+              label: "[lucide:book-open] Documentación",
+              collapsed: true, 
+              items: [
+                {
+                  label: "[lucide:braces] Typedoc",
+                  autogenerate: {
+                    directory: "units/documentation/typedoc/",
+                  },
+                },
+              ],
+            }
           ],
         },
         {
