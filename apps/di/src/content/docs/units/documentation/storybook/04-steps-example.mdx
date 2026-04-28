@@ -1,0 +1,823 @@
+---
+title: "Ejemplo paso a paso"
+description: Crea un proyecto React/Vite, desarrolla un pequeño sistema de componentes y documéntalo con Storybook de principio a fin.
+sources:
+  - author: Storybook
+    url: https://storybook.js.org/docs
+  - author: Storybook
+    url: https://storybook.js.org/docs/writing-stories
+  - author: Vite
+    url: https://vite.dev/guide/
+sidebar:
+  order: 4
+date: 2026-04-28
+updated: 2026-04-28
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import { Aside, Card, CardGrid, FileTree, LinkCard, Steps, TabItem, Tabs } from "@astrojs/starlight/components";
+
+En las secciones anteriores has aprendido qué es Storybook, cómo escribir stories y cómo usar decorators y Autodocs. Ahora toca **hacer el recorrido completo desde cero**: crear un proyecto, desarrollar componentes reales, escribir stories para cada uno y generar la documentación.
+
+Al terminar tendrás un catálogo de componentes navegable con documentación automática, controles interactivos y verificación de accesibilidad.
+
+<CardGrid stagger>
+	<Card title="Punto de partida" icon="rocket">
+		Un proyecto React/Vite nuevo con TypeScript — la base habitual del módulo.
+	</Card>
+	<Card title="Lo que vas a crear" icon="document">
+		Cuatro componentes (Button, Input, Badge, Card) con stories que cubren sus variantes.
+	</Card>
+	<Card title="Resultado" icon="open-book">
+		Un Storybook navegable con Autodocs, controles interactivos y panel de accesibilidad.
+	</Card>
+</CardGrid>
+
+## Visión general
+
+<Steps>
+	1. Crear el proyecto con Vite.
+	2. Instalar Storybook.
+	3. Configurar estilos globales y Autodocs.
+	4. Crear los componentes (Button, Input, Badge, Card).
+	5. Escribir stories para cada componente.
+	6. Verificar el resultado en Storybook.
+	7. Generar el build estático.
+</Steps>
+
+## Paso 1 — Crea el proyecto React + TypeScript
+
+```bash
+npm create vite@latest my-storybook-demo -- --template react-ts
+cd my-storybook-demo
+npm install
+```
+
+Verifica que arranca:
+
+```bash
+npm run dev
+```
+
+<Aside type="tip" title="¿Ya tienes un proyecto?">
+	Si vas a documentar un proyecto existente, sáltate este paso y trabaja directamente sobre él. Solo necesitas que sea React + TypeScript.
+</Aside>
+
+## Paso 2 — Instala Storybook
+
+En la raíz del proyecto:
+
+```bash
+npx storybook@latest init
+```
+
+Cuando te pregunte:
+
+- **¿Eres nuevo en Storybook?** → "Yes" (te creará stories de ejemplo útiles para entender el formato).
+- **¿Qué configuración?** → "Recommended" (incluye Docs y A11y).
+
+Cuando termine, arranca Storybook para verificar:
+
+```bash
+npm run storybook
+```
+
+Deberías ver el catálogo en `http://localhost:6006` con los componentes de ejemplo.
+
+<Aside type="note" title="Stories de ejemplo">
+	Los ficheros de `src/stories/` son ejemplos que Storybook genera automáticamente. Estúdialos si quieres, pero los puedes borrar cuando hayas creado tus propios componentes.
+</Aside>
+
+## Paso 3 — Configura estilos globales y Autodocs
+
+### 3.1 — Crear estilos base
+
+Crea un fichero CSS mínimo para que los componentes tengan un aspecto coherente. Puedes usar el `index.css` que ya existe o crear uno nuevo:
+
+```css title="src/index.css"
+:root {
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-error: #dc2626;
+  --color-info: #0891b2;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-500: #6b7280;
+  --color-gray-700: #374151;
+  --color-gray-900: #111827;
+  --radius: 6px;
+  --font-sans: system-ui, -apple-system, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-gray-900);
+}
+```
+
+### 3.2 — Importar CSS y activar Autodocs en preview
+
+Edita `.storybook/preview.ts` (renómbralo a `.tsx` si usas JSX en decorators):
+
+```ts title=".storybook/preview.ts"
+import type { Preview } from "@storybook/react";
+
+import "../src/index.css";
+
+const preview: Preview = {
+  tags: ["autodocs"],
+  parameters: {
+    layout: "centered",
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/i,
+      },
+    },
+  },
+};
+
+export default preview;
+```
+
+Con `tags: ["autodocs"]` todos los componentes generarán documentación automática.
+
+## Paso 4 — Crea los componentes
+
+### Estructura objetivo
+
+<FileTree>
+	- src/
+		- components/
+			- Button/
+				- Button.tsx
+				- Button.stories.tsx
+			- Input/
+				- Input.tsx
+				- Input.stories.tsx
+			- Badge/
+				- Badge.tsx
+				- Badge.stories.tsx
+			- Card/
+				- Card.tsx
+				- Card.stories.tsx
+</FileTree>
+
+### 4.1 — Componente `Button`
+
+```tsx title="src/components/Button/Button.tsx"
+import type { ButtonHTMLAttributes } from "react";
+
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  /** Variante visual del botón. */
+  variant?: "primary" | "secondary" | "danger";
+  /** Tamaño del botón. */
+  size?: "sm" | "md" | "lg";
+  /** Texto o contenido del botón. */
+  children: React.ReactNode;
+}
+
+export function Button({
+  variant = "primary",
+  size = "md",
+  children,
+  ...rest
+}: ButtonProps) {
+  const baseStyles: React.CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: "var(--radius)",
+    border: "none",
+    cursor: rest.disabled ? "not-allowed" : "pointer",
+    fontWeight: 600,
+    fontFamily: "var(--font-sans)",
+    opacity: rest.disabled ? 0.5 : 1,
+    transition: "background-color 150ms ease",
+  };
+
+  const variantStyles: Record<string, React.CSSProperties> = {
+    primary: { backgroundColor: "var(--color-primary)", color: "#fff" },
+    secondary: {
+      backgroundColor: "transparent",
+      color: "var(--color-gray-700)",
+      border: "1px solid var(--color-gray-200)",
+    },
+    danger: { backgroundColor: "var(--color-error)", color: "#fff" },
+  };
+
+  const sizeStyles: Record<string, React.CSSProperties> = {
+    sm: { padding: "6px 12px", fontSize: "13px" },
+    md: { padding: "8px 16px", fontSize: "14px" },
+    lg: { padding: "12px 24px", fontSize: "16px" },
+  };
+
+  return (
+    <button
+      style={{ ...baseStyles, ...variantStyles[variant], ...sizeStyles[size] }}
+      {...rest}
+    >
+      {children}
+    </button>
+  );
+}
+```
+
+### 4.2 — Componente `Input`
+
+```tsx title="src/components/Input/Input.tsx"
+import type { InputHTMLAttributes } from "react";
+
+export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+  /** Texto descriptivo del campo. */
+  label: string;
+  /** Mensaje de error (si existe, el input se marca como inválido). */
+  error?: string;
+  /** Texto de ayuda debajo del input. */
+  helperText?: string;
+}
+
+export function Input({ label, error, helperText, id, ...rest }: InputProps) {
+  const inputId = id ?? label.toLowerCase().replace(/\s+/g, "-");
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <label
+        htmlFor={inputId}
+        style={{
+          fontSize: 14,
+          fontWeight: 500,
+          color: "var(--color-gray-700)",
+        }}
+      >
+        {label}
+      </label>
+      <input
+        id={inputId}
+        aria-invalid={!!error}
+        aria-describedby={error ? `${inputId}-error` : undefined}
+        style={{
+          padding: "8px 12px",
+          borderRadius: "var(--radius)",
+          border: `1px solid ${error ? "var(--color-error)" : "var(--color-gray-200)"}`,
+          fontSize: 14,
+          fontFamily: "var(--font-sans)",
+          outline: "none",
+        }}
+        {...rest}
+      />
+      {error && (
+        <span
+          id={`${inputId}-error`}
+          style={{ fontSize: 12, color: "var(--color-error)" }}
+        >
+          {error}
+        </span>
+      )}
+      {helperText && !error && (
+        <span style={{ fontSize: 12, color: "var(--color-gray-500)" }}>
+          {helperText}
+        </span>
+      )}
+    </div>
+  );
+}
+```
+
+### 4.3 — Componente `Badge`
+
+```tsx title="src/components/Badge/Badge.tsx"
+export interface BadgeProps {
+  /** Variante visual que determina el color del badge. */
+  variant?: "info" | "success" | "warning" | "error";
+  /** Tamaño del badge. */
+  size?: "sm" | "md";
+  /** Contenido del badge. */
+  children: React.ReactNode;
+}
+
+export function Badge({
+  variant = "info",
+  size = "md",
+  children,
+}: BadgeProps) {
+  const colorMap: Record<string, { bg: string; text: string }> = {
+    info: { bg: "#e0f2fe", text: "#0369a1" },
+    success: { bg: "#dcfce7", text: "#15803d" },
+    warning: { bg: "#fef3c7", text: "#92400e" },
+    error: { bg: "#fee2e2", text: "#991b1b" },
+  };
+
+  const sizeMap: Record<string, React.CSSProperties> = {
+    sm: { padding: "2px 8px", fontSize: 11 },
+    md: { padding: "4px 10px", fontSize: 13 },
+  };
+
+  const colors = colorMap[variant];
+
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        borderRadius: 999,
+        fontWeight: 600,
+        fontFamily: "var(--font-sans)",
+        backgroundColor: colors.bg,
+        color: colors.text,
+        ...sizeMap[size],
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+```
+
+### 4.4 — Componente `Card`
+
+```tsx title="src/components/Card/Card.tsx"
+export interface CardProps {
+  /** Título de la tarjeta. */
+  title: string;
+  /** Descripción o contenido secundario. */
+  description?: string;
+  /** Contenido adicional (botones, badges, etc.). */
+  footer?: React.ReactNode;
+  /** URL de imagen (opcional). */
+  imageUrl?: string;
+}
+
+export function Card({ title, description, footer, imageUrl }: CardProps) {
+  return (
+    <div
+      style={{
+        border: "1px solid var(--color-gray-200)",
+        borderRadius: "var(--radius)",
+        overflow: "hidden",
+        fontFamily: "var(--font-sans)",
+        maxWidth: 360,
+      }}
+    >
+      {imageUrl && (
+        <img
+          src={imageUrl}
+          alt=""
+          style={{ width: "100%", height: 180, objectFit: "cover" }}
+        />
+      )}
+      <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+        <h3 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>{title}</h3>
+        {description && (
+          <p style={{ fontSize: 14, color: "var(--color-gray-500)", margin: 0 }}>
+            {description}
+          </p>
+        )}
+      </div>
+      {footer && (
+        <div
+          style={{
+            padding: "12px 16px",
+            borderTop: "1px solid var(--color-gray-200)",
+            display: "flex",
+            gap: 8,
+          }}
+        >
+          {footer}
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+## Paso 5 — Escribe stories para cada componente
+
+### 5.1 — Stories de `Button`
+
+```tsx title="src/components/Button/Button.stories.tsx"
+import type { Meta, StoryObj } from "@storybook/react";
+import { Button } from "./Button";
+
+const meta = {
+  component: Button,
+  argTypes: {
+    variant: {
+      control: { type: "select" },
+      options: ["primary", "secondary", "danger"],
+    },
+    size: {
+      control: { type: "radio" },
+      options: ["sm", "md", "lg"],
+    },
+    onClick: { action: "clicked" },
+  },
+  args: {
+    children: "Botón",
+    variant: "primary",
+    size: "md",
+    disabled: false,
+  },
+} satisfies Meta<typeof Button>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Primary: Story = {};
+
+export const Secondary: Story = {
+  args: { variant: "secondary" },
+};
+
+export const Danger: Story = {
+  args: { variant: "danger", children: "Eliminar" },
+};
+
+export const Small: Story = {
+  args: { size: "sm", children: "Pequeño" },
+};
+
+export const Large: Story = {
+  args: { size: "lg", children: "Grande" },
+};
+
+export const Disabled: Story = {
+  args: { disabled: true },
+};
+```
+
+### 5.2 — Stories de `Input`
+
+```tsx title="src/components/Input/Input.stories.tsx"
+import type { Meta, StoryObj } from "@storybook/react";
+import { Input } from "./Input";
+
+const meta = {
+  component: Input,
+  argTypes: {
+    onChange: { action: "changed" },
+  },
+  args: {
+    label: "Correo electrónico",
+    placeholder: "usuario@ejemplo.com",
+  },
+  decorators: [
+    (Story) => (
+      <div style={{ width: 320 }}>
+        <Story />
+      </div>
+    ),
+  ],
+} satisfies Meta<typeof Input>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {};
+
+export const WithHelperText: Story = {
+  args: {
+    helperText: "Usaremos tu correo para enviarte notificaciones.",
+  },
+};
+
+export const WithError: Story = {
+  args: {
+    error: "El correo no es válido.",
+    defaultValue: "correo-invalido",
+  },
+};
+
+export const Disabled: Story = {
+  args: {
+    disabled: true,
+    defaultValue: "no-editable@ejemplo.com",
+  },
+};
+
+export const Password: Story = {
+  args: {
+    label: "Contraseña",
+    type: "password",
+    placeholder: "••••••••",
+  },
+};
+```
+
+### 5.3 — Stories de `Badge`
+
+```tsx title="src/components/Badge/Badge.stories.tsx"
+import type { Meta, StoryObj } from "@storybook/react";
+import { Badge } from "./Badge";
+
+const meta = {
+  component: Badge,
+  argTypes: {
+    variant: {
+      control: { type: "select" },
+      options: ["info", "success", "warning", "error"],
+    },
+    size: {
+      control: { type: "radio" },
+      options: ["sm", "md"],
+    },
+  },
+  args: {
+    children: "Badge",
+    variant: "info",
+    size: "md",
+  },
+} satisfies Meta<typeof Badge>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Info: Story = {
+  args: { children: "Información" },
+};
+
+export const Success: Story = {
+  args: { variant: "success", children: "Completado" },
+};
+
+export const Warning: Story = {
+  args: { variant: "warning", children: "Pendiente" },
+};
+
+export const Error: Story = {
+  args: { variant: "error", children: "Error" },
+};
+
+export const Small: Story = {
+  args: { size: "sm", children: "Nuevo" },
+};
+
+export const AllVariants: Story = {
+  render: () => (
+    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+      <Badge variant="info">Info</Badge>
+      <Badge variant="success">Éxito</Badge>
+      <Badge variant="warning">Aviso</Badge>
+      <Badge variant="error">Error</Badge>
+    </div>
+  ),
+};
+```
+
+### 5.4 — Stories de `Card`
+
+```tsx title="src/components/Card/Card.stories.tsx"
+import type { Meta, StoryObj } from "@storybook/react";
+import { Card } from "./Card";
+import { Button } from "../Button/Button";
+import { Badge } from "../Badge/Badge";
+
+const meta = {
+  component: Card,
+  args: {
+    title: "Título de la tarjeta",
+    description: "Una descripción breve del contenido de esta tarjeta.",
+  },
+} satisfies Meta<typeof Card>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {};
+
+export const WithImage: Story = {
+  args: {
+    imageUrl: "https://picsum.photos/seed/storybook/400/200",
+  },
+};
+
+export const WithFooter: Story = {
+  args: {
+    footer: (
+      <>
+        <Button variant="primary" size="sm">Aceptar</Button>
+        <Button variant="secondary" size="sm">Cancelar</Button>
+      </>
+    ),
+  },
+};
+
+export const Complete: Story = {
+  args: {
+    title: "Informe de ventas",
+    description: "Resumen mensual con desglose por categoría y región.",
+    imageUrl: "https://picsum.photos/seed/report/400/200",
+    footer: (
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+        <Badge variant="success">Publicado</Badge>
+        <Button variant="primary" size="sm">Ver informe</Button>
+      </div>
+    ),
+  },
+};
+
+export const Minimal: Story = {
+  args: {
+    title: "Solo título",
+    description: undefined,
+  },
+};
+```
+
+<Aside type="tip" title="Componentes compuestos">
+	La story `Complete` combina `Card` con `Button` y `Badge`. Esto demuestra cómo se comportan tus componentes **juntos**, no solo en aislamiento. Es buena práctica tener al menos una story "compuesta" para componentes contenedores.
+</Aside>
+
+## Paso 6 — Verifica en Storybook
+
+Arranca Storybook si no está corriendo:
+
+```bash
+npm run storybook
+```
+
+### Qué deberías ver
+
+En el sidebar de Storybook (`http://localhost:6006`):
+
+- **Button** con stories: Primary, Secondary, Danger, Small, Large, Disabled y la página **Docs**.
+- **Input** con stories: Default, WithHelperText, WithError, Disabled, Password y **Docs**.
+- **Badge** con stories: Info, Success, Warning, Error, Small, AllVariants y **Docs**.
+- **Card** con stories: Default, WithImage, WithFooter, Complete, Minimal y **Docs**.
+
+Cada página **Docs** (generada por Autodocs) incluye:
+
+- Tabla de props con tipos, valores por defecto y descripciones (extraídas de los JSDoc de la interfaz).
+- Cada story renderizada con su código fuente.
+- Panel de controles para editar props en tiempo real.
+
+### Verificaciones que hacer
+
+<Steps>
+	1. **Controles**: abre cualquier story y cambia props desde el panel de Controls. El componente debería actualizarse al instante.
+	2. **Actions**: haz clic en un Button. El panel Actions debería mostrar el evento `clicked`.
+	3. **Docs**: navega a la página Docs de cada componente. Comprueba que la tabla de props es legible y que las descripciones JSDoc aparecen.
+	4. **A11y**: abre el panel de accesibilidad y revisa si hay violations. Si las hay, corrígelas (por ejemplo, un input sin label o un contraste insuficiente).
+	5. **Viewport**: cambia el viewport a "Mobile" y verifica que los componentes se adaptan razonablemente.
+</Steps>
+
+<Aside type="caution" title="¿Las Docs salen vacías o sin tabla de props?">
+	Revisa estos puntos:
+
+	1. ¿Las props del componente están en una **interfaz exportada**? (no inline).
+	2. ¿Tienes `tags: ["autodocs"]` en el preview o en el meta?
+	3. ¿Los comentarios JSDoc usan `/** */`? (no `//`).
+	4. ¿El componente compila sin errores de TypeScript?
+</Aside>
+
+## Paso 7 — Genera el build estático
+
+```bash
+npm run build-storybook
+```
+
+Esto genera `storybook-static/` en la raíz. Puedes abrir el resultado directamente:
+
+<Tabs>
+	<TabItem label="Linux">
+		```bash
+		xdg-open storybook-static/index.html
+		```
+	</TabItem>
+	<TabItem label="macOS">
+		```bash
+		open storybook-static/index.html
+		```
+	</TabItem>
+	<TabItem label="Windows">
+		```bash
+		start storybook-static/index.html
+		```
+	</TabItem>
+</Tabs>
+
+### Excluye del control de versiones (opcional)
+
+Si no quieres versionar el build, añádelo a `.gitignore`:
+
+```text title=".gitignore (añadir al final)"
+storybook-static/
+```
+
+## Estructura final del proyecto
+
+<FileTree>
+	- my-storybook-demo/
+		- .storybook/
+			- main.ts
+			- preview.ts
+		- src/
+			- components/
+				- Button/
+					- Button.tsx
+					- Button.stories.tsx
+				- Input/
+					- Input.tsx
+					- Input.stories.tsx
+				- Badge/
+					- Badge.tsx
+					- Badge.stories.tsx
+				- Card/
+					- Card.tsx
+					- Card.stories.tsx
+			- index.css
+			- main.tsx
+			- App.tsx
+		- storybook-static/ _(generado por build-storybook — no editar)_
+		- package.json
+		- tsconfig.json
+</FileTree>
+
+## 🧩 Aplicación en el proyecto
+
+Este flujo es el que vas a seguir en tus entregas del módulo:
+
+- **Identifica qué documentar**: cada componente reutilizable de tu app React merece stories. No hace falta documentar wrappers triviales o componentes de una sola línea.
+- **Documenta mientras desarrollas**: escribe la story justo después de crear el componente. Es mucho más fácil que hacerlo al final.
+- **Cubre los estados importantes**: por defecto, con datos, vacío, cargando, error, deshabilitado, con texto largo…
+- **Genera y revisa**: ejecuta `npm run storybook` regularmente. Si algo se ve raro, ajusta el componente o la story.
+- **Entrega el build**: `npm run build-storybook` genera un artefacto que demuestra tu trabajo de documentación de componentes.
+
+## Resumen rápido
+
+| Paso | Comando / Acción |
+| :--- | :--- |
+| Crear proyecto | `npm create vite@latest my-storybook-demo -- --template react-ts` |
+| Instalar Storybook | `npx storybook@latest init` |
+| Configurar | `preview.ts`: importar CSS, activar Autodocs, layout centered |
+| Crear componentes | Con interfaz de props tipada y comentarios JSDoc |
+| Escribir stories | `*.stories.tsx` junto a cada componente con args y argTypes |
+| Verificar | `npm run storybook` → revisar Controls, Docs, A11y |
+| Build | `npm run build-storybook` → `storybook-static/` |
+
+## Convención práctica
+
+<Steps>
+	1. Cada vez que crees un **componente nuevo**, crea su fichero `.stories.tsx` inmediatamente.
+	2. Define al menos **3 stories por componente**: estado por defecto, variante principal y un edge case.
+	3. **Tipar las props con interfaz** y añadir `/** */` a cada prop para que Autodocs sea útil.
+	4. Antes de entregar, ejecuta `npm run build-storybook` y **verifica que no falla**.
+	5. Guarda un commit con el código fuente (componentes + stories). Decide si versionas `storybook-static/` o lo generas en CI.
+</Steps>
+
+## Referencias
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://storybook.js.org/docs"
+		title="Documentación oficial de Storybook"
+		description="Guía completa, API reference y tutoriales."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://vite.dev/guide/"
+		title="Vite — Getting Started"
+		description="Cómo crear y configurar un proyecto con Vite."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://storybook.js.org/docs/writing-docs/autodocs"
+		title="Autodocs — Storybook"
+		description="Genera documentación automática a partir de tipos y stories."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+## Siguientes pasos
+
+<CardGrid>
+	<LinkCard
+		href="../storybook/01-introduction"
+		title="Introducción a Storybook"
+		description="Qué es Storybook, cómo se instala y por qué usarlo."
+	/>
+	<LinkCard
+		href="../storybook/02-writing-stories"
+		title="Escribir stories"
+		description="CSF, args, argTypes y cómo definir variantes de tus componentes."
+	/>
+</CardGrid>

@@ -1,0 +1,447 @@
+---
+title: Escribir stories
+description: Aprende el formato Component Story Format (CSF), cómo definir variantes con args y cómo controlar las props de tus componentes en Storybook.
+sources:
+  - author: Storybook
+    url: https://storybook.js.org/docs/writing-stories
+  - author: Storybook
+    url: https://storybook.js.org/docs/writing-stories/args
+  - author: Storybook
+    url: https://storybook.js.org/docs/api/csf
+sidebar:
+  order: 2
+date: 2026-04-28
+updated: 2026-04-28
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import { Aside, Card, CardGrid, LinkCard, Steps, TabItem, Tabs } from "@astrojs/starlight/components";
+
+Una **story** captura un estado concreto de un componente UI: un botón primario, un input con error, una tarjeta vacía… El fichero de stories vive junto al componente y define todas las variantes que quieres visualizar y documentar en Storybook.
+
+<CardGrid stagger>
+	<Card title="CSF (Component Story Format)" icon="document">
+		El estándar para escribir stories: un export default (meta) y named exports (stories).
+	</Card>
+	<Card title="Args" icon="setting">
+		Las props que pasas al componente en cada story. Storybook las convierte en controles editables.
+	</Card>
+	<Card title="Controles" icon="rocket">
+		Panel interactivo donde puedes cambiar args en tiempo real y ver el resultado al instante.
+	</Card>
+</CardGrid>
+
+## Dónde colocar el fichero de stories
+
+La convención es poner el fichero de stories **junto al componente**:
+
+```text
+src/components/
+├── Button/
+│   ├── Button.tsx
+│   └── Button.stories.tsx
+```
+
+Storybook busca ficheros que coincidan con el glob de `.storybook/main.ts` (por defecto `src/**/*.stories.@(ts|tsx)`). Mientras esté dentro de `src/` y tenga `.stories.` en el nombre, lo encontrará.
+
+## Component Story Format (CSF)
+
+CSF es un formato basado en módulos ES6. Cada fichero tiene dos ingredientes:
+
+1. **Default export** (meta): describe el componente y la configuración compartida.
+2. **Named exports**: cada uno es una story (una variante del componente).
+
+### Estructura mínima
+
+```tsx title="src/components/Button.stories.tsx"
+import type { Meta, StoryObj } from "@storybook/react";
+import { Button } from "./Button";
+
+const meta = {
+  component: Button,
+} satisfies Meta<typeof Button>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {};
+```
+
+Esto ya es suficiente para que Storybook renderice el componente con sus props por defecto.
+
+<Aside type="note" title="satisfies Meta<typeof Button>">
+	El uso de `satisfies` (en lugar de `: Meta<typeof Button>`) permite que TypeScript infiera el tipo completo del meta y al mismo tiempo valide que cumple con la interfaz `Meta`. Así `StoryObj<typeof meta>` conoce las props exactas del componente.
+</Aside>
+
+## Args: las props de cada story
+
+Los **args** son el mecanismo central de Storybook. Son un objeto con las props que el componente recibe en esa story concreta. Storybook las muestra en el panel de **Controls** y permite editarlas en tiempo real.
+
+### Args a nivel de story
+
+```tsx title="Button.stories.tsx"
+export const Primary: Story = {
+  args: {
+    label: "Guardar",
+    variant: "primary",
+  },
+};
+
+export const Secondary: Story = {
+  args: {
+    label: "Cancelar",
+    variant: "secondary",
+  },
+};
+```
+
+Cada story exportada se muestra como una entrada en el sidebar de Storybook.
+
+### Args a nivel de componente (meta)
+
+Si la mayoría de stories comparten los mismos args, defínelos en el meta y sobrescribe solo lo que cambia:
+
+```tsx title="Button.stories.tsx"
+const meta = {
+  component: Button,
+  args: {
+    label: "Botón",
+    variant: "primary",
+    disabled: false,
+  },
+} satisfies Meta<typeof Button>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {};
+
+export const Disabled: Story = {
+  args: {
+    disabled: true,
+  },
+};
+
+export const Secondary: Story = {
+  args: {
+    variant: "secondary",
+  },
+};
+```
+
+`Default` hereda todos los args del meta. `Disabled` solo cambia `disabled` a `true`; el resto se hereda.
+
+<Aside type="tip" title="Regla práctica">
+	Pon en el **meta** los args que representan el estado "por defecto" del componente. Define en cada **story** solo lo que la hace diferente.
+</Aside>
+
+### Componer args entre stories
+
+Puedes reutilizar args de una story en otra con spread:
+
+```tsx
+export const Primary: Story = {
+  args: {
+    label: "Guardar",
+    variant: "primary",
+  },
+};
+
+export const PrimaryDisabled: Story = {
+  args: {
+    ...Primary.args,
+    disabled: true,
+  },
+};
+```
+
+Esto es útil para evitar duplicación cuando tienes muchas variantes del mismo estado base.
+
+## ArgTypes: controlar el panel de Controls
+
+Los **argTypes** permiten personalizar cómo Storybook presenta cada prop en el panel de controles: tipo de control, opciones, descripción, valor por defecto…
+
+```tsx title="Badge.stories.tsx"
+import type { Meta, StoryObj } from "@storybook/react";
+import { Badge } from "./Badge";
+
+const meta = {
+  component: Badge,
+  argTypes: {
+    variant: {
+      control: { type: "select" },
+      options: ["info", "success", "warning", "error"],
+      description: "Variante visual del badge.",
+    },
+    size: {
+      control: { type: "radio" },
+      options: ["sm", "md", "lg"],
+    },
+    children: {
+      control: { type: "text" },
+    },
+  },
+} satisfies Meta<typeof Badge>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Info: Story = {
+  args: {
+    variant: "info",
+    size: "md",
+    children: "Nuevo",
+  },
+};
+```
+
+### Tipos de control más usados
+
+| Control | Para qué | Ejemplo de uso |
+| :--- | :--- | :--- |
+| `text` | Strings | `label`, `placeholder`, `title` |
+| `boolean` | Booleanos (toggle) | `disabled`, `loading`, `open` |
+| `number` | Números (slider o input) | `count`, `maxLength` |
+| `select` | Elegir entre opciones (dropdown) | `variant`, `size`, `status` |
+| `radio` | Elegir entre opciones (radio buttons) | `size: "sm" \| "md" \| "lg"` |
+| `color` | Selector de color | `backgroundColor` |
+| `object` | JSON editable | `style`, objetos complejos |
+| `date` | Selector de fecha | `createdAt` |
+
+<Aside type="note" title="Inferencia automática">
+	Storybook infiere automáticamente el tipo de control a partir de los tipos TypeScript del componente. Solo necesitas definir `argTypes` manualmente cuando quieras **personalizar** el control (por ejemplo, cambiar un `text` por un `select`).
+</Aside>
+
+## Render personalizado
+
+Por defecto, Storybook renderiza el componente del meta con los args como props. Si necesitas envolver el componente o añadir contexto, usa la propiedad `render`:
+
+```tsx title="UserCard.stories.tsx"
+import type { Meta, StoryObj } from "@storybook/react";
+import { UserCard } from "./UserCard";
+
+const meta = {
+  component: UserCard,
+} satisfies Meta<typeof UserCard>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const WithWrapper: Story = {
+  args: {
+    name: "Ana García",
+    role: "admin",
+  },
+  render: (args) => (
+    <div style={{ maxWidth: 320, padding: 16 }}>
+      <UserCard {...args} />
+    </div>
+  ),
+};
+```
+
+<Aside type="caution" title="Siempre spread args">
+	En la función `render`, usa siempre `{...args}` sobre el componente. Si no lo haces, los controles del panel no afectarán al componente renderizado.
+</Aside>
+
+## Stories para componentes compuestos
+
+Cuando un componente usa hijos (como una `List` con `ListItem`), necesitas `render` para componer la estructura:
+
+```tsx title="List.stories.tsx"
+import type { Meta, StoryObj } from "@storybook/react";
+import { List } from "./List";
+import { ListItem } from "./ListItem";
+
+const meta = {
+  component: List,
+} satisfies Meta<typeof List>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Empty: Story = {};
+
+export const WithItems: Story = {
+  render: (args) => (
+    <List {...args}>
+      <ListItem label="Elemento 1" />
+      <ListItem label="Elemento 2" />
+      <ListItem label="Elemento 3" />
+    </List>
+  ),
+};
+```
+
+## Organizar stories en el sidebar
+
+Storybook organiza las stories por **título**. Por defecto, usa la ruta del fichero. Puedes personalizarlo con la propiedad `title` en el meta:
+
+```tsx
+const meta = {
+  title: "Componentes/Feedback/Badge",
+  component: Badge,
+} satisfies Meta<typeof Badge>;
+```
+
+Esto crea la jerarquía: **Componentes → Feedback → Badge** en el sidebar. Usa barras `/` para crear niveles de anidamiento.
+
+<Aside type="tip" title="¿title o autodiscovery?">
+	Si no defines `title`, Storybook genera uno automáticamente a partir del nombre del componente y la ruta del fichero. Para proyectos pequeños, esto suele ser suficiente. El `title` explícito es útil cuando quieres una jerarquía organizada por categorías (Componentes, Layout, Formularios…).
+</Aside>
+
+## Ejemplo completo: componente con múltiples stories
+
+Supón que tienes este componente `Alert`:
+
+```tsx title="src/components/Alert.tsx"
+interface AlertProps {
+  variant: "info" | "success" | "warning" | "error";
+  title: string;
+  message?: string;
+  dismissible?: boolean;
+  onDismiss?: () => void;
+}
+
+export function Alert({ variant, title, message, dismissible, onDismiss }: AlertProps) {
+  return (
+    <div className={`alert alert-${variant}`} role="alert">
+      <strong>{title}</strong>
+      {message && <p>{message}</p>}
+      {dismissible && (
+        <button onClick={onDismiss} aria-label="Cerrar">×</button>
+      )}
+    </div>
+  );
+}
+```
+
+Su fichero de stories:
+
+```tsx title="src/components/Alert.stories.tsx"
+import type { Meta, StoryObj } from "@storybook/react";
+import { Alert } from "./Alert";
+
+const meta = {
+  component: Alert,
+  argTypes: {
+    variant: {
+      control: { type: "select" },
+      options: ["info", "success", "warning", "error"],
+    },
+    onDismiss: { action: "dismissed" },
+  },
+  args: {
+    title: "Título del aviso",
+    message: "Descripción adicional del aviso.",
+    dismissible: false,
+  },
+} satisfies Meta<typeof Alert>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Info: Story = {
+  args: { variant: "info" },
+};
+
+export const Success: Story = {
+  args: { variant: "success", title: "Operación completada" },
+};
+
+export const Warning: Story = {
+  args: { variant: "warning", title: "Atención" },
+};
+
+export const Error: Story = {
+  args: { variant: "error", title: "Se produjo un error" },
+};
+
+export const Dismissible: Story = {
+  args: {
+    variant: "info",
+    dismissible: true,
+  },
+};
+```
+
+<Aside type="note" title="action: 'dismissed'">
+	La anotación `action` en `argTypes` le dice a Storybook que registre las llamadas a ese callback en el panel **Actions**. Así puedes verificar que `onDismiss` se dispara al hacer clic sin necesidad de escribir un handler real.
+</Aside>
+
+## 🧩 Aplicación en el proyecto
+
+En el contexto de este módulo:
+
+- **Cada componente reutilizable** de tu app React debería tener al menos 2-3 stories: el estado por defecto, el estado "activo" o "variante principal" y algún edge case (vacío, largo, deshabilitado).
+- **Servicios y hooks no se documentan con stories**: las stories son para componentes UI. Para documentar lógica (servicios, hooks, utilidades), usa TypeDoc.
+- **Los args son tu herramienta principal**: define todas las variantes a través de args para que el panel de Controls sea útil y completo.
+
+## Resumen rápido
+
+| Concepto | Detalle |
+| :--- | :--- |
+| **CSF** | Formato estándar: default export (meta) + named exports (stories) |
+| **Meta** | Configuración del componente: `component`, `args`, `argTypes`, `title` |
+| **Story** | Un named export con `args` que define una variante |
+| **Args** | Props del componente en esa story — editables desde Controls |
+| **ArgTypes** | Personalización de cómo se muestra cada prop en el panel |
+| **Render** | Función para personalizar cómo se renderiza el componente en la story |
+
+## Convención práctica
+
+<Steps>
+	1. Define **args por defecto** en el meta con el estado más habitual del componente.
+	2. Crea una story por cada **variante visual significativa**: estados, tamaños, variantes de color, con/sin datos.
+	3. Usa `argTypes` con `action` para **callbacks** (`onClick`, `onSubmit`…) — así se loguean en el panel de Actions.
+	4. Nombra las stories con **UpperCamelCase descriptivo**: `PrimaryDisabled`, `WithLongText`, `EmptyState`.
+	5. No dupliques args — usa spread (`...Primary.args`) o args de componente.
+</Steps>
+
+## Referencias
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://storybook.js.org/docs/writing-stories"
+		title="Writing Stories — Storybook"
+		description="Guía completa sobre cómo escribir stories con CSF."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://storybook.js.org/docs/writing-stories/args"
+		title="Args — Storybook"
+		description="Cómo definir y componer args a nivel de story, componente y global."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://storybook.js.org/docs/essentials/controls"
+		title="Controls — Storybook"
+		description="Panel de controles interactivos para editar props en tiempo real."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+## Siguientes pasos
+
+<CardGrid>
+	<LinkCard
+		href="../storybook/03-addons-and-docs"
+		title="Addons y documentación"
+		description="Decorators, Autodocs y cómo organizar y documentar tu catálogo de componentes."
+	/>
+	<LinkCard
+		href="../storybook/04-steps-example"
+		title="Ejemplo paso a paso"
+		description="Crea un proyecto React/Vite, desarrolla componentes y documéntalos con Storybook."
+	/>
+</CardGrid>

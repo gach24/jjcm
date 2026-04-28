@@ -77,6 +77,12 @@ export default defineConfig({
                     directory: "units/documentation/typedoc/",
                   },
                 },
+                {
+                  label: "[lucide:braces] Storybook",
+                  autogenerate: {
+                    directory: "units/documentation/storybook/",
+                  },
+                }
               ],
             }
           ],

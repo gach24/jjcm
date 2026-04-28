@@ -128,6 +128,78 @@ Se usan **dentro** del texto del comentario, entre llaves:
 | `{@inheritDoc NombreSimbolo}` | Hereda la documentación de otro símbolo |
 | `{@label NOMBRE}` | Etiqueta un overload para referenciarlo |
 
+Las inline tags son útiles porque TypeDoc las convierte en **enlaces clicables** dentro de la doc generada y, además, algunas de ellas cambian cómo se presenta el símbolo (por ejemplo, en overloads).
+
+#### `{@link ...}` — enlaces a símbolos (y texto opcional)
+
+Lo normal es enlazar a **tipos/funciones/clases exportadas** del mismo proyecto (las que TypeDoc “ve” en el output):
+
+```ts
+/**
+ * Convierte una respuesta del servidor en un {@link Report}.
+ *
+ * Si necesitas opciones extra de ejecución, mira {@link ReportConfig}.
+ */
+export function parseReport(raw: unknown): Report {
+	// ...
+}
+```
+
+Puedes cambiar el texto visible del enlace con la forma `{@link Simbolo | texto}`:
+
+```ts
+/**
+ * Devuelve el cliente autenticado.
+ *
+ * @see {@link AuthClient | Cliente de autenticación}
+ */
+export function getAuthClient(): AuthClient {
+	// ...
+}
+```
+
+También puedes enlazar a miembros (métodos/propiedades) si están en el output:
+
+```ts
+/**
+ * Para refrescar tokens manualmente usa {@link AuthClient.refreshToken}.
+ */
+export class AuthClient {
+	refreshToken() {
+		// ...
+	}
+}
+```
+
+#### `{@inheritDoc ...}` — “copia” documentación desde otra declaración
+
+Esto sirve cuando **redefines** algo (override/implementación) pero no quieres duplicar texto. El caso típico: una interfaz/base define el contrato, y las implementaciones solo cambian el comportamiento interno.
+
+```ts
+export interface ReportsRepository {
+	/**
+	 * Carga un informe por URI.
+	 *
+	 * @param uri - URI del informe (p. ej. `/reports/Sakila/ListaActores`).
+	 * @returns El informe ya parseado.
+	 */
+	load(uri: string): Promise<Report>;
+}
+
+export class HttpReportsRepository implements ReportsRepository {
+	/** {@inheritDoc ReportsRepository.load} */
+	async load(uri: string): Promise<Report> {
+		// ... implementación HTTP ...
+	}
+}
+```
+
+Notas prácticas:
+
+- **Tiene que apuntar a algo documentable**: un símbolo que TypeDoc incluya en el output (exportado y no excluido por config).
+- **No es un import mágico**: si el símbolo “origen” no está en el entry point o se filtra por `exclude*`, no habrá nada que heredar.
+
+
 ### Tags modificadoras (modifier tags)
 
 Cambian el **comportamiento** de TypeDoc sobre el símbolo, sin texto adicional:
@@ -328,5 +400,15 @@ El objetivo es que `npm run docs:api` genere una referencia donde **cualquier pe
 		description="Estándar de comentarios para TypeScript en el que se basa TypeDoc."
 		target="_blank"
 		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+## Siguientes pasos
+
+<CardGrid>
+	<LinkCard
+		href="../typedoc/03-steps-example"
+		title="Ejemplo paso a paso"
+		description="Crea un proyecto React/Vite desde cero, documenta el código y genera la documentación con TypeDoc."
 	/>
 </CardGrid>
