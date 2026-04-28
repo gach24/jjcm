@@ -1,0 +1,528 @@
+---
+title: "Ejemplo paso a paso"
+description: Crea un proyecto React/Vite con TypeScript, añade doc comments y genera documentación navegable con TypeDoc.
+sources:
+  - author: TypeDoc
+    url: https://typedoc.org/
+  - author: Vite
+    url: https://vite.dev/guide/
+sidebar:
+  order: 3
+date: 2026-04-28
+updated: 2026-04-28
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import { Aside, Card, CardGrid, FileTree, LinkCard, Steps, TabItem, Tabs } from "@astrojs/starlight/components";
+
+En las secciones anteriores has visto qué es TypeDoc y cómo escribir doc comments. Ahora toca **hacer todo el recorrido desde cero**: crear un proyecto React con Vite, escribir código documentado y generar la documentación HTML.
+
+Al terminar tendrás un sitio estático navegable con el API reference de tu proyecto, generado automáticamente a partir de tu código TypeScript.
+
+<CardGrid stagger>
+	<Card title="Punto de partida" icon="rocket">
+		Un proyecto React/Vite nuevo con TypeScript — la base habitual del módulo.
+	</Card>
+	<Card title="Lo que vas a documentar" icon="document">
+		Un servicio, un tipo, un hook y una utilidad: los cuatro patrones más comunes en una app React.
+	</Card>
+	<Card title="Resultado" icon="open-book">
+		Un sitio HTML navegable (`docs/api/`) con índice, tipos enlazados y ejemplos.
+	</Card>
+</CardGrid>
+
+## Visión general
+
+<Steps>
+	1. Crear el proyecto con Vite.
+	2. Escribir código con doc comments (tipo, servicio, hook, utilidad).
+	3. Crear un barrel export (`src/lib/index.ts`) como entry point público.
+	4. Instalar y configurar TypeDoc.
+	5. Generar la documentación y revisar el resultado.
+</Steps>
+
+## Paso 1 — Crea el proyecto React + TypeScript
+
+Abre una terminal y ejecuta:
+
+```bash
+npm create vite@latest my-typedoc-demo -- --template react-ts
+cd my-typedoc-demo
+npm install
+```
+
+Esto genera un proyecto React con TypeScript listo para trabajar. Verifica que arranca:
+
+```bash
+npm run dev
+```
+
+<Aside type="tip" title="¿Ya tienes un proyecto?">
+	Si vas a documentar un proyecto que ya existe, sáltate este paso y trabaja directamente sobre él. Lo importante es que sea TypeScript (`tsconfig.json` presente).
+</Aside>
+
+## Paso 2 — Escribe código documentado
+
+Vas a crear cuatro ficheros que representan los patrones más habituales en una app React. Cada uno lleva doc comments que TypeDoc convertirá en documentación.
+
+### Estructura objetivo
+
+<FileTree>
+	- src/
+		- lib/
+			- index.ts _(barrel export — entry point para TypeDoc)_
+		- types/
+			- user.types.ts
+		- services/
+			- user.service.ts
+		- hooks/
+			- useUsers.ts
+		- utils/
+			- format.utils.ts
+</FileTree>
+
+### 2.1 — Tipo `User`
+
+Crea `src/types/user.types.ts`:
+
+```ts title="src/types/user.types.ts"
+/**
+ * Representa un usuario del sistema.
+ *
+ * Este tipo es el contrato principal para la capa de datos
+ * y se usa en servicios, hooks y componentes.
+ */
+export interface User {
+	/** Identificador único del usuario. */
+	id: number;
+
+	/** Nombre completo del usuario. */
+	name: string;
+
+	/** Dirección de correo electrónico. */
+	email: string;
+
+	/**
+	 * Rol del usuario en la aplicación.
+	 * @defaultValue `"viewer"`
+	 */
+	role: "admin" | "editor" | "viewer";
+}
+```
+
+<Aside type="note" title="Documenta cada propiedad">
+	En interfaces y tipos, un `/** */` corto sobre cada propiedad marca la diferencia: la tabla generada por TypeDoc se vuelve legible sin necesidad de abrir el código fuente.
+</Aside>
+
+### 2.2 — Servicio `UserService`
+
+Crea `src/services/user.service.ts`:
+
+```ts title="src/services/user.service.ts"
+import type { User } from "../types/user.types";
+
+const API_URL = "/api/users";
+
+/**
+ * Obtiene la lista completa de usuarios desde la API.
+ *
+ * @returns Una promesa con el array de usuarios.
+ * @throws {Error} Si la respuesta del servidor no es correcta.
+ *
+ * @example
+ * ```ts
+ * const users = await getUsers();
+ * console.log(users[0].name);
+ * ```
+ */
+export async function getUsers(): Promise<User[]> {
+	const response = await fetch(API_URL);
+	if (!response.ok) {
+		throw new Error(`Error ${response.status}: ${response.statusText}`);
+	}
+	return response.json();
+}
+
+/**
+ * Obtiene un usuario por su identificador.
+ *
+ * @param id - Identificador numérico del usuario.
+ * @returns El usuario encontrado.
+ * @throws {Error} Si el usuario no existe o la petición falla.
+ *
+ * @example
+ * ```ts
+ * const user = await getUserById(1);
+ * console.log(user.email);
+ * ```
+ */
+export async function getUserById(id: number): Promise<User> {
+	const response = await fetch(`${API_URL}/${id}`);
+	if (!response.ok) {
+		throw new Error(`Error ${response.status}: ${response.statusText}`);
+	}
+	return response.json();
+}
+```
+
+### 2.3 — Hook `useUsers`
+
+Crea `src/hooks/useUsers.ts`:
+
+```ts title="src/hooks/useUsers.ts"
+import { useEffect, useState } from "react";
+
+import { getUsers } from "../services/user.service";
+import type { User } from "../types/user.types";
+
+/**
+ * Estado que devuelve el hook {@link useUsers}.
+ */
+export interface UseUsersResult {
+	/** Lista de usuarios cargados. */
+	users: User[];
+	/** `true` mientras la petición está en curso. */
+	loading: boolean;
+	/** Mensaje de error si la petición falla, `null` en caso contrario. */
+	error: string | null;
+}
+
+/**
+ * Hook que carga la lista de usuarios al montar el componente.
+ *
+ * Gestiona automáticamente los estados de carga y error.
+ *
+ * @returns Un objeto {@link UseUsersResult} con `users`, `loading` y `error`.
+ *
+ * @example
+ * ```tsx
+ * function UserList() {
+ *   const { users, loading, error } = useUsers();
+ *
+ *   if (loading) return <p>Cargando...</p>;
+ *   if (error) return <p>Error: {error}</p>;
+ *
+ *   return (
+ *     <ul>
+ *       {users.map((u) => <li key={u.id}>{u.name}</li>)}
+ *     </ul>
+ *   );
+ * }
+ * ```
+ */
+export function useUsers(): UseUsersResult {
+	const [users, setUsers] = useState<User[]>([]);
+	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+
+	useEffect(() => {
+		let cancelled = false;
+		setLoading(true);
+
+		getUsers()
+			.then((data) => {
+				if (!cancelled) setUsers(data);
+			})
+			.catch((e) => {
+				if (!cancelled) setError(e.message);
+			})
+			.finally(() => {
+				if (!cancelled) setLoading(false);
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
+	return { users, loading, error };
+}
+```
+
+### 2.4 — Utilidad `formatUserName`
+
+Crea `src/utils/format.utils.ts`:
+
+```ts title="src/utils/format.utils.ts"
+import type { User } from "../types/user.types";
+
+/**
+ * Formatea el nombre de un usuario para mostrarlo en la interfaz.
+ *
+ * Convierte la primera letra de cada palabra a mayúscula (title case).
+ *
+ * @param user - El usuario cuyo nombre se quiere formatear.
+ * @returns El nombre formateado en title case.
+ *
+ * @example
+ * ```ts
+ * const user: User = { id: 1, name: "ana garcía", email: "a@b.com", role: "viewer" };
+ * formatUserName(user); // "Ana García"
+ * ```
+ */
+export function formatUserName(user: User): string {
+	return user.name
+		.split(" ")
+		.map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+		.join(" ");
+}
+
+/**
+ * Genera las iniciales del usuario (máximo 2 caracteres).
+ *
+ * Útil para avatares cuando no se dispone de imagen.
+ *
+ * @param user - El usuario del que extraer las iniciales.
+ * @returns Las iniciales en mayúsculas (p. ej. `"AG"`).
+ *
+ * @example
+ * ```ts
+ * const user: User = { id: 1, name: "Ana García", email: "a@b.com", role: "viewer" };
+ * getUserInitials(user); // "AG"
+ * ```
+ */
+export function getUserInitials(user: User): string {
+	return user.name
+		.split(" ")
+		.map((word) => word.charAt(0).toUpperCase())
+		.slice(0, 2)
+		.join("");
+}
+```
+
+## Paso 3 — Crea el barrel export (entry point)
+
+TypeDoc necesita saber **qué documentar**. La forma más limpia es crear un fichero índice que re-exporte todo lo público.
+
+Crea `src/lib/index.ts`:
+
+```ts title="src/lib/index.ts"
+export type { User } from "../types/user.types";
+export { getUsers, getUserById } from "../services/user.service";
+export { useUsers } from "../hooks/useUsers";
+export type { UseUsersResult } from "../hooks/useUsers";
+export { formatUserName, getUserInitials } from "../utils/format.utils";
+```
+
+<Aside type="caution" title="¿Por qué no usar src/main.tsx?">
+	El fichero `main.tsx` es el arranque de React (monta el DOM). No exporta nada útil para documentación. Por eso creamos un **entry point dedicado** que agrupa solo lo que queremos documentar.
+</Aside>
+
+<Aside type="tip" title="Re-exporta solo lo público">
+	Si tienes helpers internos que no quieres documentar, simplemente no los incluyas en el barrel. TypeDoc solo documentará lo que "vea" desde el entry point.
+</Aside>
+
+## Paso 4 — Instala y configura TypeDoc
+
+### 4.1 — Instala TypeDoc
+
+```bash
+npm install -D typedoc
+```
+
+### 4.2 — Crea `typedoc.json`
+
+En la raíz del proyecto:
+
+```json title="typedoc.json"
+{
+	"$schema": "https://typedoc.org/schema.json",
+	"entryPoints": ["src/lib/index.ts"],
+	"out": "docs/api",
+	"excludePrivate": true,
+	"excludeProtected": true,
+	"excludeInternal": true,
+	"readme": "none"
+}
+```
+
+<Aside type="note" title="Sobre las opciones">
+	- `entryPoints`: el barrel que acabas de crear.
+	- `out`: carpeta donde se genera el HTML.
+	- `excludePrivate` / `excludeProtected` / `excludeInternal`: filtra lo que no es API pública.
+	- `readme: "none"`: no incluye el README del proyecto en la documentación del API.
+</Aside>
+
+### 4.3 — Añade el script a `package.json`
+
+```json title="package.json (fragmento)"
+{
+	"scripts": {
+		"docs:api": "typedoc"
+	}
+}
+```
+
+### 4.4 — Excluye la carpeta `docs/` del control de versiones (opcional)
+
+Si no quieres versionar la documentación generada, añádelo a `.gitignore`:
+
+```text title=".gitignore (añadir al final)"
+docs/
+```
+
+<Aside type="tip" title="¿Versionarla o no?">
+	En proyectos pequeños o de aprendizaje, versionarla puede ser útil para revisarla en GitHub. En proyectos reales, lo habitual es generarla en CI/CD y publicarla (por ejemplo en GitHub Pages).
+</Aside>
+
+## Paso 5 — Genera la documentación
+
+Ejecuta:
+
+```bash
+npm run docs:api
+```
+
+Si todo va bien verás algo similar a:
+
+```text
+Documentation generated at ./docs/api
+```
+
+### Abre el resultado
+
+La documentación generada es HTML estático. Puedes abrirla directamente en el navegador:
+
+<Tabs>
+	<TabItem label="Linux">
+		```bash
+		xdg-open docs/api/index.html
+		```
+	</TabItem>
+	<TabItem label="macOS">
+		```bash
+		open docs/api/index.html
+		```
+	</TabItem>
+	<TabItem label="Windows">
+		```bash
+		start docs/api/index.html
+		```
+	</TabItem>
+</Tabs>
+
+### Qué deberías ver
+
+Al abrir `docs/api/index.html` en el navegador encontrarás:
+
+- Un **índice** con todas las funciones, tipos e interfaces exportados.
+- La página de cada símbolo con su **firma**, **descripción**, **parámetros**, **tipo de retorno** y **ejemplos**.
+- **Enlaces cruzados** entre tipos (por ejemplo, `User` aparece como enlace clicable en la firma de `getUsers`).
+
+<Aside type="caution" title="¿La documentación sale vacía o incompleta?">
+	Revisa estos puntos:
+
+	1. ¿El entry point (`src/lib/index.ts`) exporta los símbolos?
+	2. ¿Los ficheros originales usan `export`?
+	3. ¿Los comentarios usan `/** */`? (los `//` y `/* */` se ignoran).
+	4. ¿Hay errores de TypeScript? TypeDoc necesita que el proyecto compile.
+</Aside>
+
+## Estructura final del proyecto
+
+Después de seguir todos los pasos, el proyecto debería tener esta forma:
+
+<FileTree>
+	- my-typedoc-demo/
+		- docs/
+			- api/ _(generado por TypeDoc — no editar a mano)_
+				- index.html
+				- ...
+		- src/
+			- lib/
+				- index.ts
+			- types/
+				- user.types.ts
+			- services/
+				- user.service.ts
+			- hooks/
+				- useUsers.ts
+			- utils/
+				- format.utils.ts
+			- main.tsx
+			- App.tsx
+		- typedoc.json
+		- tsconfig.json
+		- package.json
+</FileTree>
+
+## 🧩 Aplicación en el proyecto
+
+Este flujo es el que vas a seguir en tus entregas del módulo:
+
+- **Identifica qué documentar**: no todo el código necesita TypeDoc. Céntrate en tipos, servicios, hooks y utilidades — lo que otro desarrollador consumiría como API.
+- **Crea un barrel export**: mantén un `src/lib/index.ts` (o similar) que agrupe los exports públicos. Es más limpio que listar 10 ficheros en `entryPoints`.
+- **Documenta mientras programas**: es mucho más fácil escribir el `@param` y el `@example` cuando acabas de escribir la función que un mes después.
+- **Genera y revisa**: ejecuta `npm run docs:api` y abre el HTML. Si algo se lee mal, ajusta el comentario en el código — no edites el HTML generado.
+
+## Resumen rápido
+
+| Paso | Comando / Acción |
+| :--- | :--- |
+| Crear proyecto | `npm create vite@latest my-typedoc-demo -- --template react-ts` |
+| Escribir código documentado | `/** */` con `@param`, `@returns`, `@example` |
+| Barrel export | `src/lib/index.ts` re-exporta lo público |
+| Instalar TypeDoc | `npm install -D typedoc` |
+| Configurar | `typedoc.json` con entry point y exclusiones |
+| Generar | `npm run docs:api` |
+| Revisar | Abrir `docs/api/index.html` en el navegador |
+
+## Convención práctica
+
+<Steps>
+	1. Cada vez que añadas un **export público nuevo**, documéntalo con al menos resumen + `@param` + `@returns`.
+	2. Cada vez que añadas un export, inclúyelo en el **barrel** (`src/lib/index.ts`) si quieres que aparezca en la documentación.
+	3. Antes de entregar, ejecuta `npm run docs:api` y **abre el HTML** — revisa que se lee bien y que no falta contexto.
+	4. Guarda un commit con los ficheros fuente (no con `docs/api/` si lo tienes en `.gitignore`).
+</Steps>
+
+## Referencias
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://typedoc.org/"
+		title="TypeDoc — Documentación oficial"
+		description="Guía completa, opciones de configuración y ejemplos."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://vite.dev/guide/"
+		title="Vite — Getting Started"
+		description="Cómo crear y configurar un proyecto con Vite."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://typedoc.org/documents/Doc_Comments.html"
+		title="Doc Comments — TypeDoc"
+		description="Referencia de sintaxis de comentarios y Markdown."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+## Siguientes pasos
+
+- Revisa la [introducción a TypeDoc](./01-introduction.mdx) si necesitas repasar conceptos.
+- Profundiza en [doc comments y tags](./02-use-typedoc.mdx) para documentar casos más complejos (genéricos, overloads, herencia).
+
+<CardGrid>
+	<LinkCard
+		href="../typedoc/01-introduction"
+		title="Introducción a TypeDoc"
+		description="Qué es TypeDoc, cómo se instala y qué documenta."
+	/>
+	<LinkCard
+		href="../typedoc/02-use-typedoc"
+		title="Doc comments y tags"
+		description="Cómo escribir comentarios que TypeDoc convierta en documentación útil."
+	/>
+</CardGrid>

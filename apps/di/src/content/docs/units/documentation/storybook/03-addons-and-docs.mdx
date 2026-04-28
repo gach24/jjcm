@@ -1,0 +1,358 @@
+---
+title: Addons y documentación
+description: Usa decorators para envolver stories, Autodocs para generar documentación automática y parameters para configurar el comportamiento de Storybook.
+sources:
+  - author: Storybook
+    url: https://storybook.js.org/docs/writing-stories/decorators
+  - author: Storybook
+    url: https://storybook.js.org/docs/writing-docs/autodocs
+  - author: Storybook
+    url: https://storybook.js.org/docs/writing-stories/parameters
+  - author: Storybook
+    url: https://storybook.js.org/docs/essentials
+sidebar:
+  order: 3
+date: 2026-04-28
+updated: 2026-04-28
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import { Aside, Card, CardGrid, LinkCard, Steps, TabItem, Tabs } from "@astrojs/starlight/components";
+
+Hasta ahora sabes escribir stories con CSF y args. Esta sección cubre tres piezas que hacen que Storybook pase de "herramienta de desarrollo" a **documentación publicable**: decorators para envolver componentes, Autodocs para generar documentación automática y addons esenciales que vienen incluidos.
+
+<CardGrid stagger>
+	<Card title="Decorators" icon="setting">
+		Funciones que envuelven tus stories en contexto extra: layout, providers, temas, padding…
+	</Card>
+	<Card title="Autodocs" icon="document">
+		Genera automáticamente una página de documentación por cada componente con tabla de props, código y stories.
+	</Card>
+	<Card title="Addons esenciales" icon="rocket">
+		Controls, Actions, Viewport, Backgrounds, A11y… vienen preinstalados con `addon-essentials`.
+	</Card>
+</CardGrid>
+
+## Decorators
+
+Los **decorators** son funciones que envuelven una story en markup adicional. Son necesarios cuando un componente asume un contexto para funcionar: un theme provider, un layout wrapper, un router, estilos globales…
+
+### Decorator a nivel de componente
+
+Se define en el meta y aplica a **todas** las stories del fichero:
+
+```tsx title="Card.stories.tsx"
+import type { Meta, StoryObj } from "@storybook/react";
+import { Card } from "./Card";
+
+const meta = {
+  component: Card,
+  decorators: [
+    (Story) => (
+      <div style={{ maxWidth: 400, margin: "2rem auto" }}>
+        <Story />
+      </div>
+    ),
+  ],
+} satisfies Meta<typeof Card>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
+  args: {
+    title: "Título de la tarjeta",
+    description: "Descripción breve del contenido.",
+  },
+};
+```
+
+El decorator recibe la story como componente `<Story />` y la envuelve en un `div` con ancho máximo y margen. Todas las stories de este fichero se renderizarán dentro de ese contenedor.
+
+### Decorator a nivel de story
+
+Si solo una story necesita el wrapper, defínelo en esa story:
+
+```tsx
+export const InSidebar: Story = {
+  args: { title: "En sidebar" },
+  decorators: [
+    (Story) => (
+      <aside style={{ width: 280, background: "#f5f5f5", padding: 16 }}>
+        <Story />
+      </aside>
+    ),
+  ],
+};
+```
+
+### Decorator global (preview.ts)
+
+Si **todas** tus stories necesitan un provider (tema, router, i18n…), defínelo en `.storybook/preview.ts`:
+
+```tsx title=".storybook/preview.tsx"
+import type { Preview } from "@storybook/react";
+import { ThemeProvider } from "../src/context/ThemeContext";
+
+import "../src/index.css";
+
+const preview: Preview = {
+  decorators: [
+    (Story) => (
+      <ThemeProvider>
+        <Story />
+      </ThemeProvider>
+    ),
+  ],
+};
+
+export default preview;
+```
+
+<Aside type="tip" title="Orden de decorators">
+	Los decorators se aplican de **dentro a fuera**: primero el de la story, después el del componente (meta), y finalmente el global (preview). Así, el global es el wrapper más externo.
+</Aside>
+
+<Aside type="caution" title="preview.ts vs preview.tsx">
+	Si tu decorator usa JSX (como `<ThemeProvider>`), el fichero debe tener extensión `.tsx`. Si solo exporta configuración en objetos JS, `.ts` es suficiente.
+</Aside>
+
+## Parameters
+
+Los **parameters** son metadatos estáticos que configuran el comportamiento de Storybook y sus addons. No afectan al componente, sino a cómo Storybook lo presenta.
+
+### Parameters a nivel de componente
+
+```tsx title="Modal.stories.tsx"
+const meta = {
+  component: Modal,
+  parameters: {
+    layout: "centered",
+  },
+} satisfies Meta<typeof Modal>;
+```
+
+El parameter `layout` controla cómo Storybook posiciona el componente en el canvas:
+
+| Valor | Efecto |
+| :--- | :--- |
+| `"padded"` | Padding por defecto (valor normal) |
+| `"centered"` | Centrado horizontal y verticalmente |
+| `"fullscreen"` | Sin padding, ocupa todo el canvas |
+
+### Parameters a nivel de story
+
+```tsx
+export const OnDarkBackground: Story = {
+  args: { title: "Modal oscuro" },
+  parameters: {
+    backgrounds: {
+      default: "dark",
+    },
+  },
+};
+```
+
+### Parameters globales (preview.ts)
+
+```ts title=".storybook/preview.ts"
+const preview: Preview = {
+  parameters: {
+    layout: "centered",
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/i,
+      },
+    },
+  },
+};
+```
+
+## Autodocs: documentación automática
+
+**Autodocs** genera automáticamente una página de documentación por cada componente que incluye:
+
+- El **nombre** y **descripción** del componente.
+- Una **tabla de props** con tipos, valores por defecto y descripciones.
+- Todas las **stories** renderizadas con su código fuente.
+- El panel de **controles** integrado.
+
+### Activar Autodocs
+
+Autodocs se activa añadiendo `tags: ["autodocs"]` al meta del componente:
+
+```tsx title="Button.stories.tsx" {4}
+const meta = {
+  component: Button,
+  tags: ["autodocs"],
+} satisfies Meta<typeof Button>;
+```
+
+Esto crea automáticamente una entrada "Docs" en el sidebar, debajo de las stories del componente.
+
+<Aside type="tip" title="Activar Autodocs globalmente">
+	Si quieres que **todos** los componentes tengan documentación automática sin añadir `tags` en cada fichero, actívalo en `.storybook/preview.ts`:
+
+	```ts
+	const preview: Preview = {
+	  tags: ["autodocs"],
+	};
+	```
+
+	Así, cualquier componente con stories tendrá su página Docs generada.
+</Aside>
+
+### Mejorar la documentación generada
+
+Autodocs extrae información de los **tipos TypeScript** del componente. Para que la documentación sea útil:
+
+<Steps>
+	1. **Tipar las props** con una interfaz explícita (no inline). Storybook lee los tipos y genera la tabla de props.
+	2. **Añadir JSDoc** a las props para que aparezcan como descripción en la tabla.
+	3. **Definir valores por defecto** en los argumentos destructurados o en `defaultProps`.
+	4. **Usar `argTypes`** para añadir descripciones extra o personalizar controles.
+</Steps>
+
+Ejemplo de componente bien preparado para Autodocs:
+
+```tsx title="src/components/Badge.tsx"
+interface BadgeProps {
+  /** Variante visual que determina el color del badge. */
+  variant: "info" | "success" | "warning" | "error";
+  /** Tamaño del badge. */
+  size?: "sm" | "md" | "lg";
+  /** Contenido del badge (texto o nodos). */
+  children: React.ReactNode;
+}
+
+export function Badge({ variant, size = "md", children }: BadgeProps) {
+  return (
+    <span className={`badge badge-${variant} badge-${size}`}>
+      {children}
+    </span>
+  );
+}
+```
+
+Los comentarios `/** */` sobre cada prop aparecerán como descripción en la tabla de Autodocs. El valor por defecto `size = "md"` también se detecta.
+
+## Addons esenciales
+
+Al instalar Storybook con la configuración recomendada, se incluye `@storybook/addon-essentials`, que agrupa varios addons útiles:
+
+| Addon | Qué hace |
+| :--- | :--- |
+| **Controls** | Panel para editar args/props en tiempo real |
+| **Actions** | Registra callbacks (`onClick`, `onSubmit`…) en un log |
+| **Viewport** | Simula distintos tamaños de pantalla (móvil, tablet, desktop) |
+| **Backgrounds** | Cambia el color de fondo del canvas |
+| **Docs** | Genera la documentación (Autodocs, MDX) |
+| **Measure** | Muestra medidas CSS al hacer hover |
+| **Outline** | Dibuja los contornos de los elementos CSS |
+
+### Addon de accesibilidad (A11y)
+
+Si elegiste la instalación "Recommended", también tendrás `@storybook/addon-a11y`. Este addon ejecuta automáticamente [axe-core](https://github.com/dequelabs/axe-core) sobre cada story y muestra los problemas de accesibilidad en un panel dedicado.
+
+```text
+Componentes → Badge → Info
+  ✅ 0 violations
+  ⚠️ 1 incomplete (color contrast)
+```
+
+<Aside type="note" title="Accesibilidad como parte del desarrollo">
+	El addon A11y no reemplaza una auditoría completa, pero detecta problemas comunes (contraste, labels, roles ARIA…) mientras desarrollas, antes de que lleguen a producción.
+</Aside>
+
+## Publicar Storybook como sitio estático
+
+Storybook puede exportarse como una web estática para compartir con el equipo sin que necesiten levantar el entorno de desarrollo:
+
+```bash
+npm run build-storybook
+```
+
+Esto genera un directorio `storybook-static/` con HTML, CSS y JS que puedes desplegar en cualquier hosting estático (GitHub Pages, Netlify, Vercel…).
+
+<Aside type="tip" title="Para las entregas del módulo">
+	Publicar el Storybook (o incluir el `storybook-static/` en el entregable) demuestra que tus componentes están documentados y probados visualmente.
+</Aside>
+
+## 🧩 Aplicación en el proyecto
+
+En el contexto de este módulo:
+
+- **Decorators globales**: si tu app usa un `ThemeProvider` o importa CSS global, configúralo en `.storybook/preview.ts` para que las stories se vean igual que en la app real.
+- **Autodocs en todos los componentes**: actívalo globalmente en `preview.ts` con `tags: ["autodocs"]`. Así no tienes que recordar añadirlo en cada fichero.
+- **Accesibilidad**: revisa el panel A11y de cada componente antes de entregar. No hace falta resolver todos los warnings, pero sí documentar los que dejas pendientes.
+- **Build estático**: genera `storybook-static/` como artefacto del proyecto. Es tu "catálogo de componentes publicado".
+
+## Resumen rápido
+
+| Concepto | Detalle |
+| :--- | :--- |
+| **Decorator** | Función que envuelve la story (layout, providers, contexto) |
+| **Parameter** | Metadato que configura Storybook/addons (`layout`, `backgrounds`…) |
+| **Autodocs** | Genera documentación automática: tabla de props + stories + código |
+| **`tags: ["autodocs"]`** | Activa Autodocs por componente (o globalmente en `preview.ts`) |
+| **Addons esenciales** | Controls, Actions, Viewport, Backgrounds, Docs, Measure, Outline |
+| **Build** | `npm run build-storybook` → `storybook-static/` |
+
+## Convención práctica
+
+<Steps>
+	1. Configura **decorators globales** en `preview.ts` al instalar Storybook: importa CSS, monta providers. Hazlo una vez y olvídate.
+	2. Activa **Autodocs globalmente** (`tags: ["autodocs"]` en preview) para que no se te escape ningún componente.
+	3. Usa `layout: "centered"` como parameter global si la mayoría de tus componentes son pequeños (botones, badges, inputs…).
+	4. Revisa el panel **A11y** como parte de tu rutina de desarrollo — no al final, sino mientras construyes cada componente.
+	5. Antes de entregar, ejecuta `npm run build-storybook` y verifica que el build no falla.
+</Steps>
+
+## Referencias
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://storybook.js.org/docs/writing-stories/decorators"
+		title="Decorators — Storybook"
+		description="Cómo envolver stories en contexto adicional a nivel de story, componente y global."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://storybook.js.org/docs/writing-docs/autodocs"
+		title="Autodocs — Storybook"
+		description="Genera documentación automática para tus componentes a partir de las stories y los tipos."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://storybook.js.org/docs/essentials"
+		title="Essential Addons — Storybook"
+		description="Addons incluidos por defecto: Controls, Actions, Viewport, Backgrounds, Docs."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+## Siguientes pasos
+
+<CardGrid>
+	<LinkCard
+		href="../storybook/04-steps-example"
+		title="Ejemplo paso a paso"
+		description="Crea un proyecto React/Vite, desarrolla componentes y documéntalos con Storybook de principio a fin."
+	/>
+	<LinkCard
+		href="../storybook/01-introduction"
+		title="Introducción a Storybook"
+		description="Repasa los conceptos básicos si necesitas refrescar la base."
+	/>
+</CardGrid>

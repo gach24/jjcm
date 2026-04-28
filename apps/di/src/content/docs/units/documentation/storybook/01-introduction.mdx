@@ -1,0 +1,270 @@
+---
+title: Introducción a Storybook
+description: Desarrolla, documenta y prueba componentes UI de forma aislada con Storybook, el estándar de la industria para component-driven development.
+sources:
+  - author: Storybook
+    url: https://storybook.js.org/docs
+  - author: Storybook
+    url: https://storybook.js.org/docs/get-started
+sidebar:
+  order: 1
+date: 2026-04-28
+updated: 2026-04-28
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import { Aside, Card, CardGrid, LinkCard, Steps } from "@astrojs/starlight/components";
+
+Storybook es una herramienta que permite **desarrollar componentes UI de forma aislada**, fuera de la aplicación principal. Renderizas cada componente en distintos estados (variantes, tamaños, estados de error…) y los documentas visualmente sin necesidad de levantar toda la app ni navegar hasta la pantalla donde se usa cada uno.
+
+<CardGrid stagger>
+	<Card title="¿Qué es?" icon="rocket">
+		Un entorno de desarrollo paralelo a tu app donde cada componente tiene su propia "página" interactiva.
+	</Card>
+	<Card title="¿Para qué sirve?" icon="document">
+		Visualizar, probar y documentar componentes en todos sus estados posibles, sin depender de datos reales ni rutas.
+	</Card>
+	<Card title="¿Qué necesitas?" icon="open-book">
+		Un proyecto React (o Vue, Angular, Svelte…) con componentes. Storybook se instala sobre tu proyecto existente.
+	</Card>
+</CardGrid>
+
+## Por qué Storybook
+
+Cuando una aplicación crece, los componentes se usan en muchas pantallas con diferentes props, estados y contextos. Sin una herramienta dedicada:
+
+- Para ver un botón en estado "disabled" tienes que **navegar** hasta la pantalla concreta y reproducir las condiciones.
+- Los **estados de error** o de carga son difíciles de provocar manualmente.
+- No hay un **catálogo visual** al que el equipo pueda acudir para ver qué componentes existen y cómo se comportan.
+
+Storybook resuelve esto: cada componente tiene un fichero de **stories** donde defines sus variantes. Storybook las renderiza en un navegador independiente con controles interactivos para cambiar props en tiempo real.
+
+<Aside type="tip" title="Component-driven development">
+	Storybook fomenta construir primero los **componentes pequeños** (botón, input, badge…), después los **compuestos** (formulario, tarjeta, sidebar…) y finalmente las **páginas**. Es la misma idea de "átomos → moléculas → organismos" de Atomic Design.
+</Aside>
+
+## Qué aporta en la práctica
+
+| Beneficio | Cómo |
+| :--- | :--- |
+| **Desarrollo aislado** | Cada componente se renderiza solo, sin rutas ni estado global |
+| **Documentación visual** | Autodocs genera una página por componente con props, controles y código |
+| **Pruebas de UI** | Puedes verificar visualmente variantes sin escribir tests manuales |
+| **Colaboración** | Diseñadores y QA pueden revisar componentes sin levantar el entorno de desarrollo |
+| **Reutilización** | Un catálogo centralizado evita duplicar componentes similares |
+
+## Instalación
+
+Storybook se instala sobre un proyecto existente. Si ya tienes un proyecto React con Vite (la base habitual del módulo), ejecuta en la raíz del proyecto:
+
+```bash
+npx storybook@latest init
+```
+
+El CLI detecta tu framework automáticamente y:
+
+1. Instala las dependencias necesarias.
+2. Crea la carpeta `.storybook/` con la configuración.
+3. Genera stories de ejemplo en `src/stories/` para que veas el formato.
+4. Añade los scripts `storybook` y `build-storybook` a `package.json`.
+
+<Aside type="note" title="Sobre el prompt interactivo">
+	Al instalar, Storybook puede preguntarte si quieres la configuración "Recommended" o "Minimal". Para este módulo, elige **Recommended**: incluye documentación automática (Autodocs) y el addon de accesibilidad, ambos útiles.
+</Aside>
+
+### Arrancar Storybook
+
+```bash
+npm run storybook
+```
+
+Esto levanta un servidor de desarrollo (normalmente en `http://localhost:6006`) donde verás el catálogo de componentes con las stories de ejemplo.
+
+<Aside type="caution" title="Storybook y tu app son independientes">
+	Storybook tiene su propio servidor (`npm run storybook`). Tu app se arranca con `npm run dev` como siempre. Son dos procesos distintos — puedes tener los dos corriendo a la vez.
+</Aside>
+
+## Estructura de ficheros que genera
+
+Después de instalar, tu proyecto tendrá algo así:
+
+```text
+mi-proyecto/
+├── .storybook/
+│   ├── main.ts          ← configuración principal (framework, addons, globs)
+│   └── preview.ts       ← configuración global de stories (decorators, parameters)
+├── src/
+│   ├── stories/          ← stories de ejemplo (puedes borrarlas después)
+│   │   ├── Button.tsx
+│   │   ├── Button.stories.ts
+│   │   ├── Header.tsx
+│   │   ├── Header.stories.ts
+│   │   └── ...
+│   └── components/       ← tus componentes reales
+└── package.json          ← scripts: storybook, build-storybook
+```
+
+### `.storybook/main.ts`
+
+Es el fichero de configuración principal. Define qué framework usa, qué addons están activos y dónde buscar stories:
+
+```ts title=".storybook/main.ts"
+import type { StorybookConfig } from "@storybook/react-vite";
+
+const config: StorybookConfig = {
+  stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
+  addons: [
+    "@storybook/addon-essentials",
+    "@storybook/addon-a11y",
+  ],
+  framework: {
+    name: "@storybook/react-vite",
+    options: {},
+  },
+};
+
+export default config;
+```
+
+- **`stories`**: globs que indican dónde están los ficheros de stories. Por defecto, cualquier `*.stories.ts(x)` dentro de `src/`.
+- **`addons`**: plugins que amplían Storybook (controles, documentación, accesibilidad…).
+- **`framework`**: el framework + bundler que usas (React + Vite en nuestro caso).
+
+### `.storybook/preview.ts`
+
+Configuración que aplica a **todas** las stories: estilos globales, decorators, parámetros por defecto…
+
+```ts title=".storybook/preview.ts"
+import type { Preview } from "@storybook/react";
+
+const preview: Preview = {
+  parameters: {
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/i,
+      },
+    },
+  },
+};
+
+export default preview;
+```
+
+<Aside type="tip" title="Importar CSS global">
+	Si tu app tiene un `index.css` o `globals.css`, impórtalo en `preview.ts` para que las stories usen los mismos estilos:
+
+	```ts
+	import "../src/index.css";
+	```
+</Aside>
+
+## Tu primera story (vistazo rápido)
+
+No te preocupes si no entiendes todo aún — en la siguiente sección se explica el formato en detalle. Aquí va un adelanto de cómo se ve una story para un componente `Button`:
+
+```tsx title="src/components/Button.stories.tsx"
+import type { Meta, StoryObj } from "@storybook/react";
+import { Button } from "./Button";
+
+const meta = {
+  component: Button,
+} satisfies Meta<typeof Button>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Primary: Story = {
+  args: {
+    label: "Guardar",
+    variant: "primary",
+  },
+};
+
+export const Disabled: Story = {
+  args: {
+    label: "Guardar",
+    variant: "primary",
+    disabled: true,
+  },
+};
+```
+
+Cada `export` con nombre (como `Primary` o `Disabled`) es una **story**: una variante del componente con unas props concretas. Storybook las renderiza y te deja modificar las props en tiempo real desde el panel de controles.
+
+## 🧩 Aplicación en el proyecto
+
+En el contexto de este módulo, Storybook se usa para:
+
+- **Documentar el catálogo de componentes** de tu aplicación React: botones, inputs, cards, sidebar, modales, etc.
+- **Verificar estados visuales** difíciles de reproducir en la app real: loading, error, vacío, con datos largos, etc.
+- **Facilitar la entrega**: el Storybook publicado es un artefacto que demuestra que tus componentes funcionan y están documentados, independiente de la app.
+
+El resultado esperado es un catálogo navegable donde cualquier persona pueda ver qué componentes existen, en qué estados pueden estar y cómo se usan.
+
+## Resumen rápido
+
+| Concepto | Detalle |
+| :--- | :--- |
+| **Storybook** | Entorno de desarrollo aislado para componentes UI |
+| **Story** | Una variante de un componente con unas props concretas |
+| **Instalar** | `npx storybook@latest init` sobre un proyecto existente |
+| **Arrancar** | `npm run storybook` (puerto 6006 por defecto) |
+| **Configuración** | `.storybook/main.ts` (addons, framework) y `preview.ts` (estilos, parámetros globales) |
+
+## Convención práctica
+
+<Steps>
+	1. Coloca el fichero de stories **junto al componente**: `Button.tsx` → `Button.stories.tsx`. Así es fácil encontrarlo y mantenerlo.
+	2. Instala Storybook **al principio** del proyecto, no al final. Es mucho más fácil escribir stories mientras desarrollas que añadirlas después.
+	3. Importa tus **estilos globales** en `.storybook/preview.ts` para que las stories se vean igual que en la app.
+	4. Elimina las stories de ejemplo (`src/stories/`) cuando ya no las necesites — están ahí para aprender el formato.
+</Steps>
+
+## Referencias
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://storybook.js.org/docs"
+		title="Documentación oficial de Storybook"
+		description="Guía completa, tutoriales y referencia de API."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://storybook.js.org/docs/get-started/install"
+		title="Instalación de Storybook"
+		description="Guía paso a paso de instalación para distintos frameworks."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://storybook.js.org/tutorials/intro-to-storybook/react/es/get-started/"
+		title="Tutorial introductorio (React, ES)"
+		description="Tutorial oficial en español para React."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+## Siguientes pasos
+
+<CardGrid>
+	<LinkCard
+		href="../storybook/02-writing-stories"
+		title="Escribir stories"
+		description="Aprende el formato CSF, args, argTypes y cómo definir variantes de tus componentes."
+	/>
+	<LinkCard
+		href="../storybook/03-addons-and-docs"
+		title="Addons y documentación"
+		description="Decorators, Autodocs y cómo organizar tu catálogo de componentes."
+	/>
+</CardGrid>
