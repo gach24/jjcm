@@ -1,0 +1,319 @@
+---
+title: Configuración del proyecto
+description: Inicialización del proyecto Vite + React + TS, integración con Electron mediante main y preload, configuración de Vite y scripts de desarrollo.
+evaluations:
+  - id: RA8
+    statement: Prepara aplicaciones para su distribución, evaluando y empleando herramientas específicas, para obtener aplicaciones distribuibles.
+    criteria:
+      - Se han instalado los componentes necesarios para empaquetar la aplicación.
+      - Se han configurado las herramientas de construcción y arranque.
+      - Se ha verificado el correcto funcionamiento de la aplicación en modo desarrollo.
+    contents:
+      - Andamiaje Vite + React + TypeScript
+      - Proceso `main` y script `preload` en Electron
+      - Configuración de `vite.config.ts` para producción con `file://`
+      - Scripts de desarrollo concurrentes (Vite + Electron)
+sources:
+  - author: gach24
+    url: https://github.com/gach24/DID/tree/main/15-project-10
+  - author: electron-builder
+    url: https://www.electron.build/
+sidebar:
+  order: 2
+date: 2026-05-12
+updated: 2026-05-12
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+  Aside,
+  Card,
+  CardGrid,
+  FileTree,
+  LinkCard,
+  Steps,
+  TabItem,
+  Tabs,
+} from "@astrojs/starlight/components";
+
+En esta sección montas el **andamiaje completo**: un proyecto Vite + React + TypeScript con un proceso Electron por encima y un script de desarrollo que arranca todo en paralelo. Al terminar, `npm run dev:electron` debería abrir una ventana de escritorio que recarga en caliente igual que en el navegador.
+
+<CardGrid stagger>
+  <Card title="Vite + React + TS" icon="rocket">
+    Misma plantilla que ya conoces, sin sorpresas.
+  </Card>
+  <Card title="Main + Preload" icon="seti:javascript">
+    Dos ficheros CommonJS (`.cjs`) que conviven con el resto del proyecto ESM.
+  </Card>
+  <Card title="Scripts concurrentes" icon="setting">
+    `concurrently` + `wait-on` lanzan Vite y Electron a la vez, en el orden
+    correcto.
+  </Card>
+</CardGrid>
+
+## Estructura objetivo
+
+<FileTree>
+- 15-project-10/
+  - electron/
+    - main.cjs        // proceso principal
+    - preload.cjs     // puente IPC
+  - src/              // app React (Vite)
+  - index.html
+  - package.json      // main + scripts + build
+  - vite.config.ts
+</FileTree>
+
+## Paso 1 — Crear el proyecto Vite
+
+<Tabs>
+  <TabItem label="npm">
+    ```bash
+    npm create vite@latest 15-project-10 -- --template react-ts
+    cd 15-project-10
+    npm install
+    ```
+  </TabItem>
+  <TabItem label="PowerShell (alternativa)">
+    ```powershell
+    npx create-vite@latest 15-project-10 --template react-ts
+    cd 15-project-10
+    npm install
+    ```
+  </TabItem>
+</Tabs>
+
+<Aside type="note" title="Por qué dos comandos">
+  En PowerShell, los flags posicionales después del `--` a veces se pierden.
+  Si `npm create vite@latest` te deja el flag `--template` vacío, usa la
+  variante con `npx create-vite@latest` directamente.
+</Aside>
+
+### Limpieza inicial
+
+Igual que en proyectos anteriores, retira lo que no se usa:
+
+<Steps>
+
+1. Borra `src/App.css` y la carpeta `src/assets/`.
+2. Borra `public/favicon.svg` y `public/icons.svg`.
+3. Vacía `src/App.tsx` dejando solo el esqueleto.
+4. En `index.html`, quita la línea del favicon y pon `<title>Task App</title>`.
+
+</Steps>
+
+```tsx title="src/App.tsx"
+function App() {
+  return <></>;
+}
+
+export default App;
+```
+
+## Paso 2 — Instalar Electron y electron-builder
+
+```bash
+npm install --save-dev electron electron-builder concurrently wait-on
+```
+
+| Paquete | Para qué sirve |
+| :--- | :--- |
+| `electron` | Runtime que abre la ventana y ejecuta tu código main. |
+| `electron-builder` | Empaqueta y firma la app, genera instaladores (NSIS, MSI, AppImage…). |
+| `concurrently` | Lanza dos procesos en paralelo con un solo comando. |
+| `wait-on` | Espera a que un puerto/URL esté disponible antes de continuar. |
+
+## Paso 3 — Proceso `main`
+
+Crea la carpeta `electron/` y dentro **`main.cjs`**:
+
+```js title="electron/main.cjs" {4, 12-17, 19-23}
+const { app, BrowserWindow } = require("electron");
+const path = require("node:path");
+
+const isDev = !app.isPackaged;
+
+function createWindow() {
+  const win = new BrowserWindow({
+    width: 1024,
+    height: 720,
+    minWidth: 480,
+    minHeight: 480,
+    title: "Task App",
+    webPreferences: {
+      preload: path.join(__dirname, "preload.cjs"),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  });
+
+  if (isDev) {
+    win.loadURL("http://localhost:5173");
+    win.webContents.openDevTools({ mode: "detach" });
+  } else {
+    win.loadFile(path.join(__dirname, "..", "dist", "index.html"));
+  }
+}
+
+app.whenReady().then(() => {
+  createWindow();
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
+});
+
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") app.quit();
+});
+```
+
+Puntos clave:
+
+- **`app.isPackaged`** detecta si estás corriendo desde fuente (`electron .`) o desde el `.exe` instalado. En dev cargas la URL de Vite, en producción cargas el `index.html` del build.
+- **`webPreferences`** establece la frontera de seguridad: `contextIsolation` separa el contexto JS del preload del de la página, `nodeIntegration: false` impide que el renderer haga `require`, y `sandbox: true` ejecuta el renderer dentro del sandbox de Chromium.
+- **`window-all-closed`** mantiene el comportamiento estándar en Windows/Linux (cerrar la última ventana cierra la app) y respeta la convención de macOS (la app sigue viva hasta `Cmd+Q`).
+
+## Paso 4 — Script `preload`
+
+```js title="electron/preload.cjs"
+const { contextBridge } = require("electron");
+
+contextBridge.exposeInMainWorld("app", {
+  versions: {
+    node: process.versions.node,
+    chrome: process.versions.chrome,
+    electron: process.versions.electron,
+  },
+});
+```
+
+Por ahora solo expones las versiones del runtime: te servirán para enseñar “Acerca de…” en la UI y demostrar que el puente funciona. Más adelante, cuando necesites IPC real (leer ficheros, abrir un diálogo nativo…), añadirás aquí las funciones concretas.
+
+<Aside type="caution" title="¿Por qué `.cjs` y no `.js`?">
+  El `package.json` de Vite incluye `"type": "module"`, lo que hace que todos
+  los `.js` se interpreten como ESM. El proceso main de Electron es más cómodo
+  en CommonJS (`require`, `__dirname` directo, sin asincronía en imports),
+  así que forzamos la extensión `.cjs` para mezclar ambos mundos sin pelearnos
+  con `import.meta.url` ni con bundlers.
+</Aside>
+
+## Paso 5 — Configurar Vite para producción
+
+```ts title="vite.config.ts" {6, 8-11}
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({
+  plugins: [react()],
+  base: "./",
+  server: {
+    port: 5173,
+    strictPort: true,
+  },
+});
+```
+
+<Aside type="caution" title="El bug más típico la primera vez">
+  Si te olvidas de **`base: './'`**, Vite genera rutas absolutas
+  (`/assets/...`). En desarrollo funciona porque el servidor sirve desde la
+  raíz, pero el `.exe` instalado carga `dist/index.html` con `file://` y esas
+  rutas apuntan a la raíz del disco. Resultado: **app en blanco** sin error
+  visible. Recuerda esto cuando lo veas: no estás solo.
+</Aside>
+
+`strictPort: true` hace que Vite **falle** si el puerto 5173 está ocupado en vez de elegir otro al azar. Así `wait-on tcp:5173` siempre apunta al puerto correcto.
+
+## Paso 6 — `package.json`: `main` + scripts
+
+```json title="package.json"
+{
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite",
+    "dev:electron": "concurrently -k -n vite,electron -c blue,magenta \"npm:dev\" \"wait-on tcp:5173 && electron .\"",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "pack": "npm run build && electron-builder --dir",
+    "dist": "npm run build && electron-builder"
+  }
+}
+```
+
+| Campo / script | Qué hace |
+| :--- | :--- |
+| `main` | Apunta al fichero que Electron debe ejecutar cuando arranca `electron .`. |
+| `dev` | Modo web puro (sin Electron), útil para diseñar la UI rápido. |
+| `dev:electron` | Lanza Vite y, cuando 5173 responde, arranca Electron. `-k` mata todos los procesos al cerrar la ventana. |
+| `build` | Compila TS y genera `dist/`. |
+| `pack` | Empaqueta sin instalador (carpeta `release/win-unpacked/`). Rápido, para probar. |
+| `dist` | Genera el instalador `.exe` final. |
+
+<Aside type="tip" title="¿Por qué `concurrently` y no un script ad-hoc?">
+  Podrías abrir dos terminales a mano, pero entonces tu compañero tendría que
+  hacer lo mismo. `concurrently -k` te garantiza que **si cierras la ventana
+  de Electron, también mata el Vite**, evitando un proceso zombi que sigue
+  ocupando el 5173.
+</Aside>
+
+## Paso 7 — Probar en desarrollo
+
+```bash
+npm run dev:electron
+```
+
+Deberías ver dos prefijos en la consola (`vite` en azul, `electron` en magenta) y, en pocos segundos, una ventana nativa con tu app y las DevTools acopladas. El HMR de Vite sigue funcionando: edita `App.tsx`, guarda, y la ventana de Electron se actualiza.
+
+## 🧩 Aplicación en el proyecto
+
+- Has separado claramente lo que es **frontend** (en `src/`, gestionado por Vite) de lo que es **runtime de escritorio** (en `electron/`, gestionado por Electron). Esa separación es la que te permitirá mañana sustituir Vite por Next, o `localStorage` por SQLite, sin romper el resto.
+- El script `dev:electron` es **el único comando** que el resto del equipo necesita conocer para arrancar el proyecto. Documéntalo en el `README.md` y olvídate.
+- Los flags `contextIsolation`, `nodeIntegration: false` y `sandbox: true` son **los valores recomendados por defecto** del propio equipo de Electron desde la v12+. Mantén la convención salvo motivo justificado.
+
+## Resumen rápido
+
+| Pieza | Responsabilidad |
+| :--- | :--- |
+| `electron/main.cjs` | Crear la ventana, decidir si carga URL de dev o fichero de prod |
+| `electron/preload.cjs` | Exponer al renderer solo lo que decidas tú |
+| `vite.config.ts` | `base: './'` para que `file://` funcione + puerto estricto |
+| `package.json` | `main` apuntando al `.cjs` + scripts orquestados con `concurrently` |
+
+## Convención práctica
+
+<Steps>
+
+1. Todo lo que toque Node (ficheros, IPC, menús nativos) va en `electron/`. Si te encuentras importando `electron` desde `src/`, párate y replantéalo.
+2. Cualquier API expuesta desde el preload debe ser **una función concreta**, no `require` ni el módulo entero.
+3. Si cambias `vite.config.ts`, vuelve a ejecutar `npm run pack` para detectar regresiones tipo “app en blanco” cuanto antes.
+
+</Steps>
+
+## Siguientes pasos
+
+<CardGrid>
+  <LinkCard
+    href="/jjcm/di/units/deployments/installer/01-introduction"
+    title="Volver a la introducción"
+    description="Repasa el modelo de procesos de Electron si algo del setup no te encaja."
+  />
+  <LinkCard
+    href="/jjcm/di/units/deployments/installer/03-task-app-ui"
+    title="Construir la UI"
+    description="Implementar la lista de tareas en React con hook propio y persistencia."
+  />
+  <LinkCard
+    href="https://www.electronjs.org/docs/latest/tutorial/tutorial-prerequisites"
+    title="Electron Quick Start (oficial)"
+    description="Tutorial introductorio del equipo de Electron, alineado con este setup."
+    target="_blank"
+    rel="noopener noreferrer"
+  />
+</CardGrid>

@@ -1,0 +1,261 @@
+---
+title: Opciones NSIS y troubleshooting
+description: Personalización avanzada del instalador NSIS (modos, EULA, iconos, targets adicionales) y solución de los problemas más habituales.
+evaluations:
+  - id: RA8
+    statement: Prepara aplicaciones para su distribución, evaluando y empleando herramientas específicas, para obtener aplicaciones distribuibles.
+    criteria:
+      - Se ha personalizado el asistente del instalador según las necesidades del proyecto.
+      - Se han generado paquetes de instalación con distintas estrategias de despliegue.
+      - Se han resuelto incidencias comunes durante el empaquetado y la instalación.
+    contents:
+      - Opciones NSIS (`oneClick`, `perMachine`, branding, EULA)
+      - Targets adicionales (`portable`, `zip`, `nsis-web`)
+      - Diagnóstico de errores comunes
+sources:
+  - author: gach24
+    url: https://github.com/gach24/DID/tree/main/15-project-10
+  - author: electron-builder
+    url: https://www.electron.build/nsis
+sidebar:
+  order: 5
+date: 2026-05-12
+updated: 2026-05-12
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+  Aside,
+  Card,
+  CardGrid,
+  LinkCard,
+  Steps,
+  Tabs,
+  TabItem,
+} from "@astrojs/starlight/components";
+
+El instalador NSIS por defecto cubre el 80% de los casos. El 20% restante (instaladores corporativos sin preguntas, EULAs obligatorios, branding propio del asistente…) se resuelve ajustando claves del bloque `nsis`.
+
+Esta sección cataloga las opciones más útiles, muestra recetas listas para copiar y termina con una tabla de **troubleshooting** con los errores que casi seguro vas a encontrar la primera vez.
+
+<CardGrid stagger>
+  <Card title="Modos de instalación" icon="setting">
+    Asistente clásico vs un click, per-user vs per-machine.
+  </Card>
+  <Card title="Branding" icon="seti:image">
+    Iconos del propio `.exe`, banners en la cabecera, EULA personalizado.
+  </Card>
+  <Card title="Targets" icon="seti:zip">
+    Además de NSIS, puedes emitir `portable`, `zip` o `nsis-web` desde la
+    misma config.
+  </Card>
+</CardGrid>
+
+## Referencia de opciones NSIS
+
+Todas estas claves van dentro de `build.nsis` en `package.json`.
+
+| Opción | Valor por defecto | Qué hace |
+| :--- | :--- | :--- |
+| `oneClick` | `true` | Si `true`, instala sin asistente y sin opciones (estilo Squirrel). `false` muestra el asistente clásico. |
+| `perMachine` | `false` | `true` instala para todos los usuarios (requiere admin); `false` solo para el usuario actual. |
+| `allowToChangeInstallationDirectory` | `false` | Permite al usuario elegir carpeta. Solo aplica con `oneClick: false`. |
+| `createDesktopShortcut` | `true` | Crea acceso directo en el escritorio. Acepta también `"always"`. |
+| `createStartMenuShortcut` | `true` | Acceso directo en el menú Inicio. |
+| `shortcutName` | `productName` | Nombre del acceso directo. |
+| `menuCategory` | `false` | Si `true`, agrupa el acceso directo en una carpeta del menú Inicio con el nombre de `productName`; también acepta string. |
+| `runAfterFinish` | `true` | Marca por defecto la casilla “Iniciar app al terminar”. |
+| `deleteAppDataOnUninstall` | `false` | Borra `%APPDATA%\<productName>` al desinstalar. **Cuidado: pierdes datos del usuario.** |
+| `installerIcon` | `build/installerIcon.ico` | Icono del propio `.exe` del instalador. |
+| `uninstallerIcon` | `build/uninstallerIcon.ico` | Icono del desinstalador. |
+| `installerHeaderIcon` | — | Icono que sale en la cabecera del asistente. |
+| `installerHeader` | `build/installerHeader.bmp` | Banner BMP 150×57 en la cabecera (solo modo asistente). |
+| `installerSidebar` | `build/installerSidebar.bmp` | Banner BMP 164×314 lateral en primera/última página. |
+| `license` | — | Ruta a `.txt` / `.rtf` con el EULA. Si existe, aparece la página de aceptación. |
+| `language` | autodetect | Código LCID, p. ej. `"3082"` para español. |
+| `artifactName` | `${productName} Setup ${version}.${ext}` | Nombre final del fichero generado. |
+| `differentialPackage` | `true` | Genera `.blockmap` para auto-actualización diferencial con `electron-updater`. |
+
+## Targets adicionales
+
+Además de NSIS, puedes generar varios artefactos en la misma build:
+
+```jsonc title="package.json — build.win.target"
+"win": {
+  "target": [
+    { "target": "nsis", "arch": ["x64"] },
+    "portable",
+    "zip"
+  ]
+}
+```
+
+| Target | Resultado | Para qué |
+| :--- | :--- | :--- |
+| `nsis` | `.exe` con asistente | Caso por defecto, recomendable. |
+| `nsis-web` | `.exe` *downloader* (~3 MB) que descarga la app al instalar | Reducir tamaño del fichero distribuido. |
+| `portable` | `.exe` sin instalación | Lápiz USB, equipos sin permisos de admin. |
+| `appx` | Paquete para Microsoft Store | Publicación oficial en Store. |
+| `msi` | Instalador MSI (experimental) | Despliegue empresarial con GPO. |
+| `zip` / `7z` | Distribución manual | Avanzados, scripting propio. |
+| `dir` | Solo `win-unpacked/` | Igual que `npm run pack`. |
+
+Targets soportados: `nsis`, `nsis-web`, `portable`, `appx`, `squirrel`, `msi`, `zip`, `7z`, `dir`.
+
+## Recetas
+
+### Receta A — Asistente clásico con EULA
+
+<Steps>
+
+1. Crea `build/license.txt` con el texto del EULA en UTF-8.
+2. Añade al bloque `nsis`:
+
+</Steps>
+
+```json title="package.json — build.nsis"
+"nsis": {
+  "oneClick": false,
+  "allowToChangeInstallationDirectory": true,
+  "license": "build/license.txt",
+  "warningsAsErrors": false
+}
+```
+
+3. Regenera con `npm run dist`.
+
+Aparecerá una página adicional con el EULA y un radio “Acepto los términos”. Sin aceptarlo, el botón **Siguiente** queda deshabilitado.
+
+<Aside type="tip" title="Diferencia `.txt` vs `.rtf`">
+  Si tu EULA tiene formato (negritas, listas, enlaces), guárdalo como `.rtf`.
+  Si solo es texto plano, `.txt` es más fiable entre versiones de Windows.
+</Aside>
+
+### Receta B — Corporativo silencioso
+
+Instalador “siguiente, siguiente, listo” para máquinas controladas por IT:
+
+```json title="package.json — build.nsis"
+"nsis": {
+  "oneClick": true,
+  "perMachine": true,
+  "createDesktopShortcut": true,
+  "runAfterFinish": true
+}
+```
+
+<Aside type="caution" title="`perMachine: true` requiere admin">
+  Al ser per-machine, Windows pide elevación con UAC. Tenlo en cuenta si lo
+  vas a desplegar con SCCM/Intune: configura la elevación silenciosa o
+  empaqueta para el usuario actual.
+</Aside>
+
+### Receta C — Branding del propio instalador
+
+```json title="package.json — build.nsis"
+"nsis": {
+  "installerIcon": "build/installerIcon.ico",
+  "uninstallerIcon": "build/uninstallerIcon.ico",
+  "installerHeaderIcon": "build/installerHeaderIcon.ico",
+  "installerHeader": "build/installerHeader.bmp",
+  "installerSidebar": "build/installerSidebar.bmp"
+}
+```
+
+Recuerda los tamaños exactos:
+
+- `installerHeader.bmp` → **150×57** píxeles.
+- `installerSidebar.bmp` → **164×314** píxeles.
+
+Si te sales de esos tamaños, el banner aparece estirado o se ignora.
+
+### Receta D — Forzar idioma del asistente
+
+```json title="package.json — build.nsis"
+"nsis": {
+  "language": "3082"
+}
+```
+
+`3082` es el LCID de español de España. Útil cuando el usuario tiene Windows en inglés pero quieres entregar el instalador en castellano.
+
+## Troubleshooting
+
+Los problemas que casi seguro vas a encontrar la primera vez:
+
+| Síntoma | Causa habitual | Solución |
+| :--- | :--- | :--- |
+| La app empaquetada se abre **en blanco** | Falta `base: './'` en `vite.config.ts` | Añadirlo y reconstruir con `npm run dist`. |
+| `npm run dev:electron` arranca Electron pero la ventana intenta cargar y falla | Vite tarda más de lo esperado | Subir el timeout de `wait-on` o liberar el puerto 5173. |
+| `Application entry file "electron/main.cjs" does not exist` | El bloque `files` del `build` no incluye `electron/**/*` | Añadir el patrón en `build.files`. |
+| Error `app.isPackaged is undefined` | Estás ejecutando el código del main fuera de Electron (con `node`) | Arrancar con `electron .`, nunca con `node electron/main.cjs`. |
+| El icono no se ve en el ejecutable instalado | `.ico` inválido o menor de 256×256 | Regenerar el `.ico` con tamaños 16/32/48/64/128/256. |
+| SmartScreen bloquea el instalador | Falta firma de código | Es esperable sin certificado; no es un bug. |
+| `electron-builder` se queda colgado descargando | Primera ejecución: descarga binarios a `%LOCALAPPDATA%\electron-builder\Cache\` | Esperar; son ~150 MB. |
+| El instalador no actualiza una versión vieja | Cambiaste `appId` entre versiones | Mantener el mismo `appId` siempre. |
+| Pantalla negra al arrancar en Windows con GPU vieja | Aceleración por hardware no soportada | Añadir `app.disableHardwareAcceleration()` antes de `app.whenReady()`. |
+| El instalador pesa 150+ MB | Defaults sin optimizar | Ver la sección [Reducir el tamaño](/jjcm/di/units/deployments/installer/06-installer-size). |
+
+<Aside type="tip" title="Logs de electron-builder">
+  Si algo falla en `npm run dist`, lanza con
+  `DEBUG=electron-builder npm run dist` (Linux/macOS) o
+  `$env:DEBUG="electron-builder"; npm run dist` (PowerShell) para ver
+  detalles. La salida es muy verbosa pero localiza el problema en segundos.
+</Aside>
+
+## 🧩 Aplicación en el proyecto
+
+- Decide pronto si tu instalador es **per-user** (cómodo, sin UAC) o **per-machine** (corporativo, requiere admin). Cambiarlo más tarde implica reinstalaciones manuales.
+- El branding del asistente (banners + iconos) es de las cosas más rentables en percepción de calidad. **Una práctica habitual** es entregar un instalador “a estrenar” con icono y banner propios, aunque la app sea sencilla.
+- Los troubleshootings de esta tabla no son hipotéticos: aparecen en la primera build de casi cualquier proyecto Electron real.
+
+## Resumen rápido
+
+| Necesidad | Clave |
+| :--- | :--- |
+| Asistente clásico | `oneClick: false` |
+| Elegir carpeta | `allowToChangeInstallationDirectory: true` |
+| Instalar para todos | `perMachine: true` |
+| EULA obligatorio | `license: "build/license.txt"` |
+| Cambiar icono del instalador | `installerIcon` |
+| Forzar español | `language: "3082"` |
+| Borrar datos al desinstalar | `deleteAppDataOnUninstall: true` |
+
+## Convención práctica
+
+<Steps>
+
+1. **Empieza con la receta B** (corporativo silencioso) si el destino es un aula o un departamento: menos clicks, menos errores.
+2. **Empieza con la receta A** (asistente + EULA) si el destino es público: el usuario espera ver opciones.
+3. Mantén `deleteAppDataOnUninstall: false` por defecto: borrar datos del usuario sin avisar es una mala práctica.
+
+</Steps>
+
+## Siguientes pasos
+
+<CardGrid>
+  <LinkCard
+    href="/jjcm/di/units/deployments/installer/04-build-installer"
+    title="Volver al build base"
+    description="Si una opción no aplica, revisa primero la configuración mínima."
+  />
+  <LinkCard
+    href="/jjcm/di/units/deployments/installer/06-installer-size"
+    title="Reducir el tamaño del instalador"
+    description="Compresión LZMA, locales de Chromium, nsis-web y alternativas a Electron."
+  />
+  <LinkCard
+    href="https://www.electron.build/nsis"
+    title="Referencia NSIS de electron-builder"
+    description="Todas las claves soportadas, con valores por defecto y notas oficiales."
+    target="_blank"
+    rel="noopener noreferrer"
+  />
+</CardGrid>

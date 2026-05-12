@@ -1,0 +1,177 @@
+---
+title: Introducción a Electron
+description: Modelo de procesos de Electron (main, renderer, preload), por qué empaquetar React como app de escritorio y contexto del proyecto Task App.
+evaluations:
+  - id: RA8
+    statement: Prepara aplicaciones para su distribución, evaluando y empleando herramientas específicas, para obtener aplicaciones distribuibles.
+    criteria:
+      - Se han analizado las herramientas disponibles para la generación de aplicaciones distribuibles.
+      - Se han reconocido los componentes y arquitectura de la plataforma de empaquetado.
+      - Se han identificado las diferencias entre proceso principal y procesos de renderizado.
+    contents:
+      - Arquitectura main / renderer / preload de Electron
+      - Modelo de seguridad por defecto desde Electron 12+
+      - Encaje de Vite + React + Electron para apps de escritorio
+sources:
+  - author: gach24
+    url: https://github.com/gach24/DID/tree/main/15-project-10
+  - author: Electron
+    url: https://www.electronjs.org/docs/latest/tutorial/process-model
+sidebar:
+  order: 1
+date: 2026-05-12
+updated: 2026-05-12
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+  Aside,
+  Card,
+  CardGrid,
+  LinkCard,
+  Steps,
+} from "@astrojs/starlight/components";
+
+Hasta ahora has trabajado React como **aplicación web**: Vite sirve un bundle que el navegador renderiza. En esta unidad damos el siguiente paso del ciclo de vida del software: convertir esa misma aplicación en un **ejecutable de escritorio** distribuible, con su icono, su acceso directo y su instalador `.exe`.
+
+La pieza que lo hace posible es **[Electron](https://www.electronjs.org/)**: un runtime que combina **Chromium** (el motor de Chrome) con **Node.js** dentro de un mismo binario. Tu UI sigue siendo React; lo que cambia es el contenedor que la ejecuta y cómo se entrega al usuario final.
+
+<CardGrid stagger>
+  <Card title="Chromium" icon="seti:html">
+    Renderiza HTML, CSS y JavaScript igual que un navegador. Aquí vive tu app
+    React.
+  </Card>
+  <Card title="Node.js" icon="seti:javascript">
+    Da acceso al sistema operativo (ficheros, red, procesos) desde el proceso
+    principal de la aplicación.
+  </Card>
+  <Card title="Empaquetado" icon="seti:default">
+    `electron-builder` convierte todo en un `.exe`, `.dmg` o `.AppImage` con
+    icono y accesos directos.
+  </Card>
+</CardGrid>
+
+## Modelo de procesos
+
+Electron divide la app en dos tipos de procesos. Tenerlo claro desde el principio evita el 80% de los problemas típicos.
+
+### Main process (Node)
+
+- Arranca cuando lanzas la app y **no muere** hasta que el usuario la cierra.
+- Tiene acceso completo a Node.js y a las APIs del sistema operativo: ficheros, menús nativos, diálogos, bandeja del sistema…
+- Es responsable de **crear ventanas** (`BrowserWindow`) y de gestionar el ciclo de vida (`app.whenReady`, `window-all-closed`).
+- En este proyecto vive en `electron/main.cjs`.
+
+### Renderer process (Chromium)
+
+- **Cada ventana es un proceso renderer** independiente, igual que cada pestaña en Chrome.
+- Ejecuta tu app React tal cual. Tiene `window`, `document`, `fetch`, `localStorage`, todo lo que esperas en un navegador.
+- **No tiene acceso a Node por defecto** desde Electron 12+. Esto es deliberado: si el renderer carga contenido remoto comprometido, no debería poder borrar tus ficheros.
+
+### Preload script
+
+- Es el **puente controlado** entre main y renderer.
+- Se carga en el renderer pero tiene acceso a algunas APIs de Node y al canal IPC (`ipcRenderer`).
+- Aquí decides qué APIs expones al frontend con `contextBridge.exposeInMainWorld`.
+- En este proyecto vive en `electron/preload.cjs`.
+
+<Aside type="caution" title="Frontera de seguridad">
+  Trata el renderer como si fuera **una pestaña de Chrome ejecutando código
+  ajeno**. Nunca expongas `require`, `fs` o `child_process` directamente desde
+  el preload: expón solo funciones concretas con su lógica encapsulada.
+</Aside>
+
+## ¿Por qué Electron y no una web normal?
+
+Una web React publicada cubre el 90% de los casos. Recurres a Electron cuando necesitas algo de esta lista:
+
+<CardGrid>
+  <Card title="Distribución offline" icon="cloud-download">
+    Un único instalador que arranca sin servidor ni navegador.
+  </Card>
+  <Card title="APIs nativas" icon="setting">
+    Sistema de ficheros, impresión, USB, atajos globales, menú nativo, bandeja
+    del sistema.
+  </Card>
+  <Card title="Branding propio" icon="star">
+    Ventana con tu icono, sin barra del navegador, integrado en el menú Inicio.
+  </Card>
+  <Card title="Permisos elevados" icon="approve-check">
+    Acceso a recursos que un navegador no concede (puertos serie, dispositivos
+    locales, ficheros sin diálogo de subida).
+  </Card>
+</CardGrid>
+
+Si no necesitas nada de esto, una **PWA** o un build de Vite servido como web es más ligero y más sencillo de mantener.
+
+## El proyecto de esta unidad: Task App
+
+Vas a construir una **lista de tareas** mínima que demuestre el ciclo completo:
+
+<Steps>
+
+1. Crear un proyecto Vite + React + TypeScript “normal”.
+2. Envolverlo con un proceso main de Electron.
+3. Implementar la UI de tareas con persistencia en `localStorage`.
+4. Empaquetarlo con `electron-builder` en un instalador NSIS `.exe`.
+5. Probar el instalador y entender las opciones que ofrece (icono, accesos directos, modo per-user vs per-machine).
+
+</Steps>
+
+El renderer hace **todo el trabajo de la UI** (incluso el guardado, porque `localStorage` está disponible). El main solo abre la ventana. Es el caso más simple para empezar a entender Electron sin pelearse con IPC.
+
+<Aside type="tip" title="Repositorio de referencia">
+  El código completo de esta práctica vive en
+  [`gach24/DID/15-project-10`](https://github.com/gach24/DID/tree/main/15-project-10).
+  Cada sección de esta unidad enlaza al apartado correspondiente del `README.md`
+  del repo.
+</Aside>
+
+## 🧩 Aplicación en el proyecto
+
+- Esta unidad cierra el ciclo del módulo: ya has aprendido a **generar interfaces** (React), a **integrar informes** (Sakila + Jasper) y ahora aprendes a **prepararlas para su distribución**.
+- El stack (Vite + React + Electron + electron-builder) es exactamente el que usan apps reales como **VS Code**, **Slack**, **Figma Desktop** o **Discord**. No es un “Electron de juguete”.
+- En las prácticas futuras podrás reutilizar este andamiaje para empaquetar la app de informes de Sakila como ejecutable de escritorio.
+
+## Resumen rápido
+
+| Concepto | Quién es | Dónde vive en el proyecto |
+| :--- | :--- | :--- |
+| Main process | Proceso Node que arranca la app y crea ventanas | `electron/main.cjs` |
+| Renderer process | Chromium ejecutando tu app React | `dist/index.html` (build) o `http://localhost:5173` (dev) |
+| Preload script | Puente IPC entre main y renderer | `electron/preload.cjs` |
+| Empaquetador | Genera el instalador final | `electron-builder` (configurado en `package.json`) |
+
+## Convención práctica
+
+<Steps>
+
+1. Mantén el **renderer “tonto”**: que solo dibuje la UI y delegue al main cualquier cosa que necesite Node.
+2. Expón APIs **granulares** desde el preload (`exposeInMainWorld`), nunca `require` directo.
+3. No desactives `contextIsolation`, `sandbox` ni actives `nodeIntegration` sin un motivo justificado.
+
+</Steps>
+
+## Siguientes pasos
+
+<CardGrid>
+  <LinkCard
+    href="/jjcm/di/units/deployments/installer/02-project-setup"
+    title="Configurar el proyecto"
+    description="Crear el proyecto Vite + React + TS, integrarlo con Electron y configurar los scripts de desarrollo."
+  />
+  <LinkCard
+    href="https://www.electronjs.org/docs/latest/tutorial/process-model"
+    title="Process Model (oficial)"
+    description="Documentación oficial de Electron sobre main, renderer y preload."
+    target="_blank"
+    rel="noopener noreferrer"
+  />
+</CardGrid>

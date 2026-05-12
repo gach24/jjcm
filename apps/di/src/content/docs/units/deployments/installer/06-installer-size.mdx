@@ -1,0 +1,294 @@
+---
+title: Reducir el tamaño del instalador
+description: Técnicas para bajar el tamaño del instalador de Electron (compresión LZMA, locales, nsis-web, exclusiones) y alternativas como Tauri.
+evaluations:
+  - id: RA8
+    statement: Prepara aplicaciones para su distribución, evaluando y empleando herramientas específicas, para obtener aplicaciones distribuibles.
+    criteria:
+      - Se han evaluado opciones de optimización del paquete final.
+      - Se han identificado alternativas tecnológicas según los requisitos de distribución.
+      - Se ha inspeccionado el contenido del paquete generado.
+    contents:
+      - Estrategias de compresión y exclusión
+      - Targets reducidos (`nsis-web`)
+      - Alternativas a Electron (Tauri, Neutralino, Wails)
+sources:
+  - author: gach24
+    url: https://github.com/gach24/DID/tree/main/15-project-10
+  - author: electron-builder
+    url: https://www.electron.build/configuration
+  - author: Tauri
+    url: https://tauri.app/
+sidebar:
+  order: 6
+date: 2026-05-12
+updated: 2026-05-12
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+  Aside,
+  Card,
+  CardGrid,
+  LinkCard,
+  Steps,
+  Tabs,
+  TabItem,
+} from "@astrojs/starlight/components";
+
+El primer instalador que generes va a pesar **70-100 MB sin haber escrito apenas código**. No es un bug: Chromium pesa lo que pesa y viaja completo dentro del `.exe`. La buena noticia es que con cuatro ajustes en el bloque `build` puedes recortar entre **25-35 MB** sin renunciar a ninguna funcionalidad.
+
+Esta sección los ordena de **mayor a menor impacto**, con la receta combinada al final y un apartado sobre cuándo dejar Electron y mirar a **Tauri**.
+
+<CardGrid stagger>
+  <Card title="Compresión máxima" icon="seti:zip">
+    Cambiar a LZMA agresivo: ~10-15% gratis.
+  </Card>
+  <Card title="Locales" icon="translate">
+    Quitar idiomas de Chromium que no uses: ~20-25 MB.
+  </Card>
+  <Card title="nsis-web" icon="cloud-download">
+    Instalador *downloader* de 3 MB que baja la app al instalar.
+  </Card>
+</CardGrid>
+
+## A.1 — Compresión LZMA al máximo
+
+**Coste:** unos segundos más de empaquetado. **Ganancia:** ~10-15%.
+
+```json title="package.json — build"
+"compression": "maximum"
+```
+
+Por defecto es `"normal"`. `"maximum"` activa LZMA con preajuste agresivo y suele bajar el `.exe` final entre 5 y 12 MB. Es el cambio más barato.
+
+## A.2 — Quitar locales de Chromium que no usas
+
+**Coste:** la app solo entenderá los idiomas que dejes. **Ganancia:** **~20-25 MB**, la mejor relación esfuerzo/ahorro.
+
+Electron incluye ~50 ficheros `.pak` en `release/win-unpacked/locales/`, uno por idioma de Chromium. Si solo te importan español e inglés:
+
+```json title="package.json — build"
+"electronLanguages": ["en-US", "es"]
+```
+
+<Aside type="caution" title="¿Qué pierde el usuario?">
+  Los `.pak` controlan los **menús contextuales internos de Chromium** (Copiar,
+  Pegar, Inspeccionar elemento…) y mensajes del propio navegador embebido. La
+  UI de tu app React no cambia. Si quitas todos los locales menos `en-US`,
+  un usuario chino verá los menús contextuales en inglés.
+</Aside>
+
+## A.3 — `nsis-web`: instalador *downloader*
+
+**Coste:** el usuario necesita **internet** al instalar y tienes que alojar el paquete. **Ganancia:** el `.exe` pasa de ~100 MB a **~3 MB**.
+
+```json title="package.json — build.win"
+"win": {
+  "target": [{ "target": "nsis-web", "arch": ["x64"] }],
+  "icon": "build/icon.ico"
+}
+```
+
+Trade-offs:
+
+- Sin conexión, **el instalador no funciona**.
+- Hay que configurar `publish` (S3, GitHub Releases, URL genérica) para que el `.exe` sepa dónde está el paquete real.
+- La sensación percibida es la de Chrome Installer: parece instantáneo, pero descarga ~100 MB de fondo.
+
+Útil para distribución pública por web o para mailing donde el peso del adjunto importa. Mala idea para entornos sin red estable.
+
+## A.4 — Excluir basura de `node_modules`
+
+**Coste:** revisar el patrón si alguna dependencia depende de su propio `README` (raro). **Ganancia:** 5-10 MB típicos.
+
+Por defecto, `electron-builder` cuela READMEs, source maps, declaraciones TypeScript y tests dentro del `app.asar`. Filtra con exclusiones en el array `files`:
+
+```json title="package.json — build"
+"files": [
+  "dist/**/*",
+  "electron/**/*",
+  "package.json",
+  "!**/*.{md,map,d.ts,ts,tsx}",
+  "!**/{LICENSE,CHANGELOG.md,README.md}",
+  "!**/test/**",
+  "!**/tests/**",
+  "!**/__tests__/**"
+]
+```
+
+<Aside type="note" title="No excluyas tu propio TypeScript">
+  Las exclusiones `*.ts` / `*.tsx` aplican a `node_modules`. Tu código vive
+  en `dist/` (ya transpilado por Vite), así que no se ve afectado.
+</Aside>
+
+## A.5 — Desactivar `differentialPackage` si no auto-actualizas
+
+**Coste:** ninguno si no usas `electron-updater`. **Ganancia:** mínima (no es por tamaño, es por limpieza).
+
+```json title="package.json — build.nsis"
+"nsis": {
+  "differentialPackage": false
+}
+```
+
+`differentialPackage` genera un `.blockmap` para que `electron-updater` descargue solo lo que cambia entre versiones. Si tu plan es subir un instalador nuevo en cada release, no aporta nada.
+
+## A.6 — Combo recomendado para esta práctica
+
+Aplicar A.1 + A.2 + A.4 + A.5 a la vez:
+
+```json title="package.json — build"
+"build": {
+  "appId": "com.did.taskapp",
+  "productName": "Task App",
+  "asar": true,
+  "compression": "maximum",
+  "electronLanguages": ["en-US", "es"],
+  "files": [
+    "dist/**/*",
+    "electron/**/*",
+    "package.json",
+    "!**/*.{md,map,d.ts}",
+    "!**/{LICENSE,CHANGELOG.md,README.md}"
+  ],
+  "directories": {
+    "output": "release",
+    "buildResources": "build"
+  },
+  "win": {
+    "target": ["nsis"],
+    "icon": "build/icon.ico"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "Task App",
+    "runAfterFinish": true,
+    "deleteAppDataOnUninstall": false,
+    "differentialPackage": false
+  }
+}
+```
+
+**Resultado esperado:** bajar de ~100 MB a **~70-75 MB** sin tocar tu código React.
+
+## A.7 — Inspeccionar qué hay dentro del instalador
+
+Si después de aplicar todo lo anterior el `.exe` sigue pesando más de la cuenta, mira qué se está colando:
+
+<Tabs>
+  <TabItem label="PowerShell (Windows)">
+    ```powershell
+    # Tamaño real del .exe
+    Get-ChildItem release\*.exe | Select Name, Length
+
+    # Tamaño de la carpeta unpacked (siempre mayor que el .exe)
+    Get-ChildItem release\win-unpacked -Recurse | Measure-Object -Sum Length
+
+    # Listar contenido del asar (tu código React empaquetado)
+    npx asar list release\win-unpacked\resources\app.asar
+    ```
+  </TabItem>
+  <TabItem label="Bash (Linux/macOS)">
+    ```bash
+    ls -lh release/*.exe
+    du -sh release/win-unpacked
+    npx asar list release/win-unpacked/resources/app.asar
+    ```
+  </TabItem>
+</Tabs>
+
+<Aside type="tip" title="Sospechosos habituales">
+  Si `npx asar list` te muestra ficheros raros (PDFs, fuentes que no usas,
+  iconos enormes), revisa la carpeta `public/`. Todo lo que esté ahí acaba en
+  `dist/` y de ahí al instalador.
+</Aside>
+
+## A.8 — Cuándo dejar Electron
+
+Para apps que tienen que pesar **5-10 MB** o que no pueden permitirse 200 MB de RAM idle, Electron no es la herramienta. Las alternativas modernas reutilizan tu mismo bundle React pero usan el **WebView del propio sistema operativo** en vez de empaquetar Chromium:
+
+<CardGrid>
+  <Card title="Tauri (Rust)" icon="rocket">
+    Instalador de **5-10 MB**, reutilizas tu código React. En Windows usa
+    Edge WebView2 en vez de Chromium, así que algunas APIs avanzadas
+    difieren.
+  </Card>
+  <Card title="Neutralino" icon="seti:default">
+    Filosofía similar a Tauri pero en C++. Menos comunidad, instalador aún
+    más pequeño.
+  </Card>
+  <Card title="Wails (Go)" icon="seti:default">
+    Backend en Go, frontend web. Buena opción si ya escribes Go.
+  </Card>
+</CardGrid>
+
+<Aside type="caution" title="Las diferencias importan">
+  Si tu app usa APIs muy específicas de Chromium (WebAuthn, Web Bluetooth,
+  WebGPU avanzado, codecs concretos), la portabilidad a Tauri **no es
+  trivial**: cada WebView del SO tiene su propio matrix de soporte. Para una
+  app de aula como Task App, Tauri funciona sin tocar nada del frontend.
+</Aside>
+
+Para esta práctica, los puntos A.1 + A.2 + A.4 te dejan un instalador razonable sin cambiar de stack. Tauri es un buen siguiente paso para un **proyecto integrador** del módulo si quieres explorar otra arquitectura.
+
+## 🧩 Aplicación en el proyecto
+
+- **Mide antes de optimizar**. Si tu `.exe` ya pesa 70 MB, aplicar A.3 (nsis-web) puede generar más problemas (hosting, ancho de banda) que beneficios.
+- El ahorro de A.2 (locales) es **gratis y enorme**. Hazlo siempre.
+- Tauri no es “Electron pero mejor”: es una arquitectura distinta con sus propios trade-offs. Úsalo cuando el tamaño sea un requisito real, no por moda.
+
+## Resumen rápido
+
+| Optimización | Esfuerzo | Ahorro |
+| :--- | :--- | :--- |
+| Compresión máxima | Trivial (1 línea) | ~5-12 MB |
+| Quitar locales | Trivial (1 línea) | ~20-25 MB |
+| `nsis-web` | Medio (requiere hosting) | El `.exe` baja a ~3 MB |
+| Excluir basura `node_modules` | Trivial (un patrón) | ~5-10 MB |
+| Cambiar a Tauri | Alto (otra arquitectura) | Instalador < 10 MB |
+
+## Convención práctica
+
+<Steps>
+
+1. Aplica **siempre** A.1, A.2 y A.4. Son gratis.
+2. Usa A.3 (`nsis-web`) solo si distribuyes por web pública y controlas el hosting.
+3. Considera Tauri si el peso es un requisito explícito del cliente, no por estética.
+
+</Steps>
+
+## Siguientes pasos
+
+<CardGrid>
+  <LinkCard
+    href="/jjcm/di/units/deployments/installer/05-nsis-options"
+    title="Volver a opciones NSIS"
+    description="Antes de optimizar tamaño, asegura que el instalador hace lo que quieres."
+  />
+  <LinkCard
+    href="https://tauri.app/"
+    title="Tauri (sitio oficial)"
+    description="Framework alternativo basado en WebView nativo del SO."
+    target="_blank"
+    rel="noopener noreferrer"
+  />
+  <LinkCard
+    href="https://www.electron.build/configuration"
+    title="electron-builder · Configuration"
+    description="Referencia exhaustiva de todas las claves del bloque `build`."
+    target="_blank"
+    rel="noopener noreferrer"
+  />
+</CardGrid>
