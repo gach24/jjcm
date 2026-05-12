@@ -1,0 +1,464 @@
+---
+title: UI de la Task App
+description: Implementación de la lista de tareas en React con hook propio, persistencia en localStorage y componentes desacoplados.
+evaluations:
+  - id: RA8
+    statement: Prepara aplicaciones para su distribución, evaluando y empleando herramientas específicas, para obtener aplicaciones distribuibles.
+    criteria:
+      - Se ha construido una aplicación funcional sobre el contenedor de escritorio.
+      - Se ha implementado persistencia local de los datos del usuario.
+      - Se han separado responsabilidades entre estado y presentación.
+    contents:
+      - Hook personalizado `useTasks` con persistencia en `localStorage`
+      - Componentes presentacionales `TaskForm`, `TaskItem`, `TaskList`
+      - Tipado fuerte con TypeScript (`Task`)
+      - Composición desde `App.tsx`
+sources:
+  - author: gach24
+    url: https://github.com/gach24/DID/tree/main/15-project-10
+sidebar:
+  order: 3
+date: 2026-05-12
+updated: 2026-05-12
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+  Aside,
+  Card,
+  CardGrid,
+  FileTree,
+  LinkCard,
+  Steps,
+} from "@astrojs/starlight/components";
+
+Con el andamiaje Electron listo, esta sección se centra en lo que realmente ve el usuario: una **lista de tareas** con formulario para añadir, checkbox para marcar como completada, botón para eliminar y persistencia entre reinicios.
+
+El renderer de Electron es Chromium, así que **`localStorage` está disponible** sin tocar IPC. Para una app pequeña es la opción correcta: cero dependencias, cero APIs nativas. Cuando crezca, sustituyes el hook por uno que llame a Node vía preload sin tocar los componentes.
+
+<CardGrid stagger>
+  <Card title="Estado en un hook" icon="seti:react">
+    `useTasks` encapsula CRUD + persistencia. Los componentes solo dibujan.
+  </Card>
+  <Card title="Componentes tontos" icon="document">
+    `TaskForm`, `TaskItem` y `TaskList` reciben datos y callbacks por props.
+  </Card>
+  <Card title="TypeScript estricto" icon="seti:typescript">
+    Una interfaz `Task` centraliza la forma del dato.
+  </Card>
+</CardGrid>
+
+## Estructura de ficheros
+
+<FileTree>
+- src/
+  - components/
+    - TaskForm.tsx
+    - TaskItem.tsx
+    - TaskList.tsx
+  - hooks/
+    - useTasks.ts
+  - types.ts
+  - App.tsx
+  - index.css
+</FileTree>
+
+## Paso 1 — Tipos
+
+```ts title="src/types.ts"
+export interface Task {
+  id: string;
+  text: string;
+  done: boolean;
+  createdAt: number;
+}
+```
+
+<Aside type="note" title="Por qué `createdAt: number`">
+  Guardar el timestamp como `number` (epoch ms) se serializa trivialmente en
+  `localStorage` y se ordena con `<` sin parsear. Si lo guardaras como `Date`,
+  al leerlo de `JSON.parse` volvería como `string` y te quedaría una bomba de
+  relojería.
+</Aside>
+
+## Paso 2 — Hook `useTasks`
+
+Encapsula CRUD y persistencia en un único punto. El array de tareas se lee del `localStorage` al montar y se vuelca cada vez que cambia:
+
+```ts title="src/hooks/useTasks.ts" {5, 9, 14-15, 22, 30, 33, 36}
+import { useEffect, useState } from "react";
+import type { Task } from "../types";
+
+const STORAGE_KEY = "tasks";
+
+const readStorage = (): Task[] => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as Task[]) : [];
+  } catch {
+    return [];
+  }
+};
+
+export const useTasks = () => {
+  const [tasks, setTasks] = useState<Task[]>(readStorage);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+  }, [tasks]);
+
+  const addTask = (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    setTasks((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        text: trimmed,
+        done: false,
+        createdAt: Date.now(),
+      },
+    ]);
+  };
+
+  const toggleTask = (id: string) =>
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t))
+    );
+
+  const removeTask = (id: string) =>
+    setTasks((prev) => prev.filter((t) => t.id !== id));
+
+  const clearDone = () => setTasks((prev) => prev.filter((t) => !t.done));
+
+  return { tasks, addTask, toggleTask, removeTask, clearDone };
+};
+```
+
+<Aside type="tip" title="Inicializador perezoso">
+  `useState<Task[]>(readStorage)` pasa la **función**, no `readStorage()`.
+  React la ejecuta una sola vez al montar. Si pusieras `readStorage()` con
+  paréntesis, leerías `localStorage` en cada render aunque el valor no se use.
+</Aside>
+
+## Paso 3 — `TaskForm`
+
+Input controlado: el estado vive en el componente, al enviar llama a `onAdd` y limpia el campo.
+
+```tsx title="src/components/TaskForm.tsx" {17, 21, 25}
+import { useState, type FormEvent } from "react";
+
+interface Props {
+  onAdd: (text: string) => void;
+}
+
+export const TaskForm = ({ onAdd }: Props) => {
+  const [value, setValue] = useState("");
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    onAdd(value);
+    setValue("");
+  };
+
+  return (
+    <form className="task-form" onSubmit={handleSubmit}>
+      <input
+        type="text"
+        placeholder="Nueva tarea..."
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        autoFocus
+      />
+      <button type="submit" disabled={!value.trim()}>
+        Añadir
+      </button>
+    </form>
+  );
+};
+```
+
+Detalles que importan:
+
+- **`e.preventDefault()`** evita el recargado del formulario, que en Electron además dispararía una navegación a `about:blank` y rompería la app.
+- **`disabled={!value.trim()}`** desactiva el botón si solo hay espacios; refuerza la validación que ya hace `addTask`.
+- **`autoFocus`** deja el cursor listo nada más abrir la app. Detalle pequeño, UX grande.
+
+## Paso 4 — `TaskItem`
+
+Una sola tarea: checkbox + texto + botón de borrar. Clase condicional `done` para tachar:
+
+```tsx title="src/components/TaskItem.tsx"
+import type { Task } from "../types";
+
+interface Props {
+  task: Task;
+  onToggle: (id: string) => void;
+  onRemove: (id: string) => void;
+}
+
+export const TaskItem = ({ task, onToggle, onRemove }: Props) => {
+  return (
+    <li className={`task-item${task.done ? " done" : ""}`}>
+      <label>
+        <input
+          type="checkbox"
+          checked={task.done}
+          onChange={() => onToggle(task.id)}
+        />
+        <span>{task.text}</span>
+      </label>
+      <button
+        type="button"
+        className="btn-remove"
+        aria-label="Eliminar tarea"
+        onClick={() => onRemove(task.id)}
+      >
+        ✕
+      </button>
+    </li>
+  );
+};
+```
+
+<Aside type="note" title="`aria-label` no es opcional">
+  El icono ✕ es invisible para lectores de pantalla. Sin `aria-label`, el
+  usuario solo oiría “botón” sin saber qué hace. Esto encaja con los criterios
+  de accesibilidad del módulo.
+</Aside>
+
+## Paso 5 — `TaskList`
+
+Recibe el array entero y renderiza un `TaskItem` por cada tarea. Si la lista está vacía, muestra un mensaje amigable en vez de un `<ul>` vacío:
+
+```tsx title="src/components/TaskList.tsx" {12-14, 17}
+import type { Task } from "../types";
+import { TaskItem } from "./TaskItem";
+
+interface Props {
+  tasks: Task[];
+  onToggle: (id: string) => void;
+  onRemove: (id: string) => void;
+}
+
+export const TaskList = ({ tasks, onToggle, onRemove }: Props) => {
+  if (tasks.length === 0) {
+    return <p className="empty">No hay tareas. ¡Añade una!</p>;
+  }
+
+  return (
+    <ul className="task-list">
+      {tasks.map((task) => (
+        <TaskItem
+          key={task.id}
+          task={task}
+          onToggle={onToggle}
+          onRemove={onRemove}
+        />
+      ))}
+    </ul>
+  );
+};
+```
+
+<Aside type="caution" title="Nunca uses el índice como `key`">
+  `key={task.id}` es **obligatorio** en listas. Si usas el índice
+  (`key={index}`), al reordenar o eliminar tareas React reutiliza nodos
+  equivocados y aparecen bugs imposibles de depurar (un check marcado en la
+  tarea que no toca, focus que salta…). El `id` único del `crypto.randomUUID`
+  evita todo eso.
+</Aside>
+
+## Paso 6 — `App.tsx`
+
+Compone hook + componentes y muestra contadores en la cabecera:
+
+```tsx title="src/App.tsx"
+import { TaskForm } from "./components/TaskForm";
+import { TaskList } from "./components/TaskList";
+import { useTasks } from "./hooks/useTasks";
+
+function App() {
+  const { tasks, addTask, toggleTask, removeTask, clearDone } = useTasks();
+  const remaining = tasks.filter((t) => !t.done).length;
+  const completed = tasks.length - remaining;
+
+  return (
+    <main className="container">
+      <header>
+        <h1>Task App</h1>
+        <p className="subtitle">
+          {remaining} pendientes · {completed} completadas
+        </p>
+      </header>
+
+      <TaskForm onAdd={addTask} />
+      <TaskList tasks={tasks} onToggle={toggleTask} onRemove={removeTask} />
+
+      {completed > 0 && (
+        <footer>
+          <button className="btn-clear" onClick={clearDone}>
+            Limpiar completadas
+          </button>
+        </footer>
+      )}
+    </main>
+  );
+}
+
+export default App;
+```
+
+## Paso 7 — Estilos base
+
+Tema oscuro, layout centrado y tarjetas redondeadas para cada tarea:
+
+```css title="src/index.css"
+:root {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+  color-scheme: dark;
+  color: rgba(255, 255, 255, 0.92);
+  background-color: #1a1a1a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+#root {
+  width: 100%;
+  max-width: 560px;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.task-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.task-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.85rem;
+  background: #242424;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+}
+
+.task-item.done span {
+  text-decoration: line-through;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.empty {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 1.5rem 0;
+  margin: 0;
+}
+```
+
+<Aside type="tip" title="Versión completa">
+  El CSS real del repo añade animaciones, estados hover y un botón de “limpiar
+  completadas”. Tienes el fichero íntegro en
+  [`15-project-10/src/index.css`](https://github.com/gach24/DID/blob/main/15-project-10/src/index.css).
+</Aside>
+
+## Probar el resultado
+
+```bash
+npm run dev:electron
+```
+
+Deberías poder:
+
+<Steps>
+
+1. Añadir tareas y verlas aparecer al instante.
+2. Marcar y desmarcar el checkbox (tacha el texto).
+3. Eliminar con el botón ✕.
+4. **Cerrar la ventana, volver a abrirla y ver que las tareas siguen ahí**.
+
+</Steps>
+
+Ese último punto es la prueba de que `localStorage` está persistiendo correctamente en el `userData` de Electron, no en memoria.
+
+## 🧩 Aplicación en el proyecto
+
+- Has aplicado la misma arquitectura que en `sakila-app`: **hook propio para estado** + **componentes presentacionales**. El día que cambies `localStorage` por una API REST o por SQLite vía IPC, solo tocas `useTasks.ts`.
+- La validación de “tarea vacía” vive **en el hook**, no en el componente. Así no se duplica si mañana añades un atajo de teclado o un import masivo desde fichero.
+- El uso de `crypto.randomUUID()` está disponible nativamente en el renderer de Electron (Chromium moderno). No necesitas `uuid` como dependencia.
+
+## Resumen rápido
+
+| Pieza | Responsabilidad |
+| :--- | :--- |
+| `types.ts` | Forma del dato `Task` |
+| `useTasks` | Estado + CRUD + persistencia (`localStorage`) |
+| `TaskForm` | Capturar texto y delegar al hook |
+| `TaskItem` | Mostrar una tarea + emitir `onToggle` / `onRemove` |
+| `TaskList` | Mapear el array y manejar estado vacío |
+| `App` | Composición + contadores + botón “limpiar completadas” |
+
+## Convención práctica
+
+<Steps>
+
+1. **Hook por dominio**: un solo hook (`useTasks`) que devuelva estado + acciones es más mantenible que dispersar `useState` por la UI.
+2. **Componentes tontos por defecto**: si tu componente no llama a `useEffect`, mejor.
+3. **Validación cerca del dato**: la regla “no tareas vacías” vive en el hook, no en el formulario.
+
+</Steps>
+
+## Siguientes pasos
+
+<CardGrid>
+  <LinkCard
+    href="/jjcm/di/units/deployments/installer/02-project-setup"
+    title="Configuración del proyecto"
+    description="Si el HMR no recarga, revisa el setup de Vite + Electron."
+  />
+  <LinkCard
+    href="/jjcm/di/units/deployments/installer/04-build-installer"
+    title="Generar el instalador"
+    description="Convertir la app en un .exe distribuible con electron-builder."
+  />
+  <LinkCard
+    href="https://react.dev/learn/reusing-logic-with-custom-hooks"
+    title="Custom Hooks (React)"
+    description="Guía oficial sobre extracción de lógica a hooks reutilizables."
+    target="_blank"
+    rel="noopener noreferrer"
+  />
+</CardGrid>

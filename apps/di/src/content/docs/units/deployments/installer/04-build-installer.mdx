@@ -1,0 +1,259 @@
+---
+title: Generación del instalador
+description: Configuración de electron-builder para empaquetar la app, generar el instalador NSIS .exe y entender SmartScreen.
+evaluations:
+  - id: RA8
+    statement: Prepara aplicaciones para su distribución, evaluando y empleando herramientas específicas, para obtener aplicaciones distribuibles.
+    criteria:
+      - Se ha configurado un empaquetador para generar aplicaciones distribuibles.
+      - Se han generado paquetes de instalación para sistemas operativos de escritorio.
+      - Se ha probado la instalación y ejecución del paquete generado.
+    contents:
+      - Bloque `build` en `package.json`
+      - Empaquetado con `asar`
+      - Generación de instaladores NSIS para Windows
+      - Firma de código y SmartScreen
+sources:
+  - author: gach24
+    url: https://github.com/gach24/DID/tree/main/15-project-10
+  - author: electron-builder
+    url: https://www.electron.build/configuration
+sidebar:
+  order: 4
+date: 2026-05-12
+updated: 2026-05-12
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+  Aside,
+  Card,
+  CardGrid,
+  FileTree,
+  LinkCard,
+  Steps,
+} from "@astrojs/starlight/components";
+
+Hasta aquí la app funciona en desarrollo. Ahora viene el paso que separa un proyecto de aula de un producto distribuible: convertir el código fuente en un **único `.exe` que cualquier usuario pueda instalar** con doble click, sin Node ni Vite ni Git.
+
+La herramienta que lo hace es **[electron-builder](https://www.electron.build/)**. Se configura con un bloque `build` dentro de `package.json` y produce instaladores nativos para Windows, macOS y Linux a partir del mismo proyecto.
+
+<CardGrid stagger>
+  <Card title="Icono propio" icon="seti:image">
+    Un `.ico` multi-resolución para la ventana, el instalador y el acceso
+    directo.
+  </Card>
+  <Card title="Empaquetado ASAR" icon="seti:zip">
+    Todo el código React + Electron viaja en un único `app.asar`.
+  </Card>
+  <Card title="Instalador NSIS" icon="approve-check">
+    Asistente clásico de Windows con accesos directos y desinstalador.
+  </Card>
+</CardGrid>
+
+## Paso 1 — Preparar el icono
+
+`electron-builder` espera un icono en `build/icon.ico` para Windows. Requisitos mínimos:
+
+<Steps>
+
+1. Formato **`.ico`** (no PNG, no JPG).
+2. **Resolución mínima 256x256 px**, ideal multi-resolución (16, 32, 48, 64, 128, 256).
+3. Colócalo en `build/icon.ico` (crea la carpeta si no existe).
+
+</Steps>
+
+<FileTree>
+- 15-project-10/
+  - build/
+    - icon.ico        // 256x256 mínimo, multi-resolución recomendado
+  - electron/
+  - src/
+  - package.json
+</FileTree>
+
+<Aside type="tip" title="Convertir un PNG en .ico">
+  Si solo tienes un PNG, convertidores online como
+  [convertio.co](https://convertio.co/png-ico/) o
+  [cloudconvert.com](https://cloudconvert.com/png-to-ico) generan un `.ico`
+  multi-resolución decente en segundos. Pega el resultado en `build/icon.ico`.
+</Aside>
+
+## Paso 2 — Bloque `build` en `package.json`
+
+Añade este bloque al final de `package.json`, al mismo nivel que `scripts`:
+
+```json title="package.json" {3, 7-11, 12-15, 16-19, 20-29}
+{
+  "build": {
+    "appId": "com.did.taskapp",
+    "productName": "Task App",
+    "asar": true,
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "win": {
+      "target": ["nsis"],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Task App",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}
+```
+
+### Qué hace cada clave
+
+| Clave | Para qué sirve |
+| :--- | :--- |
+| `appId` | Identificador único en estilo dominio inverso. **Windows lo usa para saber si una nueva versión sobrescribe la anterior.** |
+| `productName` | Nombre que verás en el menú Inicio, en el acceso directo y en “Aplicaciones instaladas”. |
+| `asar` | Empaqueta tu código en un único `app.asar`. Reduce el número de ficheros sueltos y acelera el arranque. |
+| `files` | Patrón de qué se incluye dentro del paquete. Si dejas fuera `electron/**/*`, **la app no arranca**. |
+| `directories.output` | Carpeta donde aparece el instalador final (`release/` por convención). |
+| `directories.buildResources` | Carpeta donde `electron-builder` busca el icono y otros recursos. |
+| `win.target` | Tipos de paquete para Windows. `"nsis"` genera el asistente clásico. |
+| `nsis.*` | Opciones del instalador (ver la siguiente sección). |
+
+<Aside type="caution" title="`appId` es para siempre">
+  Si más adelante cambias `com.did.taskapp` por `com.midominio.taskapp`, una
+  nueva instalación **no sustituirá la anterior**: el usuario verá dos copias
+  en “Aplicaciones instaladas” y tendrá que desinstalar la vieja a mano.
+  Decide el `appId` con cabeza y mantenlo entre versiones.
+</Aside>
+
+<Aside type="note" title="`asar` no es cifrado">
+  El `app.asar` es básicamente un `tar` rápido. Cualquiera con acceso al
+  disco puede extraer tu código con `npx asar list` y `npx asar extract`. Si
+  necesitas ofuscar (que no proteger), hay opciones específicas en
+  electron-builder; si necesitas proteger de verdad, mueve la lógica sensible
+  al servidor.
+</Aside>
+
+## Paso 3 — Generar el paquete
+
+Con todo configurado, tienes dos comandos disponibles:
+
+```bash
+npm run pack
+```
+
+Empaqueta sin instalador en `release/win-unpacked/`. **Es lo primero que debes probar**: arranca `Task App.exe` desde esa carpeta y comprueba que la app se ve. Si está en blanco, vuelve a la sección anterior y revisa `base: './'` en `vite.config.ts`.
+
+```bash
+npm run dist
+```
+
+Genera el **instalador NSIS** en `release/Task App Setup x.y.z.exe`. La primera vez tarda más porque `electron-builder` descarga binarios de Electron y NSIS a `%LOCALAPPDATA%\electron-builder\Cache\` (~150 MB).
+
+<FileTree>
+- 15-project-10/
+  - release/
+    - win-unpacked/             // `npm run pack`
+      - Task App.exe
+      - resources/app.asar
+    - Task App Setup 1.0.0.exe  // `npm run dist`
+    - Task App Setup 1.0.0.exe.blockmap
+</FileTree>
+
+## Paso 4 — Probar el instalador
+
+Doble click en `Task App Setup 1.0.0.exe`.
+
+<Steps>
+
+1. Aparece el asistente NSIS (porque `oneClick: false`).
+2. Te permite elegir carpeta de instalación (porque `allowToChangeInstallationDirectory: true`).
+3. Crea acceso directo en el escritorio y en el menú Inicio.
+4. Lanza la app al terminar (porque `runAfterFinish: true`).
+
+</Steps>
+
+La app instalada vive en `%LOCALAPPDATA%\Programs\Task App\` (porque `perMachine: false`) y los datos de usuario en `%APPDATA%\Task App\`.
+
+<Aside type="caution" title="SmartScreen va a salir">
+  Como no firmamos el binario, **Windows SmartScreen mostrará un aviso**
+  (“Windows protegió tu PC”). Hay que pulsar **Más información → Ejecutar
+  de todas formas**. Es esperable: SmartScreen confía en certificados de
+  firma de código (de pago) y en reputación acumulada por descargas. Para
+  un instalador de aula es ruido normal, no un bug.
+</Aside>
+
+## Verificación rápida
+
+Después de instalar:
+
+| Comprobación | Cómo |
+| :--- | :--- |
+| El acceso directo aparece en el escritorio | Mira el escritorio |
+| Aparece en el menú Inicio | Busca “Task App” |
+| Aparece en “Aplicaciones instaladas” | `Configuración → Aplicaciones → Aplicaciones instaladas` |
+| Se desinstala limpiamente | Botón “Desinstalar” desde el panel anterior |
+| Los datos del usuario sobreviven a una reinstalación | Crea tareas, desinstala (sin marcar borrar datos), reinstala |
+
+## 🧩 Aplicación en el proyecto
+
+- Has cerrado el ciclo: del código fuente al `.exe` final con dos comandos. Esto es **exactamente** lo que pide RA8 del módulo 0488.
+- `npm run pack` es tu mejor amigo durante el desarrollo del empaquetado: tarda **segundos**, no minutos, y te permite iterar sobre el icono, el `files` o las rutas sin esperar a NSIS.
+- El instalador NSIS no es la única opción: en la siguiente sección verás `nsis-web` (descarga el paquete real al instalar), `portable` (un `.exe` sin instalación) y `zip` (distribución manual).
+
+## Resumen rápido
+
+| Comando | Salida | Cuándo usarlo |
+| :--- | :--- | :--- |
+| `npm run build` | `dist/` (HTML+JS de Vite) | Antes de empaquetar |
+| `npm run pack` | `release/win-unpacked/Task App.exe` | Validar que el build funciona |
+| `npm run dist` | `release/Task App Setup x.y.z.exe` | Entrega final al usuario |
+
+## Convención práctica
+
+<Steps>
+
+1. **Itera con `pack`, entrega con `dist`**. No esperes 5 minutos por un fallo de configuración: usa `pack` mientras pules.
+2. **Versiona el `appId` desde el primer día** y no lo cambies más.
+3. **Sube el icono al repo** (`build/icon.ico`); es parte del producto.
+
+</Steps>
+
+## Siguientes pasos
+
+<CardGrid>
+  <LinkCard
+    href="/jjcm/di/units/deployments/installer/03-task-app-ui"
+    title="Volver a la UI"
+    description="Si el build está en blanco, lo más probable es un fallo en la UI o en `base: './'`."
+  />
+  <LinkCard
+    href="/jjcm/di/units/deployments/installer/05-nsis-options"
+    title="Opciones del instalador NSIS"
+    description="Personaliza el asistente: EULA, modo per-machine, iconos del propio instalador y troubleshooting."
+  />
+  <LinkCard
+    href="https://www.electron.build/nsis"
+    title="electron-builder · NSIS"
+    description="Referencia completa de todas las opciones soportadas."
+    target="_blank"
+    rel="noopener noreferrer"
+  />
+</CardGrid>

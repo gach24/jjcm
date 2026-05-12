@@ -84,6 +84,18 @@ export default defineConfig({
                   },
                 }
               ],
+            },
+            {
+              label: "[lucide:book-open] Despliegues",
+              collapsed: true,
+              items: [
+                {
+                  label: "[lucide:braces] Instalador",
+                  autogenerate: {
+                    directory: "units/deployments/installer/",
+                  },
+                },
+              ],
             }
           ],
         },
