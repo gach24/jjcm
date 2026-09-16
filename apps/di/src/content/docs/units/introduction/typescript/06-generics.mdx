@@ -1,0 +1,442 @@
+---
+title: Genéricos
+description: Funciones, interfaces y tipos genéricos, restricciones con extends, keyof, Promise tipadas y los utility types más usados (Partial, Pick, Omit, Record).
+evaluations:
+  - id: RA1
+    statement: Genera interfaces gráficos de usuario mediante editores visuales utilizando las funcionalidades del editor y adaptando el código generado
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de interfaces gráficos.
+      - Se ha creado un interfaz gráfico utilizando las herramientas de un editor visual.
+    contents:
+      - Generación de interfaces de usuario
+sources:
+  - author: Microsoft — TypeScript Handbook
+    url: https://www.typescriptlang.org/docs/handbook/intro.html
+  - author: Fernando Herrera
+    url: https://cursos.devtalles.com/courses/typescript
+sidebar:
+  order: 6
+date: 2026-09-16
+updated: 2026-09-16
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+Un **genérico** es un tipo con un **parámetro**: en lugar de fijar `number` o `string`, dejas un hueco (`T`) que se rellena en cada uso. Es lo que permite que `number[]`, `Array<string>` o `Promise<Usuario>` sean el mismo tipo base con distinto contenido. Ya los has usado sin saberlo; ahora vas a escribirlos.
+
+<CardGrid stagger>
+	<Card title="Parámetro de tipo" icon="puzzle">
+		`function f<T>(x: T): T`. `T` es una variable que vale un tipo, decidido en cada llamada.
+	</Card>
+	<Card title="Restricción" icon="approve-check">
+		`<T extends { id: number }>`: `T` puede ser cualquier tipo **que tenga** `id`.
+	</Card>
+	<Card title="Utility types" icon="setting">
+		`Partial<T>`, `Pick<T, K>`, `Record<K, V>`… genéricos incluidos en TypeScript para transformar tipos.
+	</Card>
+</CardGrid>
+
+## El problema
+
+Quieres una función que devuelva el primer elemento de un array. Sin genéricos tienes dos malas opciones:
+
+```ts
+function primeroNumero(lista: number[]): number | undefined {
+	return lista[0];
+}
+function primeroTexto(lista: string[]): string | undefined {
+	return lista[0];
+}
+// … una por cada tipo
+```
+
+```ts
+function primero(lista: any[]): any {
+	return lista[0];
+}
+const p = primero(["a", "b"]);  // any: hemos perdido el tipo
+p.foo.bar;                       // compila, explota
+```
+
+## Funciones genéricas
+
+Con un parámetro de tipo, una sola función sirve para todo **sin perder** información:
+
+```ts
+function primero<T>(lista: T[]): T | undefined {
+	return lista[0];
+}
+
+const n = primero([1, 2, 3]);         // n: number | undefined
+const s = primero(["a", "b"]);        // s: string | undefined
+const v = primero<boolean>([]);       // v: boolean | undefined
+```
+
+`<T>` declara el parámetro; `T[]` y `T` lo usan. En cada llamada, TypeScript **infiere** `T` a partir del argumento. Solo hay que indicarlo explícitamente (`primero<boolean>`) cuando no pueda deducirlo.
+
+Varios parámetros de tipo:
+
+```ts
+function emparejar<A, B>(a: A, b: B): [A, B] {
+	return [a, b];
+}
+
+const par = emparejar("edad", 30);  // [string, number]
+```
+
+<Aside type="tip" title="Nombres de los parámetros">
+	`T` (de *type*) es la convención cuando solo hay uno; `K` para claves, `V` para valores, `E` para elementos. Si el significado no es obvio, un nombre descriptivo (`TElemento`, `TRespuesta`) es mejor que una letra.
+</Aside>
+
+## Interfaces y tipos genéricos
+
+Las estructuras de datos se benefician igual. Una caja que guarda un valor de cualquier tipo:
+
+```ts
+interface Caja<T> {
+	contenido: T;
+	etiqueta: string;
+}
+
+const cajaNumeros: Caja<number> = { contenido: 42, etiqueta: "respuesta" };
+const cajaLista: Caja<string[]> = { contenido: ["a", "b"], etiqueta: "letras" };
+```
+
+El patrón más útil en React: una **respuesta de API** cuyo `datos` cambia según el endpoint:
+
+```ts
+interface Respuesta<T> {
+	ok: boolean;
+	datos: T;
+	mensaje?: string;
+}
+
+interface Usuario {
+	id: number;
+	nombre: string;
+}
+
+const r1: Respuesta<Usuario> = { ok: true, datos: { id: 1, nombre: "Ana" } };
+const r2: Respuesta<Usuario[]> = { ok: true, datos: [] };
+```
+
+Con `type` funciona igual, y admite valores por defecto para el parámetro:
+
+```ts
+type Resultado<T, E = Error> =
+	| { ok: true; valor: T }
+	| { ok: false; error: E };
+
+const bien: Resultado<number> = { ok: true, valor: 7 };
+const mal: Resultado<number> = { ok: false, error: new Error("fallo") };
+const malTexto: Resultado<number, string> = { ok: false, error: "fallo" };
+```
+
+## Restricciones con `extends`
+
+Un `T` sin restringir puede ser cualquier cosa, así que dentro de la función **no puedes hacer nada** con él:
+
+```ts
+function longitud<T>(valor: T): number {
+	return valor.length;
+	// Error: Property 'length' does not exist on type 'T'.
+}
+```
+
+`extends` acota qué tipos son válidos, y dentro de la función puedes usar lo que la restricción garantiza:
+
+```ts
+function longitud<T extends { length: number }>(valor: T): number {
+	return valor.length;
+}
+
+longitud("hola");        // 4
+longitud([1, 2, 3]);     // 3
+longitud({ length: 9 }); // 9
+longitud(42);            // Error: Argument of type 'number' is not assignable to parameter of type '{ length: number; }'.
+```
+
+Un caso habitual: funciones que trabajan con **cualquier objeto que tenga `id`**:
+
+```ts
+function buscarPorId<T extends { id: number }>(lista: T[], id: number): T | undefined {
+	return lista.find(item => item.id === id);
+}
+
+const usuarios = [{ id: 1, nombre: "Ana" }, { id: 2, nombre: "Luis" }];
+const ana = buscarPorId(usuarios, 1);  // { id: number; nombre: string } | undefined
+```
+
+## `keyof` y acceso a propiedades
+
+`keyof T` es la unión de los **nombres de las propiedades** de `T`. Combinado con un genérico, permite escribir funciones que acceden a una propiedad **por nombre** de forma segura:
+
+```ts
+function obtener<T, K extends keyof T>(objeto: T, clave: K): T[K] {
+	return objeto[clave];
+}
+
+const usuario = { id: 1, nombre: "Ana", activo: true };
+
+obtener(usuario, "nombre");   // string
+obtener(usuario, "activo");   // boolean
+obtener(usuario, "email");
+// Error: Argument of type '"email"' is not assignable to parameter of type '"id" | "nombre" | "activo"'.
+```
+
+`T[K]` es el tipo de la propiedad `K` de `T`. Con esto, ordenar un array de objetos por cualquier campo queda tipado de principio a fin:
+
+```ts
+function ordenarPor<T, K extends keyof T>(lista: T[], campo: K): T[] {
+	return [...lista].sort((a, b) => (a[campo] > b[campo] ? 1 : -1));
+}
+
+ordenarPor(usuarios, "nombre");  // ok
+ordenarPor(usuarios, "edad");    // Error: no existe la propiedad
+```
+
+## Genéricos que ya usas
+
+<Tabs>
+	<TabItem label="Array">
+		```ts
+		const nums: Array<number> = [1, 2, 3];   // igual que number[]
+		nums.map(n => n * 2);                    // map<U>(fn: (n: number) => U): U[]
+		```
+	</TabItem>
+	<TabItem label="Promise">
+		```ts
+		async function cargarUsuario(id: number): Promise<Usuario> {
+			const res = await fetch(`/api/usuarios/${id}`);
+			return res.json();
+		}
+
+		const u = await cargarUsuario(1);  // u: Usuario
+		```
+
+		`Promise<T>` indica qué tipo llegará al hacer `await`. Sin ella, `res.json()` devuelve `any`.
+	</TabItem>
+	<TabItem label="Map y Set">
+		```ts
+		const edades = new Map<string, number>();
+		edades.set("Ana", 30);
+		edades.get("Ana");  // number | undefined
+
+		const vistos = new Set<number>([1, 2, 3]);
+		```
+	</TabItem>
+</Tabs>
+
+## Utility types
+
+TypeScript incluye genéricos predefinidos que **transforman** un tipo en otro. Los cuatro que más vas a usar:
+
+```ts
+interface Usuario {
+	id: number;
+	nombre: string;
+	email: string;
+	activo: boolean;
+}
+```
+
+<Tabs>
+	<TabItem label="Partial">
+		Todas las propiedades **opcionales**. Ideal para actualizaciones parciales:
+
+		```ts
+		function actualizar(id: number, cambios: Partial<Usuario>): void {
+			// cambios puede tener cualquier subconjunto de propiedades
+		}
+
+		actualizar(1, { activo: false });
+		actualizar(1, { nombre: "Ana", email: "ana@x.com" });
+		```
+	</TabItem>
+	<TabItem label="Pick">
+		**Solo** las propiedades indicadas:
+
+		```ts
+		type UsuarioPublico = Pick<Usuario, "id" | "nombre">;
+		// { id: number; nombre: string }
+
+		const tarjeta: UsuarioPublico = { id: 1, nombre: "Ana" };
+		```
+	</TabItem>
+	<TabItem label="Omit">
+		**Todas menos** las indicadas. El complementario de `Pick`:
+
+		```ts
+		type NuevoUsuario = Omit<Usuario, "id">;
+		// { nombre: string; email: string; activo: boolean }
+
+		function crear(datos: NuevoUsuario): Usuario {
+			return { id: Date.now(), ...datos };
+		}
+		```
+	</TabItem>
+	<TabItem label="Record">
+		Objeto con claves de un tipo y valores de otro:
+
+		```ts
+		type Rol = "admin" | "editor" | "lector";
+		const permisos: Record<Rol, string[]> = {
+			admin: ["leer", "escribir", "borrar"],
+			editor: ["leer", "escribir"],
+			lector: ["leer"],
+		};
+
+		const contadores: Record<string, number> = {};
+		```
+
+		Con claves literales, TypeScript exige que estén **todas**.
+	</TabItem>
+</Tabs>
+
+Otros que te encontrarás: `Required<T>` (lo contrario de `Partial`), `Readonly<T>`, `ReturnType<F>` (tipo que devuelve una función) y `Parameters<F>`.
+
+## Resumen rápido
+
+<Tabs>
+	<TabItem label="Declarar">
+		```ts
+		function f<T>(x: T): T
+		function g<A, B>(a: A, b: B): [A, B]
+		interface Caja<T> { contenido: T }
+		type Res<T, E = Error> = …
+		function h<T extends { id: number }>(x: T)
+		function k<T, K extends keyof T>(o: T, c: K): T[K]
+		```
+	</TabItem>
+	<TabItem label="Utility types">
+		```ts
+		Partial<T>       // todo opcional
+		Required<T>      // todo obligatorio
+		Readonly<T>      // todo readonly
+		Pick<T, K>       // solo K
+		Omit<T, K>       // todo menos K
+		Record<K, V>     // claves K, valores V
+		ReturnType<F>    // retorno de F
+		```
+	</TabItem>
+</Tabs>
+
+## Convención práctica
+
+<Steps>
+
+1. Escribe un genérico cuando **dos funciones o tipos solo se diferencien en un tipo**; no antes.
+2. Deja que TypeScript **infiera** `T`; pasa el tipo explícito solo cuando la inferencia falle (arrays vacíos, `useState<T>()`).
+3. **Restringe** con `extends` en cuanto necesites usar alguna propiedad de `T`.
+4. Prefiere **utility types** a redefinir a mano variantes de un tipo existente: `Omit<Usuario, "id">` se mantiene solo cuando cambia `Usuario`.
+5. Si una firma genérica se vuelve ilegible, es señal de que hay que dividirla o de que un tipo concreto era suficiente.
+
+</Steps>
+
+## Ejercicios
+
+Resuélvelos en `src/06-generics/exercises.ts`.
+
+### Básicos
+
+1. Escribe `ultimo<T>(lista: T[]): T | undefined` y comprueba pasando el ratón que devuelve `number | undefined` para un array de números y `string | undefined` para uno de textos.
+2. Escribe `envolver<T>(valor: T): { valor: T; fecha: Date }` y úsala con un número, un texto y un objeto.
+3. Declara `interface Pila<T>` con `elementos: T[]`, `apilar(e: T): void`, `desapilar(): T | undefined` y `tamano(): number`. Implementa una `Pila<number>` como objeto literal.
+4. Escribe `filtrarPor<T extends { activo: boolean }>(lista: T[]): T[]` que devuelva solo los elementos activos. Pruébala con usuarios y con productos que tengan esa propiedad.
+5. Usa `Partial<Usuario>` para escribir `fusionar(base: Usuario, cambios: Partial<Usuario>): Usuario`.
+
+### Para pensar
+
+6. Esta función compila pero pierde información. Explica en un comentario qué tipo devuelve `resultado` y reescríbela con un genérico para que sea `string[]`:
+
+	```ts
+	function duplicar(lista: any[]): any[] {
+		return [...lista, ...lista];
+	}
+	const resultado = duplicar(["a", "b"]);
+	```
+
+7. Escribe `agruparPor<T, K extends keyof T>(lista: T[], campo: K): Map<T[K], T[]>` que agrupe los elementos por el valor de un campo. Pruébala agrupando productos por `categoria`. ¿Qué tipo tiene la clave del `Map`?
+8. Con `interface Usuario` del apartado, declara usando **solo utility types** (sin repetir propiedades): `UsuarioSinEmail`, `Credenciales` (solo `email` y un nuevo campo… ¿se puede añadir con `Pick`? Si no, combina con `&`), y `UsuarioSoloLectura`.
+9. ¿Por qué `Record<Rol, string[]>` da error si olvidas una de las tres claves, y `Record<string, string[]>` no? Escribe ambos casos y explica la diferencia en un comentario.
+
+### Reto
+
+Vuelve al `pipe` del apartado de funciones y escríbelo **una sola vez** de forma genérica: `pipe<T>(...fns: Array<(x: T) => T>): (x: T) => T`. Comprueba que sirve tanto para números como para textos y que sigue rechazando mezclas.
+
+Después escribe `mapearObjeto<T, R>(objeto: Record<string, T>, fn: (valor: T) => R): Record<string, R>` que aplique `fn` a cada valor manteniendo las claves:
+
+```ts
+mapearObjeto({ a: 1, b: 2 }, n => n * 10);         // { a: 10, b: 20 }
+mapearObjeto({ x: "hola" }, s => s.length);         // { x: 4 }
+```
+
+Pista: `Object.entries` y `Object.fromEntries`, o un `for...in` acumulando en un objeto anotado como `Record<string, R>`.
+
+### Entrega
+
+<Steps>
+
+1. Copia en `src/06-generics/examples.ts` los ejemplos de este apartado que hayas probado y confírmalos:
+
+	```bash
+	git add src/06-generics/examples.ts
+	git commit -m "Añade ejemplos de genéricos"
+	```
+
+2. Resuelve los ejercicios en `src/06-generics/exercises.ts`, documéntalos en `src/06-generics/README.md` y confírmalos en un commit aparte:
+
+	```bash
+	git add src/06-generics/exercises.ts src/06-generics/README.md
+	git commit -m "Resuelve ejercicios de genéricos"
+	```
+
+3. Sube ambos commits a GitHub con `git push`.
+
+</Steps>
+
+## Siguientes pasos
+
+<CardGrid stagger>
+	<LinkCard
+		href="/jjcm/di/units/introduction/typescript/07-classes-and-modules/"
+		title="Clases y módulos"
+		description="Clases tipadas, modificadores de acceso y organización del código en módulos."
+	/>
+	<LinkCard
+		href="https://www.typescriptlang.org/docs/handbook/2/generics.html"
+		title="Generics (Handbook)"
+		description="Funciones, clases e interfaces genéricas, restricciones y keyof."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://www.typescriptlang.org/docs/handbook/utility-types.html"
+		title="Utility Types"
+		description="Referencia completa de Partial, Pick, Omit, Record y el resto."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+{/* Oculto hasta que el repositorio esté publicado. Para mostrarlo, quita este comentario.
+<Aside type="tip" title="Ejemplos ejecutables">
+	En el repositorio [dam-di-typescript](https://github.com/IESJJCM/dam-di-typescript) tienes este apartado en [`src/06-generics/`](https://github.com/IESJJCM/dam-di-typescript/tree/main/src/06-generics): `examples.ts` con el código de los apuntes y `exercises.ts` con los ejercicios. Clona, ejecuta `npm install` y `npm run build`.
+</Aside>
+*/}

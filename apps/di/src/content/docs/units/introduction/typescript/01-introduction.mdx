@@ -1,0 +1,343 @@
+---
+title: Introducción a TypeScript
+description: Qué es TypeScript, qué problema resuelve el tipado estático, cómo trabaja el compilador y la inferencia de tipos.
+evaluations:
+  - id: RA1
+    statement: Genera interfaces gráficos de usuario mediante editores visuales utilizando las funcionalidades del editor y adaptando el código generado
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de interfaces gráficos.
+      - Se ha creado un interfaz gráfico utilizando las herramientas de un editor visual.
+    contents:
+      - Generación de interfaces de usuario
+sources:
+  - author: Microsoft — TypeScript Handbook
+    url: https://www.typescriptlang.org/docs/handbook/intro.html
+  - author: Fernando Herrera
+    url: https://cursos.devtalles.com/courses/typescript
+sidebar:
+  order: 1
+date: 2026-09-16
+updated: 2026-09-16
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+TypeScript es **JavaScript con tipos**. Todo programa JavaScript válido es también TypeScript; lo que añade es una capa de **anotaciones de tipo** que el compilador comprueba **antes** de ejecutar nada. El resultado de compilar es JavaScript normal, sin rastro de los tipos.
+
+<CardGrid stagger>
+	<Card title="Superconjunto" icon="approve-check">
+		Tu JavaScript de la unidad anterior **ya es TypeScript válido**. Puedes añadir tipos poco a poco.
+	</Card>
+	<Card title="Errores antes de ejecutar" icon="warning">
+		Un `undefined is not a function` que en JavaScript aparece en producción, aquí aparece **en el editor** mientras escribes.
+	</Card>
+	<Card title="Desaparece al compilar" icon="rocket">
+		Los tipos no existen en tiempo de ejecución. `tsc` los comprueba y los **borra**; Node y el navegador nunca los ven.
+	</Card>
+</CardGrid>
+
+## El problema que resuelve
+
+En JavaScript, esta función parece correcta y no da ningún error hasta que alguien la llama mal:
+
+```js
+function calcularTotal(precio, cantidad) {
+	return precio * cantidad;
+}
+
+calcularTotal("19.99", 3);     // 59.97 — funciona por casualidad
+calcularTotal(19.99);          // NaN   — cantidad es undefined
+calcularTotal({ precio: 10 }); // NaN
+```
+
+Los tres errores se descubren **ejecutando**, a veces mucho después de escribirlos. Con TypeScript, la misma función declara qué espera:
+
+```ts
+function calcularTotal(precio: number, cantidad: number): number {
+	return precio * cantidad;
+}
+
+calcularTotal(19.99, 3); // 59.97
+```
+
+Y las llamadas incorrectas dejan de compilar:
+
+```ts
+calcularTotal("19.99", 3);
+// Error: Argument of type 'string' is not assignable to parameter of type 'number'.
+
+calcularTotal(19.99);
+// Error: Expected 2 arguments, but got 1.
+```
+
+<Aside type="tip" title="El editor es la primera línea">
+	No hace falta compilar para ver estos errores: VS Code los subraya en rojo al momento, y al pasar el ratón muestra el tipo de cada variable. Acostúmbrate a **leer esos mensajes**; son la principal ventaja de TypeScript.
+</Aside>
+
+## Tipado estático y dinámico
+
+<Tabs>
+	<TabItem label="JavaScript (dinámico)">
+		```js
+		let valor = 42;
+		valor = "cuarenta y dos"; // permitido
+		valor = { n: 42 };        // permitido
+		valor.toFixed(2);         // TypeError en ejecución
+		```
+
+		El tipo pertenece al **valor**, no a la variable. La variable puede contener cualquier cosa en cada momento.
+	</TabItem>
+	<TabItem label="TypeScript (estático)">
+		```ts
+		let valor = 42;
+		valor = "cuarenta y dos";
+		// Error: Type 'string' is not assignable to type 'number'.
+		```
+
+		El tipo pertenece a la **variable** y se fija al declararla. Cualquier asignación incompatible es un error de compilación.
+	</TabItem>
+</Tabs>
+
+**Estático** significa "sin ejecutar": el análisis se hace sobre el texto del programa. **Dinámico** significa "al ejecutar". TypeScript añade la comprobación estática **sin quitar** la dinámica: el JavaScript resultante sigue comportándose igual.
+
+## Anotaciones e inferencia
+
+Una **anotación** es el `: tipo` que escribes tras un nombre. Pero TypeScript **infiere** el tipo cuando puede deducirlo del valor, y en ese caso la anotación sobra:
+
+```ts
+let nombre: string = "Ana";  // anotación explícita
+let edad = 30;               // inferido como number
+const activo = true;         // inferido como true (literal, por ser const)
+
+let ciudad;                  // sin valor: inferido como any
+ciudad = "Oviedo";
+```
+
+Pasa el ratón por encima de `edad` en VS Code y verás `let edad: number`. La regla práctica: **anota lo que TypeScript no puede deducir** (parámetros de función, variables sin valor inicial, valores que llegan de fuera) y deja que infiera el resto.
+
+<Aside type="caution" title="`any` desactiva TypeScript">
+	Una variable de tipo `any` acepta cualquier cosa y permite cualquier operación: es JavaScript puro dentro de TypeScript. Aparece cuando no das ni valor ni anotación, o cuando lo escribes a propósito. En esta unidad, considera cada `any` un error salvo que sepas exactamente por qué está ahí.
+</Aside>
+
+## Cómo trabaja el compilador
+
+<Steps>
+
+1. **Lee** todos los archivos `.ts` incluidos en `tsconfig.json`.
+2. **Comprueba** los tipos: cada asignación, cada llamada, cada acceso a propiedad. Si algo no cuadra, muestra un error con archivo, línea y explicación.
+3. **Borra** las anotaciones y **traduce** la sintaxis moderna al nivel de JavaScript indicado en `target`.
+4. **Escribe** el resultado en `dist/`, con la misma estructura de carpetas que `src/`.
+
+</Steps>
+
+Este `examples.ts`:
+
+```ts
+function saludar(nombre: string): string {
+	return `Hola, ${nombre}`;
+}
+
+const mensaje: string = saludar("Ana");
+console.log(mensaje);
+```
+
+se convierte en este `examples.js`, que es lo que ejecuta Node:
+
+```js
+function saludar(nombre) {
+	return `Hola, ${nombre}`;
+}
+
+const mensaje = saludar("Ana");
+console.log(mensaje);
+```
+
+<Aside type="note" title="Los tipos no protegen en ejecución">
+	Como los tipos se borran, si los datos llegan de fuera (un `fetch`, un formulario, un archivo) TypeScript **no puede** comprobarlos: solo garantiza lo que ocurre dentro de tu código. Validar datos externos sigue siendo tu responsabilidad, como en JavaScript.
+</Aside>
+
+## Leer un error de TypeScript
+
+Los mensajes son largos pero siguen siempre la misma estructura. Ante este código:
+
+```ts
+const usuario = { nombre: "Ana", edad: 30 };
+console.log(usuario.email);
+```
+
+`tsc` responde:
+
+```txt
+src/01-introduction/examples.ts:2:21 - error TS2339:
+  Property 'email' does not exist on type '{ nombre: string; edad: number; }'.
+```
+
+<Steps>
+
+1. **Dónde**: archivo, línea 2, columna 21.
+2. **Código** `TS2339`: útil para buscar el error en internet.
+3. **Qué**: la propiedad `email` no existe en el tipo indicado. El tipo lo ha **inferido** del objeto literal; nunca declaraste que hubiera un `email`.
+
+</Steps>
+
+En JavaScript esa línea imprimiría `undefined` sin quejarse, y el error real aparecería más tarde, en otro sitio.
+
+## Resumen rápido
+
+<Tabs>
+	<TabItem label="Conceptos">
+		```txt
+		TypeScript = JavaScript + tipos comprobados al compilar
+		Estático    → se analiza sin ejecutar
+		Inferencia  → TypeScript deduce el tipo del valor
+		any         → desactiva la comprobación (evitar)
+		tsc         → comprueba, borra tipos y emite .js
+		```
+	</TabItem>
+	<TabItem label="Sintaxis vista">
+		```ts
+		let nombre: string = "Ana";               // anotación
+		let edad = 30;                            // inferencia
+		function f(a: number, b: number): number  // parámetros y retorno
+		```
+	</TabItem>
+</Tabs>
+
+## Convención práctica
+
+<Steps>
+
+1. **Anota parámetros de función siempre**; TypeScript no puede inferirlos y sin anotación son `any`.
+2. **Deja que infiera** las variables con valor inicial: `let edad = 30` es mejor que `let edad: number = 30`.
+3. **Anota el tipo de retorno** en funciones públicas o largas: documenta la intención y detecta antes los errores dentro de la función.
+4. **Lee los errores completos** antes de "arreglar" el código. Casi siempre dicen exactamente qué pasa.
+5. **Cero `any`** en esta unidad, salvo que puedas explicar por qué es inevitable.
+
+</Steps>
+
+## Ejercicios
+
+Resuélvelos en `src/01-introduction/exercises.ts`. Compila con `npm run build` (o deja `npm run watch` corriendo) y ejecuta con `node dist/01-introduction/exercises.js`.
+
+### Básicos
+
+1. Declara `nombre` (string), `edad` (number) y `esEstudiante` (boolean) **con anotación explícita** y muéstralas con `console.log`.
+2. Declara las mismas tres variables **sin anotación** y comprueba, pasando el ratón por encima en VS Code, que TypeScript infiere los mismos tipos.
+3. Intenta asignar un `string` a `edad`. Copia el mensaje de error completo en un comentario y déjalo comentado.
+4. Escribe `calcularTotal(precio: number, cantidad: number): number` y llámala correctamente. Después añade, comentadas, dos llamadas incorrectas con el error que da cada una.
+
+### Para pensar
+
+5. Predice si cada línea compila **antes** de probarlo, y luego comprueba:
+
+	```ts
+	let a = 10;
+	a = 20;
+	a = "veinte";
+
+	const b = 10;
+	b = 20;
+
+	let c;
+	c = 10;
+	c = "diez";
+	```
+
+	Una de las tres variables acepta ambos tipos sin error. Explica en un comentario **por qué** y qué tiene de peligroso.
+
+6. Esta función compila sin errores pero tiene un fallo lógico. TypeScript no puede detectarlo: explica en un comentario por qué el tipado estático no ayuda aquí.
+
+	```ts
+	function areaRectangulo(base: number, altura: number): number {
+		return base + altura;
+	}
+	```
+
+7. Compila `exercises.ts` y abre el `.js` generado en `dist/`. Anota en un comentario **qué ha desaparecido** y **qué se ha mantenido** respecto al `.ts`.
+
+### Reto
+
+Convierte a TypeScript esta función de JavaScript, con tipos en parámetros y retorno. Después demuestra con llamadas **comentadas** que cada uno de los tres usos incorrectos del principio del apartado (`"19.99"`, un solo argumento, un objeto) es rechazado por el compilador, copiando el mensaje de error junto a cada uno.
+
+```js
+function aplicarDescuento(precio, porcentaje) {
+	return precio - (precio * porcentaje) / 100;
+}
+```
+
+Añade una cuarta llamada con `porcentaje` igual a `150`. ¿La rechaza TypeScript? Explica en un comentario qué tipo de errores **sí** detecta el compilador y cuáles **no**.
+
+### Entrega
+
+<Steps>
+
+1. Copia en `src/01-introduction/examples.ts` los ejemplos de este apartado que hayas probado y confírmalos:
+
+	```bash
+	git add src/01-introduction/examples.ts
+	git commit -m "Añade ejemplos de introducción a TypeScript"
+	```
+
+2. Resuelve los ejercicios en `src/01-introduction/exercises.ts`, documéntalos en `src/01-introduction/README.md` y confírmalos en un commit aparte:
+
+	```bash
+	git add src/01-introduction/exercises.ts src/01-introduction/README.md
+	git commit -m "Resuelve ejercicios de introducción a TypeScript"
+	```
+
+3. Sube ambos commits a GitHub con `git push`. Comprueba que `dist/` **no** ha subido.
+
+</Steps>
+
+## Siguientes pasos
+
+<CardGrid stagger>
+	<LinkCard
+		href="/jjcm/di/units/introduction/typescript/02-basic-types/"
+		title="Tipos básicos"
+		description="Primitivos, arrays, tuplas, any, unknown y aserciones."
+	/>
+	<LinkCard
+		href="https://www.typescriptlang.org/docs/handbook/typescript-from-scratch.html"
+		title="TypeScript for the New Programmer"
+		description="Introducción oficial: qué es TypeScript y por qué existe."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://www.typescriptlang.org/play"
+		title="TypeScript Playground"
+		description="Escribe TypeScript en el navegador y ve el JavaScript generado al lado."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://www.typescriptlang.org/docs/handbook/2/basic-types.html"
+		title="The Basics (Handbook)"
+		description="Comprobación estática, tsc y emisión de JavaScript."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+{/* Oculto hasta que el repositorio esté publicado. Para mostrarlo, quita este comentario.
+<Aside type="tip" title="Ejemplos ejecutables">
+	En el repositorio [dam-di-typescript](https://github.com/IESJJCM/dam-di-typescript) tienes este apartado en [`src/01-introduction/`](https://github.com/IESJJCM/dam-di-typescript/tree/main/src/01-introduction): `examples.ts` con el código de los apuntes y `exercises.ts` con los ejercicios. Clona, ejecuta `npm install` y `npm run build`.
+</Aside>
+*/}

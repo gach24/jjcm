@@ -47,6 +47,12 @@ export default defineConfig({
                     directory: "units/introduction/javascript",
                   },
                 },
+                {
+                  label: "[lucide:braces] TypeScript",
+                  autogenerate: {
+                    directory: "units/introduction/typescript",
+                  },
+                },
               ],
             },
             {

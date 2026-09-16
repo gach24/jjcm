@@ -1,0 +1,353 @@
+---
+title: Tipos básicos
+description: Primitivos, arrays, tuplas, objetos literales, any, unknown, void, never y aserciones de tipo en TypeScript.
+evaluations:
+  - id: RA1
+    statement: Genera interfaces gráficos de usuario mediante editores visuales utilizando las funcionalidades del editor y adaptando el código generado
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de interfaces gráficos.
+      - Se ha creado un interfaz gráfico utilizando las herramientas de un editor visual.
+    contents:
+      - Generación de interfaces de usuario
+sources:
+  - author: Microsoft — TypeScript Handbook
+    url: https://www.typescriptlang.org/docs/handbook/intro.html
+  - author: Fernando Herrera
+    url: https://cursos.devtalles.com/courses/typescript
+sidebar:
+  order: 2
+date: 2026-09-16
+updated: 2026-09-16
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+Los tipos básicos de TypeScript se corresponden con los valores que ya conoces de JavaScript: `string`, `number`, `boolean`, arrays y objetos. A ellos se suman unos pocos tipos **propios de TypeScript** (`any`, `unknown`, `void`, `never`) que no existen en ejecución y sirven para describir situaciones especiales.
+
+<CardGrid stagger>
+	<Card title="Primitivos" icon="pencil">
+		`string`, `number`, `boolean`, `null`, `undefined`, `bigint`, `symbol`. Se escriben en **minúscula**.
+	</Card>
+	<Card title="Colecciones" icon="list-format">
+		`number[]` para arrays, `[string, number]` para tuplas, `{ nombre: string }` para objetos.
+	</Card>
+	<Card title="Especiales" icon="warning">
+		`any` (todo vale), `unknown` (todo vale, pero compruébalo), `void` (no devuelve), `never` (no ocurre).
+	</Card>
+</CardGrid>
+
+## Primitivos
+
+```ts
+let nombre: string = "Ana";
+let edad: number = 30;
+let activo: boolean = true;
+let saldo: bigint = 9007199254740993n;
+let nada: null = null;
+let sinDefinir: undefined = undefined;
+```
+
+<Aside type="caution" title="`string`, no `String`">
+	`String`, `Number` y `Boolean` con mayúscula también existen, pero son los **objetos envoltorio** de JavaScript, no los tipos primitivos. Usa siempre la versión en minúscula; la mayúscula acepta cosas que no quieres.
+</Aside>
+
+`number` cubre enteros y decimales, igual que en JavaScript. No hay `int` ni `float`:
+
+```ts
+let entero: number = 42;
+let decimal: number = 3.14;
+let negativo: number = -7;
+let infinito: number = Infinity;
+```
+
+## Arrays
+
+Dos sintaxis equivalentes; la primera es la habitual:
+
+```ts
+const numeros: number[] = [1, 2, 3];
+const nombres: Array<string> = ["Ana", "Luis"];
+
+numeros.push(4);
+numeros.push("cinco");
+// Error: Argument of type 'string' is not assignable to parameter of type 'number'.
+```
+
+Con inferencia, el tipo del array sale de sus elementos:
+
+```ts
+const mezcla = [1, "dos", true]; // (string | number | boolean)[]
+const vacio = [];                // any[] — evítalo: anota el tipo
+const lista: string[] = [];      // mejor
+```
+
+## Tuplas
+
+Un array de **longitud fija** donde cada posición tiene su tipo. Útil para pares y ternas con significado posicional:
+
+```ts
+const coordenada: [number, number] = [43.36, -5.85];
+const entrada: [string, number] = ["Ana", 30];
+
+const [usuario, puntos] = entrada; // usuario: string, puntos: number
+
+entrada[2] = "extra";
+// Error: Tuple type '[string, number]' of length '2' has no element at index '2'.
+```
+
+<Aside type="tip" title="Tuplas en React">
+	Las verás constantemente: `useState` devuelve una tupla `[valor, setValor]`. Entender que la posición 0 y la 1 tienen tipos distintos es lo que hace que la desestructuración funcione con seguridad.
+</Aside>
+
+## Objetos
+
+El tipo de un objeto describe sus propiedades y el tipo de cada una:
+
+```ts
+const persona: { nombre: string; edad: number } = {
+	nombre: "Ana",
+	edad: 30,
+};
+
+persona.edad = 31;      // ok
+persona.email = "a@b";  // Error: Property 'email' does not exist on type ...
+```
+
+Con inferencia, basta con escribir el literal:
+
+```ts
+const producto = { nombre: "Teclado", precio: 49.99 };
+// tipo inferido: { nombre: string; precio: number }
+```
+
+Las propiedades **opcionales** se marcan con `?` y las de **solo lectura** con `readonly`:
+
+```ts
+const config: { readonly host: string; puerto?: number } = { host: "localhost" };
+
+config.puerto = 3000;   // ok: era opcional
+config.host = "otro";   // Error: Cannot assign to 'host' because it is a read-only property.
+```
+
+Escribir el tipo del objeto en cada variable es pesado; en el siguiente apartado verás cómo darle un **nombre** con `interface` y `type`.
+
+## `any` y `unknown`
+
+Ambos aceptan **cualquier valor**. La diferencia está en lo que te dejan hacer después:
+
+<Tabs>
+	<TabItem label="any">
+		```ts
+		let dato: any = obtenerDeAlgunSitio();
+
+		dato.toUpperCase();   // compila, aunque dato sea un número
+		dato.foo.bar.baz;     // compila, y explota en ejecución
+		const n: number = dato; // compila
+		```
+
+		`any` **desactiva la comprobación**. Todo compila; los errores vuelven a aparecer al ejecutar, como en JavaScript.
+	</TabItem>
+	<TabItem label="unknown">
+		```ts
+		let dato: unknown = obtenerDeAlgunSitio();
+
+		dato.toUpperCase();
+		// Error: 'dato' is of type 'unknown'.
+
+		if (typeof dato === "string") {
+			dato.toUpperCase(); // ok: dentro del if, TypeScript sabe que es string
+		}
+		```
+
+		`unknown` te obliga a **comprobar el tipo** antes de usar el valor. Es la opción correcta para datos que vienen de fuera.
+	</TabItem>
+</Tabs>
+
+<Aside type="note" title="Cuándo aparece `any` sin que lo escribas">
+	Parámetros sin anotación, variables declaradas sin valor, `JSON.parse()` y las respuestas de `fetch` (`res.json()`) devuelven `any`. Con `strict` activado, el compilador avisa de los parámetros; los demás casos tienes que detectarlos tú y anotarlos.
+</Aside>
+
+## `void` y `never`
+
+`void` es el tipo de retorno de una función que **no devuelve nada** útil:
+
+```ts
+function registrar(mensaje: string): void {
+	console.log(`[LOG] ${mensaje}`);
+}
+```
+
+`never` es el tipo de algo que **nunca ocurre**: una función que siempre lanza un error o que no termina.
+
+```ts
+function fallar(mensaje: string): never {
+	throw new Error(mensaje);
+}
+```
+
+Lo usarás sobre todo para comprobar que has cubierto todos los casos de una unión, en el apartado de [narrowing](/jjcm/di/units/introduction/typescript/05-unions-and-narrowing/).
+
+## Aserciones de tipo
+
+A veces sabes algo que TypeScript no puede deducir. Con `as` le dices "trátalo como este tipo":
+
+```ts
+const entrada = document.getElementById("nombre") as HTMLInputElement;
+console.log(entrada.value); // sin el as, entrada sería HTMLElement | null y .value no existiría
+```
+
+<Aside type="caution" title="Una aserción no convierte nada">
+	`as` no cambia el valor ni lo comprueba: solo **acalla** al compilador. Si te equivocas, el error aparece en ejecución. Úsalo cuando tengas una razón concreta, nunca para hacer desaparecer un error que no entiendes.
+</Aside>
+
+## Resumen rápido
+
+<Tabs>
+	<TabItem label="Anotar">
+		```ts
+		let s: string;               let n: number;
+		let b: boolean;              let u: undefined;
+		let arr: number[];           let tupla: [string, number];
+		let obj: { a: string; b?: number; readonly c: boolean };
+		```
+	</TabItem>
+	<TabItem label="Especiales">
+		```ts
+		any      // todo vale, sin comprobar → evitar
+		unknown  // todo vale, comprobar antes de usar
+		void     // función sin retorno
+		never    // no ocurre nunca (throw, bucle infinito)
+		x as T   // aserción: "confía en mí"
+		```
+	</TabItem>
+</Tabs>
+
+## Convención práctica
+
+<Steps>
+
+1. Tipos primitivos en **minúscula**: `string`, no `String`.
+2. Arrays con `tipo[]`; `Array<tipo>` solo cuando el tipo sea largo y las llaves ayuden a leer.
+3. Anota los **arrays vacíos** (`const lista: string[] = []`); sin anotación son `any[]`.
+4. Datos externos como **`unknown`**, nunca `any`, y compruébalos antes de usarlos.
+5. Aserciones `as` solo con una razón que puedas escribir en un comentario al lado.
+
+</Steps>
+
+## Ejercicios
+
+Resuélvelos en `src/02-basic-types/exercises.ts`. Recuerda: compilar, mirar los errores y solo después ejecutar con `node dist/02-basic-types/exercises.js`.
+
+### Básicos
+
+1. Declara una variable de cada tipo primitivo (`string`, `number`, `boolean`, `null`, `undefined`) con anotación explícita e imprímelas.
+2. Declara un array `notas: number[]`, añade tres valores con `push` e intenta añadir un `string`. Deja la línea comentada con el error.
+3. Declara una tupla `alumno: [string, number, boolean]` con nombre, edad y si está matriculado. Desestructúrala en tres variables e imprímelas.
+4. Declara un objeto `libro` con `titulo` (string), `paginas` (number) y `autor` opcional. Crea dos libros: uno con autor y otro sin él.
+5. Escribe `mostrar(mensaje: string): void` que imprima el mensaje, y `abortar(motivo: string): never` que lance un `Error`.
+
+### Para pensar
+
+6. Predice el tipo que **infiere** TypeScript para cada variable y comprueba pasando el ratón en VS Code:
+
+	```ts
+	const a = [1, 2, 3];
+	const b = [1, "dos"];
+	const c = [];
+	const d = { x: 1, y: "dos" };
+	const e = null;
+	let f = null;
+	```
+
+7. Este código compila. Explica en un comentario **por qué** compila y **qué ocurrirá** al ejecutarlo. Reescríbelo con `unknown` para que el compilador detecte el problema.
+
+	```ts
+	const datos: any = JSON.parse('{"nombre": "Ana"}');
+	console.log(datos.direccion.calle);
+	```
+
+8. ¿Cuál es la diferencia entre `let x: number[]` y `let x: [number]`? Escribe un valor que sea válido para el primero y no para el segundo, y otro válido para ambos.
+
+### Reto
+
+Escribe `describir(valor: unknown): string` que devuelva una descripción del valor recibido **sin usar `any` ni aserciones**:
+
+```txt
+describir("hola")      → "texto de 4 caracteres"
+describir(42)          → "número entero"
+describir(3.5)         → "número decimal"
+describir(true)        → "booleano verdadero"
+describir(null)        → "nulo"
+describir([1, 2, 3])   → "array de 3 elementos"
+describir({ a: 1 })    → "objeto con 1 propiedad(es)"
+```
+
+Pista: cada `if (typeof valor === "...")` o `Array.isArray(valor)` estrecha el tipo de `unknown` a algo concreto dentro del bloque. Para el objeto, `Object.keys` necesita que ya hayas descartado `null`.
+
+### Entrega
+
+<Steps>
+
+1. Copia en `src/02-basic-types/examples.ts` los ejemplos de este apartado que hayas probado y confírmalos:
+
+	```bash
+	git add src/02-basic-types/examples.ts
+	git commit -m "Añade ejemplos de tipos básicos"
+	```
+
+2. Resuelve los ejercicios en `src/02-basic-types/exercises.ts`, documéntalos en `src/02-basic-types/README.md` y confírmalos en un commit aparte:
+
+	```bash
+	git add src/02-basic-types/exercises.ts src/02-basic-types/README.md
+	git commit -m "Resuelve ejercicios de tipos básicos"
+	```
+
+3. Sube ambos commits a GitHub con `git push`.
+
+</Steps>
+
+## Siguientes pasos
+
+<CardGrid stagger>
+	<LinkCard
+		href="/jjcm/di/units/introduction/typescript/03-interfaces-and-types/"
+		title="Interfaces y type"
+		description="Dar nombre a los tipos de objeto y reutilizarlos."
+	/>
+	<LinkCard
+		href="https://www.typescriptlang.org/docs/handbook/2/everyday-types.html"
+		title="Everyday Types (Handbook)"
+		description="Primitivos, arrays, objetos, any y aserciones en la documentación oficial."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://www.typescriptlang.org/docs/handbook/2/objects.html#tuple-types"
+		title="Tuple Types"
+		description="Tuplas, elementos opcionales y tuplas de solo lectura."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+{/* Oculto hasta que el repositorio esté publicado. Para mostrarlo, quita este comentario.
+<Aside type="tip" title="Ejemplos ejecutables">
+	En el repositorio [dam-di-typescript](https://github.com/IESJJCM/dam-di-typescript) tienes este apartado en [`src/02-basic-types/`](https://github.com/IESJJCM/dam-di-typescript/tree/main/src/02-basic-types): `examples.ts` con el código de los apuntes y `exercises.ts` con los ejercicios. Clona, ejecuta `npm install` y `npm run build`.
+</Aside>
+*/}
