@@ -17,7 +17,7 @@ sources:
 sidebar:
   order: 4
 date: 2026-03-21
-updated: 2026-03-21
+updated: 2026-09-16
 author:
   name: Germán Carreño
   email: germanach@educastur.com
@@ -377,6 +377,117 @@ console.log(total);         // 3
 
 </Steps>
 
+## Ejercicios
+
+Resuélvelos en `src/04-destructuring/exercises.js`. En todos los casos la solución debe usar **desestructuración**, no acceso por punto o por índice.
+
+### Básicos
+
+1. Dado el objeto `persona` con `nombre`, `edad` y `ciudad`, extrae `nombre` y `edad` en variables y muéstralas.
+2. Dado `producto = { nombre: "Teclado", precio: 49.99 }`, extrae sus propiedades **renombrándolas** a `nombreProducto` y `precioFinal`.
+3. Dado `config = { tema: "oscuro" }`, extrae `tema` e `idioma`, con `"es"` como **valor por defecto** para `idioma`.
+4. Dado el array `["manzana", "pera", "plátano", "naranja"]`, extrae los dos primeros en `fruta1` y `fruta2` y guarda el resto en un nuevo array con **rest**.
+
+	Salida esperada:
+
+	```txt
+	manzana
+	pera
+	["plátano", "naranja"]
+	```
+
+5. Intercambia los valores de dos variables **sin variable auxiliar**.
+
+	```js
+	let a = 100;
+	let b = 200;
+	```
+
+6. Extrae el color `"azul"` del array anidado en una sola sentencia.
+
+	```js
+	const colores = ["rojo", ["verde", "azul", "amarillo"]];
+	```
+
+### Para pensar
+
+7. Escribe `mostrarUsuario({ nombre, rol = "visitante" })` que reciba un objeto y desestructure **en los parámetros**. Llámala con `{ nombre: "Ana", rol: "admin" }` y con `{ nombre: "Luis" }`.
+
+	Salida esperada:
+
+	```txt
+	Ana (admin)
+	Luis (visitante)
+	```
+
+8. De esta respuesta, extrae `status`, el **primer usuario**, el resto de usuarios y `total` en una única desestructuración anidada.
+
+	```js
+	const respuesta = {
+		status: 200,
+		datos: {
+			usuarios: ["Ana", "Luis", "Marta"],
+			total: 3,
+		},
+	};
+	```
+
+9. Dado un usuario con `nombre`, `email` y `password`, usa **rest en objetos** para obtener un nuevo objeto `usuarioSeguro` que contenga todo **menos** `password`. Comprueba con `console.log` que el original no se ha modificado.
+
+### Reto
+
+Escribe `resumirPedido(pedido)` que, usando desestructuración **en los parámetros** con valores por defecto, devuelva una cadena como `"Ana: 3 líneas, envío a Oviedo"`. Debe funcionar con los tres pedidos siguientes sin lanzar errores:
+
+```js
+const pedido1 = {
+	cliente: { nombre: "Ana" },
+	lineas: ["Teclado", "Ratón", "Monitor"],
+	envio: { ciudad: "Oviedo" },
+};
+
+const pedido2 = {
+	cliente: { nombre: "Luis" },
+	lineas: ["Cable"],
+};
+
+const pedido3 = {
+	cliente: {},
+	lineas: [],
+};
+```
+
+Salida esperada:
+
+```txt
+Ana: 3 líneas, envío a Oviedo
+Luis: 1 líneas, envío a desconocida
+Cliente anónimo: 0 líneas, envío a desconocida
+```
+
+Pista: cuando una propiedad anidada puede no existir, el valor por defecto va **en el nivel intermedio** (`envio: { ciudad = "desconocida" } = {}`).
+
+### Entrega
+
+<Steps>
+
+1. Copia en `src/04-destructuring/examples.js` los ejemplos de este apartado que hayas probado y confírmalos:
+
+	```bash
+	git add src/04-destructuring/examples.js
+	git commit -m "Añade ejemplos de desestructuración"
+	```
+
+2. Resuelve los ejercicios en `src/04-destructuring/exercises.js`, documéntalos en `src/04-destructuring/README.md` y confírmalos en un commit aparte:
+
+	```bash
+	git add src/04-destructuring/exercises.js src/04-destructuring/README.md
+	git commit -m "Resuelve ejercicios de desestructuración"
+	```
+
+3. Sube ambos commits a GitHub con `git push`.
+
+</Steps>
+
 ## Siguientes pasos
 
 Documentación de referencia en **MDN** (español):
@@ -405,6 +516,8 @@ Documentación de referencia en **MDN** (español):
 	/>
 </CardGrid>
 
+{/* Oculto hasta que el repositorio esté publicado. Para mostrarlo, quita este comentario.
 <Aside type="tip" title="Ejemplos ejecutables">
-	En el repositorio [DID — carpeta `01-javascript`](https://github.com/gach24/DID/tree/main/01-javascript) tienes el código de muestra (`js/`), los **ejercicios** (`ejercicios/`) y un `index.html` para probarlo en el navegador (p. ej. con Live Server).
+	En el repositorio [dam-di-javascript](https://github.com/IESJJCM/dam-di-javascript) tienes este apartado en [`src/04-destructuring/`](https://github.com/IESJJCM/dam-di-javascript/tree/main/src/04-destructuring): `examples.js` con el código de los apuntes, `exercises.js` con los ejercicios y su `index.html` para abrirlo con Live Server.
 </Aside>
+*/}

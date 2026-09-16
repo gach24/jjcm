@@ -1,0 +1,521 @@
+---
+title: Preparar el proyecto
+description: Estructura de carpetas del repositorio de apuntes de JavaScript y su creación en Git y GitHub.
+evaluations:
+  - id: RA1
+    statement: Genera interfaces gráficos de usuario mediante editores visuales utilizando las funcionalidades del editor y adaptando el código generado
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de interfaces gráficos.
+      - Se ha creado un interfaz gráfico utilizando las herramientas de un editor visual.
+    contents:
+      - Generación de interfaces de usuario
+sources:
+  - author: Fernando Herrera
+    url: https://cursos.devtalles.com/courses/javascript-moderno
+  - author: Juan Pablo De la torre Valdez
+    url: https://www.udemy.com/course/react-de-principiante-a-experto-creando-mas-de-10-aplicaciones/
+sidebar:
+  order: 0
+date: 2026-09-16
+updated: 2026-09-16
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	FileTree,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+Los ejemplos de esta unidad viven en un **repositorio propio**, independiente del resto del módulo. Antes de escribir la primera línea de código vas a crear su estructura de carpetas, ponerla bajo control de versiones con **Git** y publicarla en **GitHub**.
+
+<CardGrid stagger>
+	<Card title="Un repositorio por unidad" icon="open-book">
+		Este repositorio contiene **solo** JavaScript. Cada unidad posterior (React, informes, despliegues) tendrá el suyo, con su propio historial y sus propias dependencias.
+	</Card>
+	<Card title="Git" icon="seti:git">
+		Historial **local** de tu trabajo. Cada `commit` es un punto al que puedes volver si algo se rompe.
+	</Card>
+	<Card title="GitHub" icon="github">
+		Copia **remota** del repositorio. Es lo que enlazarás al entregar y lo que te permite trabajar desde varios equipos.
+	</Card>
+</CardGrid>
+
+<Aside type="note" title="Requisitos previos">
+	Necesitas **Git** y **Node.js** instalados, Git configurado con tu nombre y correo, y la extensión **Live Server** en VS Code. Si aún no lo has hecho, sigue la página de [Instalaciones](/jjcm/di/installations/) antes de continuar.
+</Aside>
+
+## Estructura del repositorio
+
+La estructura propuesta es **una carpeta por apartado** de la unidad, numerada en el mismo orden que el menú lateral. Cada carpeta es **autocontenida**: tiene su propia página HTML y su propio código, así que puedes abrir un apartado y ejecutarlo sin tocar nada de los demás.
+
+<FileTree>
+
+- di-javascript/
+  - .gitignore
+  - README.md
+  - index.html            índice: enlaza los 8 apartados
+  - assets/
+    - styles.css          estilo mínimo compartido
+  - src/
+    - **01-variables/**
+      - index.html        página del apartado
+      - examples.js       código explicado en los apuntes
+      - exercises.js      espacio para practicar
+      - README.md         explicación de tus soluciones
+    - 02-types/
+    - 03-functions/
+    - 04-destructuring/
+    - 05-array-methods/
+    - **06-modules/**
+      - index.html
+      - examples.js
+      - operations.js     módulo auxiliar que se importa
+      - exercises.js
+      - README.md
+    - 07-promises/
+    - 08-fetch/
+
+</FileTree>
+
+<Aside type="tip" title="El nombre del repositorio">
+	En los ejemplos se usa **`di-javascript`**: prefijo del módulo más tema. Escala bien al resto de unidades (`di-react`, `di-informes`, `di-electron`) y las agrupa en tu perfil de GitHub. Si tu profesor indica otro nombre, sustitúyelo en todos los comandos.
+</Aside>
+
+### Por qué esta estructura
+
+<Steps>
+
+1. **Una carpeta por apartado** evita el archivo `index.html` único que hay que editar cada vez que cambias de ejemplo. Abres la carpeta, pulsas *Open with Live Server* y ya está.
+2. **Nombres de archivo iguales en todas las carpetas** (`examples.js`, `exercises.js`): el contexto lo da la carpeta, no el nombre. No tienes que recordar cómo llamaste al archivo de cada tema.
+3. **`examples.js` separado de `exercises.js`**: el primero es material de referencia que puedes consultar siempre; el segundo es tuyo y puedes romperlo sin miedo.
+4. **Un `README.md` por apartado** donde explicas tus soluciones con tus palabras. GitHub lo muestra automáticamente al abrir la carpeta, así que quien revise tu repositorio ve primero la explicación y después el código.
+5. **Numeración con dos dígitos** (`01-`, `02-`, … `10-`). Con un solo dígito el orden alfabético colocaría `10-` antes que `2-`, y la carpeta dejaría de leerse de arriba abajo.
+6. **`src/` agrupa el código** y deja en la raíz solo lo que describe el proyecto (`README.md`, `index.html`, `.gitignore`). Es la convención que te encontrarás en cualquier proyecto real.
+
+</Steps>
+
+<Aside type="note" title="Por qué `06-modules` tiene un archivo de más">
+	Para explicar `import`/`export` hacen falta **dos** archivos: uno que exporta y otro que importa. Tener cada apartado en su propia carpeta permite añadir los archivos auxiliares que necesite sin ensuciar los demás.
+</Aside>
+
+## Crear la estructura
+
+Abre una terminal en la carpeta donde guardes tus proyectos del módulo (Ej: di) y ejecuta los comandos de tu sistema. El bucle crea los ocho apartados con sus cuatro archivos de una sola vez.
+
+<Tabs>
+	<TabItem label="Linux / macOS / Git Bash" icon="lucide:terminal">
+		```bash
+		mkdir -p 01-javascript/assets 01-javascript/src
+		cd 01-javascript
+		touch .gitignore README.md index.html assets/styles.css
+
+		for apartado in 01-variables 02-types 03-functions 04-destructuring \
+		                05-array-methods 06-modules 07-promises 08-fetch; do
+		  mkdir -p "src/$apartado"
+		  touch "src/$apartado/index.html" "src/$apartado/examples.js" "src/$apartado/exercises.js" "src/$apartado/README.md"
+		done
+
+		touch src/06-modules/operations.js
+		```
+	</TabItem>
+	<TabItem label="Windows (PowerShell)" icon="lucide:monitor">
+		```powershell
+		mkdir di-javascript\assets, di-javascript\src
+		cd di-javascript
+		ni .gitignore, README.md, index.html, assets\styles.css
+
+		$apartados = "01-variables","02-types","03-functions","04-destructuring",
+		             "05-array-methods","06-modules","07-promises","08-fetch"
+
+		foreach ($a in $apartados) {
+		  ni -ItemType Directory -Force "src\$a"
+		  ni -ItemType File -Force "src\$a\index.html", "src\$a\examples.js", "src\$a\exercises.js", "src\$a\README.md"
+		}
+
+		ni src\06-modules\operations.js
+		```
+	</TabItem>
+</Tabs>
+
+Abre después la carpeta en el editor con `code .` (o **Archivo → Abrir carpeta**). Trabaja **siempre con `di-javascript` abierta como raíz**, no con archivos sueltos: es lo que permite que Git y el editor detecten la configuración del proyecto.
+
+### El índice de la raíz
+
+Este `index.html` es la portada del repositorio: enlaza los ocho apartados para que no tengas que navegar por las carpetas.
+
+```html title="index.html"
+<!doctype html>
+<html lang="es">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Apuntes de JavaScript</title>
+		<link rel="stylesheet" href="./assets/styles.css" />
+	</head>
+	<body>
+		<h1>Apuntes de JavaScript</h1>
+		<ol>
+			<li><a href="./src/01-variables/">Variables</a></li>
+			<li><a href="./src/02-types/">Tipos de datos</a></li>
+			<li><a href="./src/03-functions/">Funciones y arrow functions</a></li>
+			<li><a href="./src/04-destructuring/">Desestructuración</a></li>
+			<li><a href="./src/05-array-methods/">Métodos de arrays</a></li>
+			<li><a href="./src/06-modules/">Módulos</a></li>
+			<li><a href="./src/07-promises/">Promesas y async/await</a></li>
+			<li><a href="./src/08-fetch/">Fetch API</a></li>
+		</ol>
+	</body>
+</html>
+```
+
+### La página de cada apartado
+
+El `index.html` de cada carpeta es casi idéntico: cambian el título y, si acaso, el script que carga. Copia esta plantilla en los ocho apartados.
+
+```html title="src/01-variables/index.html" {12}
+<!doctype html>
+<html lang="es">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>01 · Variables</title>
+		<link rel="stylesheet" href="../../assets/styles.css" />
+	</head>
+	<body>
+		<h1>01 · Variables</h1>
+		<p>Abre la consola del navegador con <kbd>F12</kbd> para ver los resultados.</p>
+		<script type="module" src="./examples.js"></script>
+	</body>
+</html>
+```
+
+<Aside type="caution" title="El atributo type=module no es opcional">
+	Sin `type="module"` el navegador rechaza los `import`/`export` que verás en [Módulos en JavaScript](/jjcm/di/units/introduction/javascript/06-modules/). Déjalo puesto desde el primer día y te ahorrarás el error `Cannot use import statement outside a module`.
+</Aside>
+
+Para ejecutar tus propias pruebas en lugar de los apuntes, cambia una sola línea:
+
+```html
+<script type="module" src="./exercises.js"></script>
+```
+
+### Estilo compartido
+
+No es el objetivo de la unidad, pero un CSS mínimo hace las páginas legibles y evita el aspecto de documento sin formato.
+
+```css title="assets/styles.css"
+body {
+	font-family: system-ui, sans-serif;
+	max-width: 48rem;
+	margin: 2rem auto;
+	padding: 0 1rem;
+	line-height: 1.6;
+}
+
+h1 {
+	border-bottom: 2px solid #ddd;
+	padding-bottom: 0.5rem;
+}
+
+a {
+	color: #0b57d0;
+}
+```
+
+### `.gitignore`
+
+Indica a Git qué **no** debe guardar en el historial: archivos propios de tu sistema o de tu editor.
+
+```bash title=".gitignore"
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+
+# Dependencias (por si más adelante añades alguna)
+node_modules/
+
+# Logs y temporales
+*.log
+```
+
+### Documentar las soluciones
+
+El `README.md` de cada apartado es donde **explicas** lo que has hecho en `exercises.js`. Resolver un ejercicio demuestra que sabes hacerlo; explicarlo demuestra que sabes **por qué** funciona, y es lo que se valora al corregir. Rellénalo a medida que resuelves, no al final.
+
+Cada ejercicio ocupa una sección con **tres partes**:
+
+<Steps>
+
+1. **Título**: el número y el nombre del ejercicio tal como aparece en los apuntes.
+2. **Explicación**, con tus palabras y en dos o tres frases: qué pide el ejercicio, qué concepto del apartado aplicas y cualquier decisión o error con el que te hayas encontrado. Si un ejercicio te pedía **predecir** una salida, escribe aquí tu predicción y si acertaste.
+3. **Código**: la versión final que hay en `exercises.js`, dentro de un bloque `js`. Si el ejercicio produce salida en consola, añade un bloque `txt` con lo que se ve.
+
+</Steps>
+
+Plantilla para copiar en cada `README.md`:
+
+````md title="src/01-variables/README.md"
+# 01 · Variables
+
+## Ejercicio 1 · Declarar y reasignar con `let`
+
+**Explicación.** Declaro `nombre` con `let` porque el ejercicio pide reasignarla
+después; con `const` la segunda asignación daría `TypeError`.
+
+```js
+let nombre = "Ana";
+console.log(nombre);
+nombre = "Luis";
+console.log(nombre);
+```
+
+```txt
+Ana
+Luis
+```
+
+## Ejercicio 2 · Constante `PI`
+
+**Explicación.** ...
+````
+
+<Aside type="tip" title="Cómo se ve sin salir del editor">
+	VS Code tiene vista previa de Markdown: con el archivo abierto, pulsa `Ctrl+Shift+V` (o el icono de *Open Preview* arriba a la derecha). Así compruebas que los bloques de código y los títulos se renderizan bien antes de hacer commit.
+</Aside>
+
+<Aside type="caution" title="Lo que no es una explicación">
+	Copiar el enunciado o describir el código línea a línea (*"declaro una variable, luego hago un console.log"*) no explica nada. Una buena explicación responde a **por qué** has elegido esa solución y qué pasaría si la cambiaras.
+</Aside>
+
+## Ejecutar los ejemplos
+
+Este repositorio **no necesita npm ni instalar dependencias**: es HTML y JavaScript servidos por Live Server.
+
+<Steps>
+
+1. Haz **clic derecho sobre el `index.html`** del apartado que quieras probar → **Open with Live Server**.
+2. Se abrirá el navegador en una dirección del tipo `http://127.0.0.1:5500`.
+3. Abre las **herramientas de desarrollo** con `F12` y ve a la pestaña **Console**: ahí aparece todo lo que imprimas con `console.log`.
+4. Edita el `.js`, guarda con `Ctrl+S` y la página se recarga sola. El ciclo es: **editar → guardar → mirar la consola**.
+
+</Steps>
+
+<Aside type="caution" title="No abras el HTML haciendo doble clic">
+	Si abres el archivo directamente, la barra del navegador muestra `file:///…` en lugar de `http://…`. Con el protocolo `file://` el navegador **bloquea los módulos ES y las peticiones `fetch`** por seguridad, y verás errores de CORS que no tienen nada que ver con tu código. Usa **siempre** Live Server.
+</Aside>
+
+<Aside type="tip" title="Ejecutar un archivo en la terminal">
+	Para un ejemplo que no toque la página puedes usar Node: `node src/01-variables/examples.js`. Ten en cuenta que en Node **no existen** `document`, `window` ni `alert`: son propios del navegador.
+</Aside>
+
+## Formatear el código
+
+Un código bien indentado se lee mejor y se corrige antes. No hace falta instalar nada: VS Code incluye un **formateador integrado** para HTML, CSS y JavaScript que ordena la indentación, los espacios y los saltos de línea por ti.
+
+<Steps>
+
+1. **Formatea un archivo a mano** con `Shift+Alt+F` (Windows/Linux) o `Shift+Option+F` (macOS). También desde el clic derecho → **Format Document**, o en la paleta de comandos (`Ctrl+Shift+P`) escribiendo *Format Document*.
+2. **Activa el formateo al guardar** para no tener que acordarte: abre la configuración con `Ctrl+,` (o **Archivo → Preferencias → Configuración**), busca **Format On Save** y marca la casilla. Desde ese momento cada `Ctrl+S` deja el archivo ordenado.
+3. **Usa siempre la misma indentación** en todo el proyecto. En la barra de estado inferior verás algo como *Spaces: 4* o *Tab Size: 4*; haz clic ahí para cambiarlo. Da igual cuál elijas, lo importante es no mezclar.
+4. **Prueba que funciona**: pega este fragmento en `exercises.js`, guarda y comprueba que VS Code lo reordena solo.
+
+	```js
+	function saludar(nombre){
+	return "Hola, "+nombre;}
+	console.log(   saludar("Ana")  );
+	```
+
+</Steps>
+
+<Aside type="note" title="Prettier y ESLint, más adelante">
+	En [Instalaciones](/jjcm/di/installations/) aparecen las extensiones **Prettier** (formateador) y **ESLint** (detector de errores y malas prácticas). En esta unidad **no las vamos a usar**: para archivos HTML, CSS y JavaScript sueltos el formateador integrado es suficiente. Las incorporaremos cuando trabajemos con proyectos que tengan `package.json`, donde su configuración se guarda en el propio repositorio y todo el equipo formatea igual.
+</Aside>
+
+## Crear el repositorio Git
+
+Con la estructura creada, convierte la carpeta en un repositorio y guarda el primer punto del historial.
+
+<Steps>
+
+1. Sitúate en la raíz del proyecto e **inicializa** el repositorio:
+
+	```bash
+	cd di-javascript
+	git init
+	```
+
+2. **Comprueba** qué ve Git. Deben aparecer tus archivos en rojo, como *untracked*:
+
+	```bash
+	git status
+	```
+
+3. **Prepara** todos los archivos para el commit (lo que listaste en `.gitignore` queda fuera automáticamente):
+
+	```bash
+	git add .
+	```
+
+4. **Confirma** el primer commit con un mensaje descriptivo:
+
+	```bash
+	git commit -m "Estructura inicial de los apuntes de JavaScript"
+	```
+
+5. **Revisa** el historial. Deberías ver tu commit con tu nombre y tu correo:
+
+	```bash
+	git log --oneline
+	```
+
+</Steps>
+
+<Aside type="tip" title="Mensajes de commit">
+	Escribe **qué cambia**, no qué archivo tocaste: `Añade ejemplos de desestructuración` es útil; `cambios` o `update` no dicen nada cuando revises el historial dentro de tres meses.
+</Aside>
+
+## Publicar en GitHub
+
+El repositorio que acabas de crear vive **solo en tu equipo**. Para tener copia remota y poder entregarlo hay que enlazarlo con GitHub.
+
+<Tabs>
+	<TabItem label="Desde la web" icon="lucide:globe">
+
+		<Steps>
+
+		1. Entra en [github.com/new](https://github.com/new) e inicia sesión.
+		2. Pon **`di-javascript`** como *Repository name* y deja la visibilidad en **Public** (o **Private** si tu profesor lo indica).
+		3. **No marques** ninguna casilla de *Initialize this repository* (ni README, ni `.gitignore`, ni licencia): ya tienes esos archivos en local y crearlos aquí provoca un conflicto al subir.
+		4. Pulsa **Create repository**.
+		5. **Enlaza** el remoto desde tu terminal, sustituyendo `TU-USUARIO`:
+
+			```bash
+			git remote add origin https://github.com/TU-USUARIO/di-javascript.git
+			git branch -M main
+			git push -u origin main
+			```
+
+		6. **Recarga** la página de GitHub: tus carpetas deben aparecer allí.
+
+		</Steps>
+
+	</TabItem>
+	<TabItem label="Con GitHub CLI" icon="lucide:terminal">
+
+		Si tienes instalado [GitHub CLI](https://cli.github.com/), el proceso es un solo comando.
+
+		<Steps>
+
+		1. **Autentícate** la primera vez y sigue las indicaciones del navegador:
+
+			```bash
+			gh auth login
+			```
+
+		2. **Crea y sube** el repositorio desde la raíz del proyecto:
+
+			```bash
+			gh repo create di-javascript --public --source=. --remote=origin --push
+			```
+
+		3. **Ábrelo** en el navegador para comprobarlo:
+
+			```bash
+			gh repo view --web
+			```
+
+		</Steps>
+
+	</TabItem>
+</Tabs>
+
+<Aside type="caution" title="La contraseña de GitHub no sirve">
+	Al hacer `push` por HTTPS, GitHub **no acepta tu contraseña**: pide un *personal access token*. Genéralo en **Settings → Developer settings → Personal access tokens** y pégalo cuando la terminal pida la contraseña. Con `gh auth login` o con claves SSH te evitas este paso.
+</Aside>
+
+<Aside type="tip" title="Publicar los apuntes como página web">
+	Como el repositorio es HTML puro, puedes verlo online sin configurar nada: en **Settings → Pages**, elige la rama `main` y la carpeta `/ (root)`. En un par de minutos tendrás tus ejemplos en `https://TU-USUARIO.github.io/di-javascript/`.
+</Aside>
+
+## Flujo de trabajo diario
+
+A partir de aquí el ciclo se repite en cada sesión. Son tres comandos:
+
+<Steps>
+
+1. **Escribe** código y guarda los archivos.
+2. **Revisa** qué has cambiado con `git status` y `git diff`.
+3. **Registra** el trabajo y **súbelo**:
+
+	```bash
+	git add .
+	git commit -m "Añade ejercicios de métodos de arrays"
+	git push
+	```
+
+</Steps>
+
+<Aside type="tip" title="Commits pequeños y frecuentes">
+	Haz un commit **al terminar cada apartado**, no uno gigante al final del trimestre. El historial cuenta entonces cómo has trabajado, y recuperar un archivo que estropeaste es cuestión de segundos.
+</Aside>
+
+## Comprobación final
+
+Antes de pasar al primer apartado, confirma que tienes todo listo:
+
+<Steps>
+
+1. `git --version` y `node --version` responden con un número de versión.
+2. `src/` contiene las ocho carpetas numeradas, cada una con `index.html`, `examples.js`, `exercises.js` y `README.md`.
+3. `git log --oneline` muestra al menos un commit con tu nombre.
+4. `git remote -v` muestra `origin` apuntando a tu repositorio de GitHub.
+5. Al abrir `src/01-variables/index.html` con Live Server, la dirección empieza por `http://` y la consola muestra lo que escribas con `console.log`.
+6. Al guardar un archivo mal indentado con `Ctrl+S`, VS Code lo formatea solo.
+
+</Steps>
+
+## Siguientes pasos
+
+<CardGrid stagger>
+	<LinkCard
+		href="/jjcm/di/units/introduction/javascript/01-variables/"
+		title="Variables"
+		description="Primer apartado de la unidad: <code>let</code>, <code>const</code> y <code>var</code>."
+	/>
+	<LinkCard
+		href="/jjcm/di/installations/"
+		title="Instalaciones"
+		description="Instalar y configurar Git, Node.js y las extensiones del editor."
+	/>
+	<LinkCard
+		href="https://docs.github.com/es/get-started/start-your-journey/hello-world"
+		title="Hello World (GitHub Docs)"
+		description="Guía oficial en español para tu primer repositorio."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://git-scm.com/book/es/v2"
+		title="Pro Git (libro oficial)"
+		description="Referencia completa de Git en español, gratuita y online."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>

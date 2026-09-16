@@ -17,7 +17,7 @@ sources:
 sidebar:
   order: 5
 date: 2026-03-21
-updated: 2026-03-21
+updated: 2026-09-16
 author:
   name: Germán Carreño
   email: germanach@educastur.com
@@ -659,6 +659,126 @@ console.log(aprobadosUnicos); // "Ana, Marta, Luis"
 
 </Steps>
 
+## Ejercicios
+
+Resuélvelos en `src/05-array-methods/exercises.js`. Salvo que el enunciado diga lo contrario, **no mutes** el array original: prefiere `map`, `filter`, `toSorted`… y comprueba después con `console.log` que el original sigue intacto.
+
+### Básicos
+
+1. Declara un array con al menos cinco nombres de personas. Añade uno al final, elimina el primero y comprueba con `includes()` si existe un nombre concreto.
+2. Ordena `[4, 1, 9, 3, 7]` de forma ascendente y descendente **sin mutar** el original.
+
+	Salida esperada:
+
+	```txt
+	[1, 3, 4, 7, 9]
+	[9, 7, 4, 3, 1]
+	[4, 1, 9, 3, 7]
+	```
+
+3. Crea un array con los números del 1 al 5 y muéstralos de tres formas: con un `for` clásico, con `for...of` y con `forEach` mostrando también el índice.
+4. Recorre `["HTML", "CSS", "JavaScript", "React"]` con un `for` clásico **al revés** e imprime `Posición X: Valor`.
+5. Dado `["Ana", "Luis", "Marta", "Pedro"]`, recórrelo con `forEach` e imprime un saludo para cada nombre.
+6. Dado `[5, 12, 8, 130, 44]`, usa `filter` para obtener solo los mayores que 10.
+7. Dado `["Ana", "Alberto", "Bea", "Carlos"]`, filtra los que empiecen por la letra `A`.
+8. Dado `[1, 2, 3, 4, 5]`, usa `map` para obtener los cuadrados.
+9. Dado `[10, 20, 30]`, usa `map` para calcular cada precio con el 21 % de IVA incluido.
+
+	Salida esperada:
+
+	```txt
+	[12.1, 24.2, 36.3]
+	```
+
+10. Dado `["html", "css", "javascript"]`, usa `map` para pasar cada palabra a mayúsculas.
+
+### Para pensar
+
+11. Dado `[3, 8, 12, 5, 7, 20]`, quédate con los pares y multiplícalos por 10 **encadenando** `filter` y `map` en una sola expresión.
+
+	Salida esperada:
+
+	```txt
+	[80, 120, 200]
+	```
+
+12. Dado el siguiente array, filtra los alumnos con nota mayor o igual a 5, obtén un array solo con sus nombres y recórrelo imprimiendo `Alumno aprobado: NOMBRE`.
+
+	```js
+	const alumnos = [
+		{ nombre: "Ana", nota: 7 },
+		{ nombre: "Luis", nota: 4 },
+		{ nombre: "Marta", nota: 9 },
+	];
+	```
+
+13. Con el mismo array, usa `find` para obtener **el primer** alumno con nota superior a 8 y `filter` para obtener **todos** los que suspenden. Explica en un comentario cuándo usarías cada uno.
+14. Dado un array de pedidos con `precio` y `cantidad`, calcula el importe total con `reduce`. Recuerda pasar el **valor inicial**.
+
+	```js
+	const pedidos = [
+		{ producto: "Camiseta", precio: 19.99, cantidad: 3 },
+		{ producto: "Pantalón", precio: 39.5, cantidad: 1 },
+		{ producto: "Gorra", precio: 12, cantidad: 2 },
+	];
+	```
+
+15. Predice qué imprime `console.log([10, 1, 21, 2].sort())` **antes** de ejecutarlo. Explica en un comentario por qué el resultado no está ordenado numéricamente y escribe la versión correcta.
+
+### Reto
+
+Dado este inventario, resuelve cada punto con **un único encadenamiento** de métodos y sin bucles manuales:
+
+```js
+const inventario = [
+	{ nombre: "Teclado", precio: 49.99, stock: 12, categoria: "periféricos" },
+	{ nombre: "Ratón", precio: 19.99, stock: 0, categoria: "periféricos" },
+	{ nombre: "Monitor", precio: 199, stock: 4, categoria: "pantallas" },
+	{ nombre: "Cable HDMI", precio: 8.5, stock: 0, categoria: "cables" },
+	{ nombre: "Webcam", precio: 59, stock: 7, categoria: "periféricos" },
+];
+```
+
+1. Nombres de los productos **agotados**.
+2. **Valor total** del inventario (precio × stock de cada producto).
+3. Nombres ordenados **alfabéticamente**, sin mutar `inventario`.
+4. Lista de **categorías sin repetir**.
+5. ¿**Todos** los productos tienen precio mayor que 0? ¿**Alguno** está agotado?
+
+Salida esperada:
+
+```txt
+["Ratón", "Cable HDMI"]
+1808.88
+["Cable HDMI", "Monitor", "Ratón", "Teclado", "Webcam"]
+["periféricos", "pantallas", "cables"]
+true true
+```
+
+Pista para el punto 4: `filter` con `indexOf`, o bien `new Set(...)` convertido de nuevo a array.
+
+### Entrega
+
+<Steps>
+
+1. Copia en `src/05-array-methods/examples.js` los ejemplos de este apartado que hayas probado y confírmalos:
+
+	```bash
+	git add src/05-array-methods/examples.js
+	git commit -m "Añade ejemplos de métodos de arrays"
+	```
+
+2. Resuelve los ejercicios en `src/05-array-methods/exercises.js`, documéntalos en `src/05-array-methods/README.md` y confírmalos en un commit aparte:
+
+	```bash
+	git add src/05-array-methods/exercises.js src/05-array-methods/README.md
+	git commit -m "Resuelve ejercicios de métodos de arrays"
+	```
+
+3. Sube ambos commits a GitHub con `git push`.
+
+</Steps>
+
 ## Siguientes pasos
 
 Documentación de referencia en **MDN** (español):
@@ -694,6 +814,8 @@ Documentación de referencia en **MDN** (español):
 	/>
 </CardGrid>
 
+{/* Oculto hasta que el repositorio esté publicado. Para mostrarlo, quita este comentario.
 <Aside type="tip" title="Ejemplos ejecutables">
-	En el repositorio [DID — carpeta `01-javascript`](https://github.com/gach24/DID/tree/main/01-javascript) tienes el código de muestra (`js/`), los **ejercicios** (`ejercicios/`) y un `index.html` para probarlo en el navegador (p. ej. con Live Server).
+	En el repositorio [dam-di-javascript](https://github.com/IESJJCM/dam-di-javascript) tienes este apartado en [`src/05-array-methods/`](https://github.com/IESJJCM/dam-di-javascript/tree/main/src/05-array-methods): `examples.js` con el código de los apuntes, `exercises.js` con los ejercicios y su `index.html` para abrirlo con Live Server.
 </Aside>
+*/}

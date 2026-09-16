@@ -17,7 +17,7 @@ sources:
 sidebar:
   order: 7
 date: 2026-03-21
-updated: 2026-03-21
+updated: 2026-09-16
 author:
   name: Germán Carreño
   email: germanach@educastur.com
@@ -710,6 +710,97 @@ renderizarUsuarios();
 
 </Steps>
 
+## Ejercicios
+
+Resuélvelos en `src/07-promises/exercises.js`. Como los resultados llegan **con retraso**, fíjate en el **orden** en que aparecen los mensajes en la consola, no solo en su contenido.
+
+### Básicos
+
+1. Crea una promesa que se resuelva con `"Hola"` al cabo de un segundo (usa `setTimeout`) y consúmela con `then`.
+2. Escribe `esperar(ms)` que devuelva una promesa resuelta tras `ms` milisegundos. Encadena `esperar(500).then(...)` para imprimir `"medio segundo"`.
+3. Crea una promesa que se **rechace** con `new Error("Fallo")`. Consúmela con `catch` y añade un `finally` que imprima `"Terminado"`.
+
+	Salida esperada:
+
+	```txt
+	Fallo
+	Terminado
+	```
+
+4. Copia la función `obtenerDatos(forzarError)` de este apartado y consúmela con **`async/await`** dentro de un `try/catch`. Pruébala con `true` y con `false`.
+5. Escribe `dividir(a, b)` que devuelva una promesa: se resuelve con el cociente y se rechaza con un `Error` si `b` es `0`.
+
+### Para pensar
+
+6. Predice el orden de salida **antes** de ejecutar y explica en un comentario por qué `"3"` aparece antes que `"2"` aunque ambas líneas se programan "para más tarde".
+
+	```js
+	console.log("1");
+	setTimeout(() => console.log("2"), 0);
+	Promise.resolve().then(() => console.log("3"));
+	console.log("4");
+	```
+
+7. Este código imprime `undefined`. Localiza el error, explícalo en un comentario y corrígelo.
+
+	```js
+	function obtenerId() {
+		return Promise.resolve(7);
+	}
+	function obtenerUsuario(id) {
+		return Promise.resolve({ id, nombre: "Ana" });
+	}
+
+	obtenerId()
+		.then(id => {
+			obtenerUsuario(id);
+		})
+		.then(usuario => console.log(usuario));
+	```
+
+8. Lanza tres llamadas a `esperar` de 300, 500 y 800 ms. Mide con `Date.now()` cuánto tarda en total si las esperas **en secuencia** con `await` y cuánto si usas **`Promise.all`**. Anota ambos tiempos en un comentario.
+9. Escribe `conTimeout(promesa, ms)` que use **`Promise.race`** para rechazar con `Error("Tiempo agotado")` si la promesa no se resuelve antes de `ms` milisegundos. Pruébala con `esperar(1000)` y un límite de 500.
+10. Usa **`Promise.allSettled`** con `dividir(10, 2)`, `dividir(4, 0)` y `dividir(9, 3)`. Recorre el resultado e imprime una línea por promesa indicando si se cumplió o falló y con qué valor o mensaje.
+
+### Reto
+
+Simula el procesado de pedidos. Escribe `procesarPedido(id)` que devuelva una promesa con un retardo aleatorio entre 100 y 600 ms y que **falle** aleatoriamente en un 30 % de los casos con `Error("Pedido <id> rechazado")`.
+
+Con ella, escribe `procesarTodos(ids)` que:
+
+1. Lance todos los pedidos **en paralelo** con `Promise.allSettled`.
+2. **Reintente una vez** los que hayan fallado.
+3. Devuelva un resumen `{ ok: [...], fallidos: [...] }` con los ids de cada grupo.
+
+```js
+const resumen = await procesarTodos([1, 2, 3, 4, 5]);
+console.log(resumen);
+```
+
+Ejecuta el reto varias veces: al ser aleatorio, el resumen debe cambiar, pero la suma de `ok` y `fallidos` debe ser siempre 5.
+
+### Entrega
+
+<Steps>
+
+1. Copia en `src/07-promises/examples.js` los ejemplos de este apartado que hayas probado y confírmalos:
+
+	```bash
+	git add src/07-promises/examples.js
+	git commit -m "Añade ejemplos de promesas y async/await"
+	```
+
+2. Resuelve los ejercicios en `src/07-promises/exercises.js`, documéntalos en `src/07-promises/README.md` y confírmalos en un commit aparte:
+
+	```bash
+	git add src/07-promises/exercises.js src/07-promises/README.md
+	git commit -m "Resuelve ejercicios de promesas y async/await"
+	```
+
+3. Sube ambos commits a GitHub con `git push`.
+
+</Steps>
+
 ## Siguientes pasos
 
 <CardGrid stagger>
@@ -757,6 +848,8 @@ renderizarUsuarios();
 	/>
 </CardGrid>
 
+{/* Oculto hasta que el repositorio esté publicado. Para mostrarlo, quita este comentario.
 <Aside type="tip" title="Ejemplos ejecutables">
-	En el repositorio [DID — `01-javascript`](https://github.com/gach24/DID/tree/main/01-javascript) tienes `js/10-ejemplo.js` (promesa básica y `obtenerDatos`), `js/11-ejemplo.js` (async/await) y los apartados **10. Promesas** y **11. async/await** en el `README.md`. Ábrelo con Live Server o integra el script como módulo para ver el orden síncrono vs asíncrono en consola.
+	En el repositorio [dam-di-javascript](https://github.com/IESJJCM/dam-di-javascript) tienes este apartado en [`src/07-promises/`](https://github.com/IESJJCM/dam-di-javascript/tree/main/src/07-promises): `examples.js` con el código de los apuntes, `exercises.js` con los ejercicios y su `index.html` para abrirlo con Live Server.
 </Aside>
+*/}
