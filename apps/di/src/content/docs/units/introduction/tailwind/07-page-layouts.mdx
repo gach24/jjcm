@@ -1,0 +1,356 @@
+---
+title: Maquetación de páginas
+description: "Estructuras de página completas con Tailwind: pie siempre abajo, cabecera fija, barra lateral que se oculta en móvil, secciones de landing y panel de administración, combinando grid, flexbox y responsive."
+evaluations:
+  - id: RA1
+    statement: Genera interfaces gráficos de usuario mediante editores visuales utilizando las funcionalidades del editor y adaptando el código generado
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de interfaces gráficos.
+      - Se ha creado un interfaz gráfico utilizando las herramientas de un editor visual.
+    contents:
+      - Generación de interfaces de usuario
+sources:
+  - author: Tailwind Labs — Tailwind CSS Documentation
+    url: https://tailwindcss.com/docs
+  - author: MDN Web Docs — CSS layout
+    url: https://developer.mozilla.org/es/docs/Learn_web_development/Core/CSS_layout
+sidebar:
+  order: 7
+date: 2026-09-16
+updated: 2026-09-16
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+Hasta ahora has maquetado **piezas**. Este apartado maqueta **la página entera**: dónde va la cabecera, cómo se coloca la barra lateral, qué hace el pie cuando hay poco contenido, cómo se organizan las secciones de una landing. Son cuatro o cinco esqueletos que se repiten en casi todas las webs, y cada uno combina grid para la estructura, flex para el detalle y prefijos responsive para el móvil.
+
+<CardGrid stagger>
+	<Card title="Esqueleto" icon="list-format">
+		Un `grid` o `flex-col` de altura mínima `min-h-screen` con cabecera, contenido y pie.
+	</Card>
+	<Card title="Lateral" icon="right-caret">
+		`grid-cols-[250px_1fr]` en escritorio; en móvil el lateral desaparece o se convierte en menú.
+	</Card>
+	<Card title="Secciones" icon="document">
+		Cada bloque de una landing es un `section` con su contenedor `mx-auto max-w-* px-*`.
+	</Card>
+</CardGrid>
+
+## Esqueleto básico: pie siempre abajo
+
+El problema clásico: con poco contenido, el pie sube hasta la mitad de la pantalla. La solución es que la página mida **al menos** la ventana y el contenido absorba el sobrante.
+
+<Tabs>
+	<TabItem label="Con grid">
+		```html
+		<body class="grid min-h-screen grid-rows-[auto_1fr_auto]">
+			<header class="bg-gray-800 p-4 text-white">Cabecera</header>
+			<main class="p-8">Contenido, largo o corto</main>
+			<footer class="bg-gray-800 p-4 text-center text-gray-300">© 2026</footer>
+		</body>
+		```
+
+		`grid-rows-[auto_1fr_auto]`: cabecera y pie miden lo que necesitan; `main` se lleva el resto.
+	</TabItem>
+	<TabItem label="Con flex">
+		```html
+		<body class="flex min-h-screen flex-col">
+			<header class="bg-gray-800 p-4 text-white">Cabecera</header>
+			<main class="flex-1 p-8">Contenido, largo o corto</main>
+			<footer class="bg-gray-800 p-4 text-center text-gray-300">© 2026</footer>
+		</body>
+		```
+
+		`flex-col` + `flex-1` en `main`: mismo efecto. Ambas son correctas; grid es más explícita, flex más corta.
+	</TabItem>
+</Tabs>
+
+`min-h-screen` (no `h-screen`): si el contenido es más largo que la ventana, la página **crece** y aparece el scroll normal. Con `h-screen` el contenido quedaría cortado.
+
+## Cabecera fija
+
+`sticky top-0` mantiene la cabecera visible al hacer scroll sin sacarla del flujo (el contenido no se mete debajo). `z-10` la pone por encima de lo que pase por debajo.
+
+```html
+<header class="sticky top-0 z-10 border-b bg-white/90 backdrop-blur">
+	<div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+		<span class="font-bold">Logo</span>
+		<nav class="hidden gap-6 md:flex">…</nav>
+	</div>
+</header>
+<main class="mx-auto max-w-6xl px-4 py-8">
+	<p class="h-[200vh]">Contenido largo para hacer scroll…</p>
+</main>
+```
+
+`bg-white/90 backdrop-blur` es el efecto translúcido habitual. Sin fondo, el texto del contenido se vería a través de la cabecera.
+
+<Aside type="caution" title="`sticky` frente a `fixed`">
+	`fixed` saca el elemento del flujo: el contenido empieza **debajo** de él y hay que compensarlo con un `pt-16` en `main`. `sticky` ocupa su sitio y solo se "pega" al hacer scroll. Para cabeceras, `sticky` casi siempre es más simple. Los detalles de posicionamiento están en el [siguiente apartado](/jjcm/di/units/introduction/tailwind/08-other-techniques/).
+</Aside>
+
+## Barra lateral
+
+La estructura de los paneles de administración: un lateral fijo y el contenido a la derecha. En móvil no hay sitio: el lateral se oculta y se sustituye por un menú superior.
+
+```html
+<body class="min-h-screen bg-gray-100">
+	<div class="grid min-h-screen grid-cols-1 lg:grid-cols-[250px_1fr]">
+		<!-- lateral: solo desde lg -->
+		<aside class="hidden bg-gray-900 p-6 text-gray-200 lg:block">
+			<p class="text-xl font-bold text-white">Panel</p>
+			<nav class="mt-8 flex flex-col gap-1">
+				<a class="rounded bg-gray-800 px-3 py-2 text-white" href="#">Inicio</a>
+				<a class="rounded px-3 py-2 hover:bg-gray-800" href="#">Pedidos</a>
+				<a class="rounded px-3 py-2 hover:bg-gray-800" href="#">Clientes</a>
+				<a class="rounded px-3 py-2 hover:bg-gray-800" href="#">Ajustes</a>
+			</nav>
+		</aside>
+
+		<!-- columna principal -->
+		<div class="flex min-h-screen flex-col">
+			<header class="flex items-center justify-between border-b bg-white px-6 py-4">
+				<button class="lg:hidden" aria-label="Abrir menú">☰</button>
+				<h1 class="text-lg font-semibold">Inicio</h1>
+				<div class="size-8 rounded-full bg-blue-500"></div>
+			</header>
+			<main class="flex-1 p-6">Contenido</main>
+		</div>
+	</div>
+</body>
+```
+
+Fíjate en las capas: **grid** para lateral + principal, **flex-col** dentro de la columna principal para cabecera + contenido, **flex** en la cabecera para alinear sus tres elementos. Cada herramienta en su nivel.
+
+### Lateral con scroll propio
+
+Si el contenido es largo y quieres que el lateral **no se desplace** con él:
+
+```html
+<aside class="hidden lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-y-auto …">
+```
+
+`sticky top-0 h-screen` lo mantiene en su sitio; `overflow-y-auto` le da scroll propio si sus enlaces no caben.
+
+## Landing por secciones
+
+Una landing es una **pila de secciones** de ancho completo, cada una con su fondo y su contenedor centrado. La estructura se repite; cambia el interior.
+
+```html
+<body class="flex min-h-screen flex-col">
+	<header>…navbar…</header>
+
+	<main class="flex-1">
+		<!-- hero -->
+		<section class="bg-gray-50">
+			<div class="mx-auto grid max-w-6xl items-center gap-8 px-4 py-16 md:grid-cols-2 lg:px-8 lg:py-24">
+				<div>…texto y botones…</div>
+				<img class="w-full rounded-xl" src="…" alt="" />
+			</div>
+		</section>
+
+		<!-- características -->
+		<section>
+			<div class="mx-auto max-w-6xl px-4 py-16 lg:px-8">
+				<h2 class="text-center text-3xl font-bold">Qué aprenderás</h2>
+				<div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+					<div class="rounded-lg border p-6">…</div>
+					<div class="rounded-lg border p-6">…</div>
+					<div class="rounded-lg border p-6">…</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- llamada a la acción -->
+		<section class="bg-blue-600 text-white">
+			<div class="mx-auto flex max-w-6xl flex-col items-center gap-6 px-4 py-16 text-center md:flex-row md:justify-between md:text-left">
+				<h2 class="text-2xl font-bold">¿Empezamos?</h2>
+				<a class="rounded-md bg-white px-6 py-3 font-semibold text-blue-600" href="#">Matricúlate</a>
+			</div>
+		</section>
+	</main>
+
+	<footer class="bg-gray-900 text-gray-300">…</footer>
+</body>
+```
+
+Tres secciones, tres patrones: hero en dos columnas, características en rejilla, CTA en una fila que en móvil se apila. El contenedor `mx-auto max-w-6xl px-4 lg:px-8` es el mismo en las tres; el fondo va en el `section` (ancho completo) y el contenido dentro del contenedor (centrado).
+
+<Aside type="tip" title="Ritmo vertical">
+	Usa el mismo `py-*` en todas las secciones (`py-16`, y `lg:py-24` si quieres más aire en escritorio). Secciones con alturas de padding distintas parecen mal alineadas aunque no lo estén.
+</Aside>
+
+## Contenido con lateral de lectura
+
+Blogs y documentación: el texto en el centro con un ancho de lectura, y a un lado un índice o tarjetas relacionadas.
+
+```html
+<div class="mx-auto grid max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[1fr_300px] lg:px-8">
+	<article class="max-w-prose">
+		<h1 class="text-4xl font-bold">Título del artículo</h1>
+		<p class="mt-4 leading-relaxed">Texto que no supera 65 caracteres por línea…</p>
+	</article>
+	<aside class="space-y-4">
+		<div class="rounded-lg border p-4">Índice</div>
+		<div class="rounded-lg border p-4">Relacionados</div>
+	</aside>
+</div>
+```
+
+En móvil el `aside` cae **debajo** del artículo (una columna); desde `lg`, a la derecha con 300 px. `max-w-prose` en el artículo mantiene las líneas legibles aunque la columna sea más ancha.
+
+## Tablas que no rompen el móvil
+
+Las tablas de datos son más anchas que un móvil. La solución no es reducirlas sino permitir **scroll horizontal dentro de su contenedor**:
+
+```html
+<div class="overflow-x-auto rounded-lg border">
+	<table class="min-w-full text-left text-sm">
+		<thead class="bg-gray-50 text-xs uppercase text-gray-600">
+			<tr>
+				<th class="px-4 py-3">Pedido</th>
+				<th class="px-4 py-3">Cliente</th>
+				<th class="px-4 py-3">Fecha</th>
+				<th class="px-4 py-3">Estado</th>
+				<th class="px-4 py-3 text-right">Total</th>
+			</tr>
+		</thead>
+		<tbody class="divide-y">
+			<tr class="hover:bg-gray-50">
+				<td class="px-4 py-3 font-medium">#1042</td>
+				<td class="px-4 py-3">Ana García</td>
+				<td class="px-4 py-3 whitespace-nowrap">16/09/2026</td>
+				<td class="px-4 py-3"><span class="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800">Enviado</span></td>
+				<td class="px-4 py-3 text-right">128,47 €</td>
+			</tr>
+		</tbody>
+	</table>
+</div>
+```
+
+`overflow-x-auto` en el envoltorio, `min-w-full` en la tabla y `whitespace-nowrap` en las celdas que no deben partirse. La página no tiene scroll horizontal; la tabla sí, dentro de su marco.
+
+## Resumen rápido
+
+<Tabs>
+	<TabItem label="Esqueletos">
+		```txt
+		pie abajo    grid min-h-screen grid-rows-[auto_1fr_auto]
+		             flex min-h-screen flex-col + main flex-1
+		cabecera     sticky top-0 z-10 bg-white/90 backdrop-blur
+		lateral      grid-cols-1 lg:grid-cols-[250px_1fr] + aside hidden lg:block
+		lectura      lg:grid-cols-[1fr_300px] + article max-w-prose
+		tabla        div overflow-x-auto > table min-w-full
+		```
+	</TabItem>
+	<TabItem label="Sección">
+		```txt
+		<section class="bg-…">                       fondo a ancho completo
+		  <div class="mx-auto max-w-6xl px-4 py-16 lg:px-8">
+		    …                                        contenido centrado
+		```
+	</TabItem>
+</Tabs>
+
+## Convención práctica
+
+<Steps>
+
+1. **`min-h-screen`** en el esqueleto, nunca `h-screen`: la página debe poder crecer.
+2. **Grid para el esqueleto, flex para las barras**, contenedor `mx-auto max-w-*` para cada sección.
+3. Cabeceras con **`sticky top-0 z-10`** y fondo opaco o translúcido; evita `fixed` salvo necesidad.
+4. El lateral en móvil **desaparece** (`hidden lg:block`) y se sustituye por un menú; no lo encojas.
+5. Tablas anchas: **`overflow-x-auto` en un envoltorio**, no en la página.
+
+</Steps>
+
+## Ejercicios
+
+Resuélvelos en `src/07-page-layouts/exercises.html` (y en archivos adicionales de la carpeta si un ejercicio pide una página completa).
+
+### Básicos
+
+1. Esqueleto con pie siempre abajo, primero con grid y después con flex. Pon poco contenido y comprueba que el pie está al fondo; pon mucho y comprueba que aparece scroll y el pie queda al final.
+2. Cabecera `sticky top-0` con fondo translúcido sobre un `main` de `h-[300vh]`. Quita `z-10` y añade un elemento con `relative` en el contenido: ¿qué pasa al hacer scroll?
+3. Estructura con barra lateral de 250 px desde `lg`, oculta por debajo, con botón ☰ en la cabecera solo en móvil.
+4. Landing de tres secciones (hero, características en rejilla, CTA) con el mismo contenedor y el mismo `py-16` en las tres.
+5. Tabla de cinco columnas dentro de `overflow-x-auto`. Comprueba en 375 px que la página no tiene scroll horizontal pero la tabla sí.
+
+### Para pensar
+
+6. Cambia `min-h-screen` por `h-screen` en el esqueleto con mucho contenido y explica en el README qué ocurre y por qué.
+7. Reproduce la cabecera con `fixed top-0` en lugar de `sticky`. ¿Qué has tenido que añadir a `main` para que el contenido no quede debajo? ¿Qué pasa si la cabecera cambia de altura en móvil?
+8. Haz que el lateral tenga scroll propio (`sticky top-0 h-screen overflow-y-auto`) con treinta enlaces, y el contenido principal sea muy largo. Describe el comportamiento al hacer scroll en cada zona.
+9. En el layout de lectura, pon el `aside` **antes** del `article` en el HTML pero a la derecha en escritorio, y debajo en móvil. Pista: `order-*` con prefijo. ¿Qué implicación tiene para el orden de lectura?
+
+### Reto
+
+Construye un **panel de administración** completo en `src/07-page-layouts/dashboard.html`: barra lateral oscura (oculta en móvil, con botón que la muestra usando el script del apartado de componentes), cabecera con título y avatar, y en el contenido la rejilla de estadísticas del reto de grid ya responsive (KPIs, gráfico, actividad) más la tabla de pedidos con scroll horizontal. Todo debe verse correctamente en 375, 768 y 1280 px sin scroll horizontal de página. En el README dibuja en ASCII la estructura en móvil y en escritorio, indicando qué contenedor es grid y cuál flex.
+
+### Entrega
+
+<Steps>
+
+1. Copia en `src/07-page-layouts/index.html` los ejemplos de este apartado que hayas probado y confírmalos:
+
+	```bash
+	git add src/07-page-layouts/index.html
+	git commit -m "Añade ejemplos de maquetación de páginas"
+	```
+
+2. Resuelve los ejercicios, documéntalos en `README.md` y confirma **todos** los archivos de la carpeta en un commit aparte:
+
+	```bash
+	git add src/07-page-layouts
+	git commit -m "Resuelve ejercicios de maquetación de páginas"
+	```
+
+3. Sube ambos commits a GitHub con `git push`.
+
+</Steps>
+
+## Siguientes pasos
+
+<CardGrid stagger>
+	<LinkCard
+		href="/jjcm/di/units/introduction/tailwind/08-other-techniques/"
+		title="Otras técnicas"
+		description="Posicionamiento, container queries, modo oscuro, transiciones y el proyecto final."
+	/>
+	<LinkCard
+		href="https://tailwindcss.com/docs/position"
+		title="Position (docs)"
+		description="static, relative, absolute, fixed y sticky."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Learn_web_development/Core/CSS_layout"
+		title="Maquetación CSS (MDN)"
+		description="El módulo completo de layout: flujo normal, flex, grid, posicionamiento."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+{/* Oculto hasta que el repositorio esté publicado. Para mostrarlo, quita este comentario.
+<Aside type="tip" title="Ejemplos ejecutables">
+	En el repositorio [dam-di-tailwind](https://github.com/IESJJCM/dam-di-tailwind) tienes este apartado en [`src/07-page-layouts/`](https://github.com/IESJJCM/dam-di-tailwind/tree/main/src/07-page-layouts): `index.html` con los ejemplos de los apuntes y `exercises.html` con los ejercicios. Clona, ejecuta `npm install` y `npm run watch`, y ábrelo con Live Server.
+</Aside>
+*/}

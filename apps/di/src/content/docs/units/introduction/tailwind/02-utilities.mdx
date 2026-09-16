@@ -1,0 +1,339 @@
+---
+title: Utilidades básicas
+description: "Las clases de Tailwind que se usan a diario, con su CSS equivalente: espaciado, tamaños, colores, tipografía, bordes, sombras, display y estados hover y focus."
+evaluations:
+  - id: RA1
+    statement: Genera interfaces gráficos de usuario mediante editores visuales utilizando las funcionalidades del editor y adaptando el código generado
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de interfaces gráficos.
+      - Se ha creado un interfaz gráfico utilizando las herramientas de un editor visual.
+    contents:
+      - Generación de interfaces de usuario
+sources:
+  - author: Tailwind Labs — Tailwind CSS Documentation
+    url: https://tailwindcss.com/docs
+  - author: MDN Web Docs — CSS layout
+    url: https://developer.mozilla.org/es/docs/Learn_web_development/Core/CSS_layout
+sidebar:
+  order: 2
+date: 2026-09-16
+updated: 2026-09-16
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+Antes de maquetar hay que dominar un puñado de utilidades que aparecen en **cualquier** elemento: cuánto espacio ocupa, cuánto aire tiene alrededor, de qué color es y cómo se ve su texto. Son pocas familias y todas siguen el patrón `propiedad-valor`. Este apartado las presenta con el CSS que generan; lo que aprendas aquí lo usarás en cada línea de los apartados siguientes.
+
+<CardGrid stagger>
+	<Card title="Espacio" icon="pencil">
+		`p-*` padding, `m-*` margin, `gap-*` separación entre hijos. Todos con la escala de 0.25rem.
+	</Card>
+	<Card title="Tamaño y color" icon="seti:image">
+		`w-*`, `h-*`, `max-w-*` para dimensiones; `bg-*`, `text-*`, `border-*` para color, con escala 50–950.
+	</Card>
+	<Card title="Estados" icon="approve-check">
+		`hover:`, `focus:`, `active:`, `disabled:` delante de cualquier clase.
+	</Card>
+</CardGrid>
+
+## Espaciado: padding y margin
+
+| Patrón | CSS | Ejemplo |
+| --- | --- | --- |
+| `p-{n}` | `padding: n×0.25rem` | `p-4` → `1rem` en los cuatro lados |
+| `px-{n}` / `py-{n}` | horizontal / vertical | `px-6 py-2` → botón |
+| `pt-` `pr-` `pb-` `pl-` | un solo lado | `pb-4` → solo abajo |
+| `m-{n}`, `mx-`, `my-`, `mt-`… | igual con `margin` | `mt-8` → separa del elemento anterior |
+| `mx-auto` | `margin-inline: auto` | centra horizontalmente un bloque con ancho |
+| `-mt-{n}` | margen **negativo** | `-mt-4` → sube 1rem |
+
+```html
+<div class="bg-gray-200 p-8">
+	<div class="mx-auto max-w-sm bg-white px-6 py-4">
+		Padding 8 fuera, 6/4 dentro, centrado con mx-auto.
+	</div>
+</div>
+```
+
+<Aside type="tip" title="`space-y` para listas de elementos">
+	Para separar hijos sin poner `mt-*` en cada uno: `space-y-4` en el padre añade `margin-top: 1rem` a todos los hijos menos al primero. `space-x-*` hace lo mismo en horizontal. En flex y grid usarás `gap-*`, que es mejor; `space-*` sirve para bloques normales.
+</Aside>
+
+## Tamaños
+
+| Patrón | CSS | Notas |
+| --- | --- | --- |
+| `w-{n}` / `h-{n}` | `width` / `height` en la escala | `w-64` → `16rem` |
+| `w-full` / `h-full` | `100%` | del padre |
+| `w-screen` / `h-screen` | `100vw` / `100vh` | del viewport |
+| `min-h-screen` | `min-height: 100vh` | páginas que llenan la ventana |
+| `w-1/2`, `w-1/3`, `w-2/3`… | porcentajes | fracciones del padre |
+| `max-w-sm` … `max-w-7xl` | `max-width` fijos | `sm`=24rem, `md`=28rem, `lg`=32rem, `xl`=36rem, `2xl`=42rem… |
+| `max-w-prose` | `65ch` | ancho cómodo de lectura |
+| `size-{n}` | `width` y `height` a la vez | `size-12` → cuadrado de 3rem |
+
+```html
+<div class="h-32 w-64 bg-blue-200">64 × 32 (16rem × 8rem)</div>
+<div class="size-16 rounded-full bg-blue-500"></div>
+<p class="max-w-prose">Un párrafo largo que no supera 65 caracteres por línea…</p>
+```
+
+<Aside type="caution" title="Altura: casi nunca fija">
+	Fijar `h-*` en contenedores de texto es fuente de desbordamientos cuando el contenido crece. Deja que la altura la marque el contenido y usa `min-h-*` si necesitas un mínimo.
+</Aside>
+
+## Colores
+
+Tailwind incluye 22 paletas (`gray`, `red`, `blue`, `green`, `sky`, `indigo`, `emerald`, `amber`…), cada una con **11 tonos** de `50` (casi blanco) a `950` (casi negro). El mismo color se aplica a distintas propiedades con distinto prefijo:
+
+| Prefijo | CSS |
+| --- | --- |
+| `bg-blue-500` | `background-color` |
+| `text-blue-500` | `color` |
+| `border-blue-500` | `border-color` |
+| `ring-blue-500` | color del anillo de foco |
+
+```html
+<div class="flex gap-2">
+	<div class="size-12 bg-blue-100"></div>
+	<div class="size-12 bg-blue-300"></div>
+	<div class="size-12 bg-blue-500"></div>
+	<div class="size-12 bg-blue-700"></div>
+	<div class="size-12 bg-blue-900"></div>
+</div>
+```
+
+Además: `bg-white`, `bg-black`, `bg-transparent`, y **opacidad** con `/`: `bg-black/50` es negro al 50 %.
+
+<Aside type="note" title="Regla para elegir tonos">
+	Fondos claros: `50`–`200`. Texto sobre fondo claro: `700`–`900`. Botones y acentos: `500`–`600`, con `hover:` un tono más oscuro. Texto secundario: `gray-500`/`gray-600`. Con estas cinco combinaciones cubres el 90 % de una interfaz.
+</Aside>
+
+## Tipografía
+
+| Clase | CSS |
+| --- | --- |
+| `text-xs` `text-sm` `text-base` `text-lg` `text-xl` `text-2xl` … `text-9xl` | `font-size` (+ `line-height` adecuado) |
+| `font-light` `font-normal` `font-medium` `font-semibold` `font-bold` | `font-weight` 300–700 |
+| `text-left` `text-center` `text-right` | `text-align` |
+| `italic` `underline` `line-through` `uppercase` `capitalize` | decoración y transformación |
+| `leading-tight` `leading-normal` `leading-relaxed` | `line-height` |
+| `tracking-tight` `tracking-wide` | `letter-spacing` |
+| `truncate` | una línea con `…` al final |
+| `font-sans` `font-serif` `font-mono` | familia |
+
+```html
+<h1 class="text-4xl font-bold tracking-tight">Título principal</h1>
+<h2 class="mt-6 text-2xl font-semibold text-gray-800">Subtítulo</h2>
+<p class="mt-2 leading-relaxed text-gray-600">
+	Texto normal con interlineado cómodo para leer párrafos largos.
+</p>
+<p class="mt-2 text-sm uppercase tracking-wide text-gray-500">Etiqueta pequeña</p>
+<p class="w-48 truncate">Este texto es demasiado largo para caber en 12rem y se corta.</p>
+```
+
+## Bordes, radios y sombras
+
+| Clase | CSS |
+| --- | --- |
+| `border` | `border-width: 1px` (+ estilo `solid`) |
+| `border-2` `border-4` | grosor |
+| `border-t` `border-b` `border-x` | un solo lado |
+| `border-gray-300` | color |
+| `rounded` `rounded-md` `rounded-lg` `rounded-xl` `rounded-full` | `border-radius` |
+| `rounded-t-lg` | solo esquinas superiores |
+| `shadow-sm` `shadow` `shadow-md` `shadow-lg` `shadow-xl` | `box-shadow` |
+| `ring-2 ring-blue-500` | anillo exterior (sin ocupar espacio) |
+
+```html
+<div class="rounded-xl border border-gray-200 bg-white p-6 shadow-md">Tarjeta</div>
+<img class="size-24 rounded-full ring-4 ring-white" src="avatar.jpg" alt="Avatar" />
+<hr class="my-6 border-t border-gray-300" />
+```
+
+## Display, overflow y visibilidad
+
+| Clase | CSS |
+| --- | --- |
+| `block` `inline` `inline-block` | `display` |
+| `flex` `grid` | `display` (apartados siguientes) |
+| `hidden` | `display: none` |
+| `overflow-hidden` `overflow-auto` `overflow-x-auto` | `overflow` |
+| `invisible` | `visibility: hidden` (ocupa espacio) |
+| `sr-only` | oculto visualmente, visible para lectores de pantalla |
+
+```html
+<span class="inline-block rounded bg-green-100 px-2 py-1 text-xs text-green-800">Activo</span>
+<div class="h-24 overflow-auto border">Contenido con scroll si no cabe…</div>
+```
+
+## Estados: hover, focus y más
+
+Cualquier clase acepta un **prefijo de estado**. Se aplica solo mientras el estado esté activo:
+
+| Prefijo | Cuándo |
+| --- | --- |
+| `hover:` | ratón encima |
+| `focus:` | elemento con foco (teclado, clic en input) |
+| `active:` | mientras se pulsa |
+| `disabled:` | elemento deshabilitado |
+| `focus-visible:` | foco por teclado, no por clic |
+| `group-hover:` | el **padre** con clase `group` tiene el ratón encima |
+
+```html
+<button class="rounded bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 focus:ring-2 focus:ring-blue-300 focus:outline-none active:bg-blue-800 disabled:opacity-50">
+	Guardar
+</button>
+
+<input class="rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none" placeholder="Escribe…" />
+```
+
+<Aside type="tip" title="`transition` suaviza el cambio">
+	Sin `transition`, el `hover:` cambia de golpe. Con `transition` (o `transition-colors`) el navegador anima el cambio en 150 ms. Es una clase, no cuesta nada, y hace que todo parezca más cuidado.
+</Aside>
+
+## Resumen rápido
+
+<Tabs>
+	<TabItem label="Espacio y tamaño">
+		```txt
+		p-4  px-6  py-2  pt-1        padding
+		m-4  mx-auto  mt-8  -mt-2    margin
+		space-y-4                     entre hijos (bloques)
+		w-64  w-full  w-1/2  size-12  ancho / cuadrado
+		h-32  h-screen  min-h-screen  alto
+		max-w-md  max-w-prose         ancho máximo
+		```
+	</TabItem>
+	<TabItem label="Color y texto">
+		```txt
+		bg-blue-500  text-gray-700  border-gray-300  bg-black/50
+		text-sm  text-2xl  font-bold  text-center  uppercase
+		leading-relaxed  tracking-wide  truncate
+		```
+	</TabItem>
+	<TabItem label="Bordes y estados">
+		```txt
+		border  border-2  border-t  rounded-lg  rounded-full
+		shadow-md  ring-2 ring-blue-500
+		hover:  focus:  active:  disabled:  group-hover:
+		transition
+		```
+	</TabItem>
+</Tabs>
+
+## Convención práctica
+
+<Steps>
+
+1. **Padding dentro, margin fuera**: `p-*` separa el contenido del borde del elemento; `m-*` separa el elemento de sus vecinos.
+2. **Centra bloques con `mx-auto` + `max-w-*`**, no con márgenes calculados a mano.
+3. Elige tonos con la regla **claro de fondo, oscuro de texto, 500–600 para acción**.
+4. Todo elemento interactivo lleva **`hover:` y `focus:`**; el foco visible es accesibilidad, no decoración.
+5. Evita `h-*` fijo en contenedores de texto; usa `min-h-*`.
+
+</Steps>
+
+## Ejercicios
+
+Resuélvelos en `src/02-utilities/exercises.html`.
+
+### Básicos
+
+1. Crea una **escala de color**: seis `div` cuadrados (`size-12`) con `bg-red-100` a `bg-red-900` en un `flex gap-2`. Repítela con `emerald`.
+2. Maqueta un **botón primario** (`bg-blue-600`, texto blanco, `px-4 py-2`, `rounded`, `hover:` más oscuro, `focus:ring-2`) y un **botón secundario** (fondo blanco, borde gris, texto gris oscuro, `hover:bg-gray-50`).
+3. Crea un párrafo de texto largo con `max-w-prose leading-relaxed text-gray-700` y otro idéntico sin esas clases. Compáralos en una ventana ancha.
+4. Crea un **badge** de estado: `inline-block`, `rounded-full`, `px-2 py-0.5`, `text-xs font-medium`, fondo `green-100` y texto `green-800`. Haz tres variantes: éxito, aviso (amber) y error (red).
+5. Crea un `input` con borde gris que al recibir foco cambie a borde azul con anillo azul claro y sin `outline`.
+
+### Para pensar
+
+6. Este bloque tiene un error de diseño frecuente. Localízalo, explica en el README qué ocurre cuando el texto es más largo y corrígelo:
+
+	```html
+	<div class="h-24 w-64 bg-white p-4 shadow">
+		<p>Descripción del producto que puede ser bastante larga y ocupar varias líneas de texto.</p>
+	</div>
+	```
+
+7. Escribe en el README el CSS de `space-y-4` aplicado a tres párrafos. ¿Qué diferencia hay con poner `mt-4` en cada párrafo? ¿Y con `mb-4`? Piensa en el primer y el último elemento.
+8. `bg-blue-500/50` y `opacity-50` con `bg-blue-500` parecen iguales. Crea un ejemplo con texto dentro de cada uno y explica la diferencia.
+
+### Reto
+
+Construye una **tarjeta de producto** con: imagen (usa `https://picsum.photos/400/300`) con esquinas superiores redondeadas, un badge "Nuevo" superpuesto en la esquina (pista: `relative` en la tarjeta y `absolute top-2 left-2` en el badge), nombre en `text-lg font-semibold`, descripción de dos líneas en gris, precio en `text-2xl font-bold`, y un botón "Añadir al carrito" con `hover:`, `focus:` y `transition`. La tarjeta tiene `max-w-sm`, `rounded-xl`, `shadow-md` y **la sombra crece** al pasar el ratón (`hover:shadow-xl`). En el README, lista **todas** las clases agrupadas por familia con su CSS.
+
+### Entrega
+
+<Steps>
+
+1. Copia en `src/02-utilities/index.html` los ejemplos de este apartado que hayas probado y confírmalos:
+
+	```bash
+	git add src/02-utilities/index.html
+	git commit -m "Añade ejemplos de utilidades básicas"
+	```
+
+2. Resuelve los ejercicios en `src/02-utilities/exercises.html`, documéntalos en `src/02-utilities/README.md` y confírmalos en un commit aparte:
+
+	```bash
+	git add src/02-utilities/exercises.html src/02-utilities/README.md
+	git commit -m "Resuelve ejercicios de utilidades básicas"
+	```
+
+3. Sube ambos commits a GitHub con `git push`.
+
+</Steps>
+
+## Siguientes pasos
+
+<CardGrid stagger>
+	<LinkCard
+		href="/jjcm/di/units/introduction/tailwind/03-flexbox/"
+		title="Flexbox"
+		description="Colocar elementos en fila o columna, alinearlos y repartir el espacio."
+	/>
+	<LinkCard
+		href="https://tailwindcss.com/docs/padding"
+		title="Padding (docs)"
+		description="Tabla completa de la escala de espaciado."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://tailwindcss.com/docs/colors"
+		title="Colors (docs)"
+		description="Las 22 paletas con sus 11 tonos, y cómo usarlas."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://tailwindcss.com/docs/hover-focus-and-other-states"
+		title="Hover, focus y otros estados"
+		description="Todos los prefijos de estado disponibles."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+{/* Oculto hasta que el repositorio esté publicado. Para mostrarlo, quita este comentario.
+<Aside type="tip" title="Ejemplos ejecutables">
+	En el repositorio [dam-di-tailwind](https://github.com/IESJJCM/dam-di-tailwind) tienes este apartado en [`src/02-utilities/`](https://github.com/IESJJCM/dam-di-tailwind/tree/main/src/02-utilities): `index.html` con los ejemplos de los apuntes y `exercises.html` con los ejercicios. Clona, ejecuta `npm install` y `npm run watch`, y ábrelo con Live Server.
+</Aside>
+*/}

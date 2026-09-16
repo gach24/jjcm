@@ -1,0 +1,372 @@
+---
+title: Grid
+description: "Maquetar en dos dimensiones con CSS Grid y Tailwind: columnas y filas, gap, celdas que ocupan varias pistas, colocación explícita, rejillas automáticas con auto-fit y cuándo usar grid en lugar de flexbox."
+evaluations:
+  - id: RA1
+    statement: Genera interfaces gráficos de usuario mediante editores visuales utilizando las funcionalidades del editor y adaptando el código generado
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de interfaces gráficos.
+      - Se ha creado un interfaz gráfico utilizando las herramientas de un editor visual.
+    contents:
+      - Generación de interfaces de usuario
+sources:
+  - author: Tailwind Labs — Tailwind CSS Documentation
+    url: https://tailwindcss.com/docs
+  - author: MDN Web Docs — CSS layout
+    url: https://developer.mozilla.org/es/docs/Learn_web_development/Core/CSS_layout
+sidebar:
+  order: 4
+date: 2026-09-16
+updated: 2026-09-16
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+**CSS Grid** maqueta en **dos dimensiones**: defines columnas y filas en el contenedor y los hijos ocupan celdas. Donde flexbox coloca elementos "uno detrás de otro", grid los coloca "en esta columna y esta fila". Es la herramienta para rejillas de tarjetas, galerías, paneles de control y la estructura general de una página. Tailwind expone las propiedades de grid con clases directas; las pocas que no tienen clase propia se escriben con valores arbitrarios.
+
+<CardGrid stagger>
+	<Card title="Contenedor" icon="list-format">
+		`grid` activa grid. `grid-cols-{n}` define columnas iguales. `gap-*` separa filas y columnas.
+	</Card>
+	<Card title="Hijos" icon="puzzle">
+		`col-span-{n}` ocupa varias columnas; `col-start-{n}` coloca en una concreta. Lo mismo con `row-*`.
+	</Card>
+	<Card title="Automático" icon="rocket">
+		`grid-cols-[repeat(auto-fit,minmax(…))]`: tantas columnas como quepan. Responsive sin breakpoints.
+	</Card>
+</CardGrid>
+
+## Definir columnas
+
+| Clase | CSS |
+| --- | --- |
+| `grid` | `display: grid` |
+| `grid-cols-1` … `grid-cols-12` | `grid-template-columns: repeat(n, minmax(0, 1fr))` |
+| `grid-cols-none` | sin columnas definidas |
+| `gap-4` | `gap: 1rem` (filas y columnas) |
+| `gap-x-4` / `gap-y-2` | `column-gap` / `row-gap` |
+
+```html
+<div class="grid grid-cols-3 gap-4">
+	<div class="bg-yellow-300 p-4">1</div>
+	<div class="bg-yellow-400 p-4">2</div>
+	<div class="bg-yellow-500 p-4">3</div>
+	<div class="bg-yellow-300 p-4">4</div>
+	<div class="bg-yellow-400 p-4">5</div>
+</div>
+```
+
+`grid-cols-3` crea tres columnas de **igual ancho** (`1fr` cada una: una fracción del espacio disponible). Los hijos se colocan solos, de izquierda a derecha y de arriba abajo, saltando de fila al llenar las tres columnas. El 4 y el 5 caen en la segunda fila sin que hagas nada.
+
+<Aside type="note" title="Por qué `minmax(0, 1fr)` y no `1fr`">
+	Con `1fr` a secas, una columna cuyo contenido no cabe (una palabra larguísima, una imagen ancha) **crece** y rompe la rejilla. `minmax(0, 1fr)` permite que la columna encoja a cero y el contenido desborde dentro de ella, que es lo que se espera. Tailwind lo pone por ti.
+</Aside>
+
+### Columnas de distinto ancho
+
+Cuando las columnas no son iguales, se escribe la definición completa como **valor arbitrario**. Es CSS puro dentro de corchetes, con `_` en lugar de espacios:
+
+```html
+<div class="grid grid-cols-[200px_1fr] gap-4">
+	<aside class="bg-gray-800 p-4 text-white">200px fijos</aside>
+	<main class="bg-gray-100 p-4">el resto (1fr)</main>
+</div>
+
+<div class="mt-4 grid grid-cols-[1fr_2fr_1fr] gap-4">
+	<div class="bg-teal-300 p-4">1fr</div>
+	<div class="bg-teal-400 p-4">2fr (el doble)</div>
+	<div class="bg-teal-500 p-4">1fr</div>
+</div>
+```
+
+## Filas
+
+Por defecto las filas se crean **automáticamente** con la altura de su contenido. Solo hay que definirlas cuando la rejilla tiene una altura fija que repartir:
+
+| Clase | CSS |
+| --- | --- |
+| `grid-rows-{n}` | `grid-template-rows: repeat(n, minmax(0, 1fr))` |
+| `grid-rows-[auto_1fr_auto]` | valor arbitrario: cabecera, contenido, pie |
+| `auto-rows-min` / `auto-rows-fr` | altura de las filas implícitas |
+
+```html
+<div class="grid h-screen grid-rows-[auto_1fr_auto]">
+	<header class="bg-gray-800 p-4 text-white">Cabecera (auto)</header>
+	<main class="bg-gray-100 p-4">Contenido: ocupa lo que sobra (1fr)</main>
+	<footer class="bg-gray-800 p-4 text-white">Pie (auto)</footer>
+</div>
+```
+
+Esta rejilla de tres filas es el esqueleto de página más habitual: el pie **siempre** queda abajo, tenga el contenido la altura que tenga.
+
+## Ocupar varias celdas: `span`
+
+| Clase | CSS |
+| --- | --- |
+| `col-span-2` | `grid-column: span 2 / span 2` |
+| `col-span-full` | `grid-column: 1 / -1` (toda la fila) |
+| `row-span-2` | `grid-row: span 2 / span 2` |
+
+```html
+<div class="grid grid-cols-3 gap-4">
+	<div class="col-span-2 bg-sky-300 p-4">ancho doble</div>
+	<div class="bg-sky-400 p-4">normal</div>
+	<div class="bg-sky-400 p-4">normal</div>
+	<div class="col-span-2 bg-sky-300 p-4">ancho doble</div>
+	<div class="col-span-full bg-sky-500 p-4">fila completa</div>
+</div>
+```
+
+Con `row-span-2` una celda ocupa dos filas, lo que permite el efecto **destacado** de las galerías:
+
+```html
+<div class="grid grid-cols-3 gap-2">
+	<div class="row-span-2 bg-rose-400 p-4">destacado</div>
+	<div class="bg-rose-300 p-4">2</div>
+	<div class="bg-rose-300 p-4">3</div>
+	<div class="bg-rose-300 p-4">4</div>
+	<div class="bg-rose-300 p-4">5</div>
+</div>
+```
+
+## Colocación explícita
+
+Además de "ocupa n columnas", puedes decir **en cuál** empieza y termina. Las **líneas** de la rejilla se numeran desde 1 (una rejilla de 3 columnas tiene 4 líneas):
+
+| Clase | CSS |
+| --- | --- |
+| `col-start-2` | `grid-column-start: 2` |
+| `col-end-4` | `grid-column-end: 4` |
+| `col-start-2 col-end-4` | de la línea 2 a la 4 (= 2 columnas) |
+| `row-start-1` / `row-end-3` | igual en filas |
+
+```html
+<div class="grid grid-cols-4 gap-4">
+	<div class="col-start-2 col-end-4 bg-lime-400 p-4">líneas 2 → 4</div>
+	<div class="col-start-1 row-start-2 bg-lime-300 p-4">col 1, fila 2</div>
+	<div class="col-start-4 row-start-2 bg-lime-300 p-4">col 4, fila 2</div>
+</div>
+```
+
+Esto es lo que hace a grid distinto de flexbox: **el orden del HTML deja de determinar la posición**.
+
+## Alinear dentro de las celdas
+
+Por defecto cada hijo **estira** hasta llenar su celda. Para alinearlo dentro:
+
+| Clase | CSS | Eje |
+| --- | --- | --- |
+| `justify-items-start|center|end` | `justify-items` | horizontal, todos los hijos |
+| `items-start|center|end` | `align-items` | vertical, todos los hijos |
+| `place-items-center` | ambos a la vez | atajo |
+| `justify-self-*` / `self-*` | un solo hijo | |
+
+```html
+<div class="grid h-64 place-items-center bg-gray-200">
+	<div class="bg-white p-4 shadow">Centrado</div>
+</div>
+```
+
+`grid place-items-center` es la alternativa a `flex items-center justify-center` para centrar; ambas funcionan.
+
+## Rejillas automáticas: `auto-fit`
+
+Hasta ahora fijabas el número de columnas. Con `repeat(auto-fit, minmax(min, 1fr))` el navegador crea **tantas columnas como quepan** con un mínimo de ancho, y las reparte. No hace falta ningún breakpoint: la rejilla se adapta sola.
+
+```html
+<div class="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
+	<div class="bg-violet-300 p-4">1</div>
+	<div class="bg-violet-400 p-4">2</div>
+	<div class="bg-violet-500 p-4">3</div>
+	<div class="bg-violet-300 p-4">4</div>
+	<div class="bg-violet-400 p-4">5</div>
+	<div class="bg-violet-500 p-4">6</div>
+</div>
+```
+
+Estrecha la ventana: a 900 px caben 4 columnas de 200; a 500 px, 2; en móvil, 1. Es el patrón más útil de este apartado para **rejillas de tarjetas**.
+
+<Aside type="tip" title="`auto-fit` frente a `auto-fill`">
+	Con pocos elementos, `auto-fit` **estira** las columnas para llenar el ancho; `auto-fill` deja columnas vacías del tamaño mínimo. Para tarjetas casi siempre quieres `auto-fit`.
+</Aside>
+
+## Flujo automático
+
+`grid-flow-*` controla cómo se colocan los hijos que no tienen posición explícita:
+
+| Clase | CSS |
+| --- | --- |
+| `grid-flow-row` | por filas (por defecto) |
+| `grid-flow-col` | por columnas: cada hijo nuevo va a la siguiente columna |
+| `grid-flow-dense` | rellena huecos con elementos posteriores que quepan |
+
+`grid-flow-col` con `auto-cols-*` es una forma de hacer una fila de elementos de igual ancho sin contar cuántos hay.
+
+## Grid o flexbox
+
+| Situación | Usa |
+| --- | --- |
+| Una fila de botones, un menú, un formulario en línea | **flex** |
+| Centrar una sola cosa | cualquiera |
+| Tarjetas que deben alinearse **en filas y columnas** | **grid** |
+| Estructura de página: cabecera, lateral, contenido, pie | **grid** |
+| Elementos de tamaño desconocido que se envuelven | **flex-wrap** (o `auto-fit`) |
+| Un hijo debe ocupar varias filas o columnas | **grid** |
+| El contenido decide el tamaño | **flex** |
+| El contenedor decide el tamaño | **grid** |
+
+No son excluyentes: lo normal es un **grid** para la estructura y **flex** dentro de cada celda para alinear su contenido.
+
+```html
+<div class="grid grid-cols-2 gap-4">
+	<div class="flex flex-col justify-between bg-sky-300 p-4">
+		<h2 class="text-lg font-semibold">Título</h2>
+		<button class="self-start rounded bg-white px-3 py-1 text-sky-600">Acción</button>
+	</div>
+	<div class="flex items-center justify-center bg-sky-400 p-4">Contenido centrado</div>
+</div>
+```
+
+## Resumen rápido
+
+<Tabs>
+	<TabItem label="Contenedor">
+		```txt
+		grid                              display
+		grid-cols-3  grid-cols-12         columnas iguales
+		grid-cols-[200px_1fr]             columnas a medida
+		grid-cols-[repeat(auto-fit,minmax(200px,1fr))]
+		grid-rows-[auto_1fr_auto]         filas a medida
+		gap-4  gap-x-4  gap-y-2
+		place-items-center  items-*  justify-items-*
+		grid-flow-col  grid-flow-dense
+		```
+	</TabItem>
+	<TabItem label="Hijos">
+		```txt
+		col-span-2  col-span-full  row-span-2
+		col-start-2  col-end-4  row-start-1
+		self-*  justify-self-*
+		```
+	</TabItem>
+</Tabs>
+
+## Convención práctica
+
+<Steps>
+
+1. **Grid para estructura, flex para contenido**: rejilla de tarjetas con grid, interior de cada tarjeta con flex.
+2. Para tarjetas, empieza por **`auto-fit` + `minmax`**; añade breakpoints solo si necesitas un número exacto de columnas.
+3. Deja que las **filas se creen solas**; define `grid-rows-*` únicamente en contenedores de altura fija (la página entera).
+4. Usa `col-span-*` para destacar; `col-start-*` solo cuando la posición no siga el orden del HTML.
+5. Si te encuentras contando líneas de rejilla en un componente pequeño, probablemente era un flex.
+
+</Steps>
+
+## Ejercicios
+
+Resuélvelos en `src/04-grid/exercises.html`.
+
+### Básicos
+
+1. Seis cajas numeradas en `grid grid-cols-3 gap-4`. Cambia a `grid-cols-2` y a `grid-cols-4` y observa cómo se recolocan.
+2. Una rejilla `grid-cols-[250px_1fr]` con un `aside` y un `main` de `h-64`. Cambia `250px` por `1fr` y compara.
+3. Una rejilla de 4 columnas donde la primera caja ocupe `col-span-2`, la última `col-span-full` y haya una de `row-span-2`.
+4. Reproduce la estructura de página `grid-rows-[auto_1fr_auto]` con `h-screen`. Pon poco contenido en `main` y comprueba que el pie sigue abajo.
+5. Una galería de 8 tarjetas con `repeat(auto-fit,minmax(180px,1fr))`. Estrecha la ventana y anota a qué anchos cambia el número de columnas.
+
+### Para pensar
+
+6. Coloca **explícitamente** tres cajas en una rejilla de 3×3 con `col-start`/`row-start`: una en el centro, una en la esquina superior derecha y una que ocupe toda la última fila. Escribe en el README los números de línea que has usado y por qué una rejilla de 3 columnas tiene 4 líneas.
+7. Dos versiones de la misma rejilla de tarjetas de altura distinta: una con `grid grid-cols-3` y otra con `flex flex-wrap` (cada tarjeta `w-1/3`). Explica en el README qué diferencia ves en la alineación de las filas y por qué.
+8. Cambia `auto-fit` por `auto-fill` en una rejilla con solo **dos** tarjetas y un `minmax(200px,1fr)`. Describe la diferencia con la ventana ancha.
+9. Sin ejecutarlo, indica en qué celda queda cada hijo. Luego compruébalo:
+
+	```html
+	<div class="grid grid-cols-3 grid-flow-dense gap-2">
+		<div class="col-span-2 bg-red-300 p-4">A</div>
+		<div class="col-span-2 bg-red-400 p-4">B</div>
+		<div class="bg-red-500 p-4">C</div>
+	</div>
+	```
+
+	Quita `grid-flow-dense` y vuelve a comprobar.
+
+### Reto
+
+Maqueta un **panel de estadísticas** con grid: una rejilla de 4 columnas con cuatro tarjetas de KPI en la primera fila (número grande, etiqueta pequeña), una tarjeta "Gráfico" que ocupe **3 columnas y 2 filas**, una tarjeta "Actividad" de 1 columna y 2 filas a su derecha, y una tarjeta "Tabla" de fila completa al final. Cada tarjeta es `flex flex-col` con el contenido alineado como corresponda. Dale una altura mínima a las tarjetas de gráfico y actividad con `min-h-64`. En el README dibuja la rejilla en ASCII con los `span` de cada tarjeta.
+
+### Entrega
+
+<Steps>
+
+1. Copia en `src/04-grid/index.html` los ejemplos de este apartado que hayas probado y confírmalos:
+
+	```bash
+	git add src/04-grid/index.html
+	git commit -m "Añade ejemplos de grid"
+	```
+
+2. Resuelve los ejercicios en `src/04-grid/exercises.html`, documéntalos en `src/04-grid/README.md` y confírmalos en un commit aparte:
+
+	```bash
+	git add src/04-grid/exercises.html src/04-grid/README.md
+	git commit -m "Resuelve ejercicios de grid"
+	```
+
+3. Sube ambos commits a GitHub con `git push`.
+
+</Steps>
+
+## Siguientes pasos
+
+<CardGrid stagger>
+	<LinkCard
+		href="/jjcm/di/units/introduction/tailwind/05-responsive/"
+		title="Diseño responsive"
+		description="Breakpoints, mobile-first y cómo cambiar el layout según el ancho."
+	/>
+	<LinkCard
+		href="https://tailwindcss.com/docs/grid-template-columns"
+		title="Grid template columns (docs)"
+		description="Clases de columnas y cómo usar valores arbitrarios."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/CSS/CSS_grid_layout/Basic_concepts_of_grid_layout"
+		title="Conceptos básicos de grid (MDN)"
+		description="Líneas, pistas, celdas y áreas explicadas sin framework."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://cssgridgarden.com/#es"
+		title="Grid Garden"
+		description="Juego para practicar col-start, span y grid-template."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+{/* Oculto hasta que el repositorio esté publicado. Para mostrarlo, quita este comentario.
+<Aside type="tip" title="Ejemplos ejecutables">
+	En el repositorio [dam-di-tailwind](https://github.com/IESJJCM/dam-di-tailwind) tienes este apartado en [`src/04-grid/`](https://github.com/IESJJCM/dam-di-tailwind/tree/main/src/04-grid): `index.html` con los ejemplos de los apuntes y `exercises.html` con los ejercicios. Clona, ejecuta `npm install` y `npm run watch`, y ábrelo con Live Server.
+</Aside>
+*/}

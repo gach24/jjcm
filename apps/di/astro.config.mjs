@@ -53,6 +53,12 @@ export default defineConfig({
                     directory: "units/introduction/typescript",
                   },
                 },
+                {
+                  label: "[lucide:braces] Tailwind CSS",
+                  autogenerate: {
+                    directory: "units/introduction/tailwind",
+                  },
+                },
               ],
             },
             {

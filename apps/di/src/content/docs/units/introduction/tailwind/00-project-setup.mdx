@@ -1,0 +1,411 @@
+---
+title: Preparar el proyecto
+description: Estructura del repositorio de apuntes de Tailwind CSS, instalación de Tailwind v4 con su CLI, compilación del CSS y creación del repositorio en Git y GitHub.
+evaluations:
+  - id: RA1
+    statement: Genera interfaces gráficos de usuario mediante editores visuales utilizando las funcionalidades del editor y adaptando el código generado
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de interfaces gráficos.
+      - Se ha creado un interfaz gráfico utilizando las herramientas de un editor visual.
+    contents:
+      - Generación de interfaces de usuario
+sources:
+  - author: Tailwind Labs — Tailwind CSS Documentation
+    url: https://tailwindcss.com/docs
+  - author: MDN Web Docs — CSS layout
+    url: https://developer.mozilla.org/es/docs/Learn_web_development/Core/CSS_layout
+sidebar:
+  order: 0
+date: 2026-09-16
+updated: 2026-09-16
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	FileTree,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+Los ejemplos de esta unidad son páginas HTML que se ven con **Live Server**, como en JavaScript, con una novedad: Tailwind **genera el CSS** a partir de las clases que escribes en el HTML. Hay que instalarlo con npm y dejar un proceso vigilando los archivos, igual que `tsc --watch` en TypeScript.
+
+<CardGrid stagger>
+	<Card title="Un repositorio por unidad" icon="open-book">
+		Un único proyecto npm para **toda** la unidad, no uno por ejemplo. Tailwind se instala una vez y sirve a todas las carpetas.
+	</Card>
+	<Card title="Compilar el CSS" icon="seti:css">
+		`@tailwindcss/cli` lee tus HTML, detecta las clases que usas y escribe **solo ese CSS** en `output.css`.
+	</Card>
+	<Card title="Ver el resultado" icon="laptop">
+		Live Server sirve el HTML y recarga al guardar. Con el CLI en modo `--watch`, cada cambio de clase se refleja al instante.
+	</Card>
+</CardGrid>
+
+<Aside type="note" title="Requisitos previos">
+	Necesitas **Node.js**, **Git**, VS Code con **Live Server** y, muy recomendable, la extensión **Tailwind CSS IntelliSense** (`bradlc.vscode-tailwindcss`), que autocompleta las clases y muestra el CSS que genera cada una al pasar el ratón. Si te falta algo, pasa por [Instalaciones](/jjcm/di/installations/).
+</Aside>
+
+## Estructura del repositorio
+
+Una carpeta por apartado dentro de `src/`, y en la raíz lo que describe el proyecto. El CSS de entrada y el generado viven en `src/` para que todas las páginas lo enlacen con la misma ruta relativa.
+
+<FileTree>
+
+- di-tailwind/
+  - .gitignore
+  - README.md
+  - package.json          dependencias y scripts de npm
+  - src/
+    - input.css           punto de entrada: importa Tailwind
+    - output.css          generado por el CLI, ignorado por Git
+    - index.html          índice: enlaza los 8 apartados
+    - **01-introduction/**
+      - index.html        ejemplos explicados en los apuntes
+      - exercises.html    espacio para practicar
+      - README.md         explicación de tus soluciones
+    - 02-utilities/
+    - 03-flexbox/
+    - 04-grid/
+    - 05-responsive/
+    - 06-components/
+    - 07-page-layouts/
+    - 08-other-techniques/
+  - node_modules/         dependencias, ignorado por Git
+
+</FileTree>
+
+<Aside type="tip" title="El nombre del repositorio">
+	En los ejemplos se usa **`di-tailwind`**, siguiendo el patrón de las unidades anteriores. Si tu profesor indica otro nombre, sustitúyelo en todos los comandos.
+</Aside>
+
+### Qué cambia respecto a JavaScript
+
+<Steps>
+
+1. **Los ejemplos son `index.html`**, no `examples.js`: en esta unidad el código que importa está en el HTML. Llamarlo `index.html` permite abrir cada carpeta directamente con Live Server.
+2. **Un solo `output.css`** para todas las páginas. Cada `index.html` lo enlaza con `../output.css`. No hay un CSS por apartado.
+3. **Hay un proceso de compilación**, como en TypeScript. Sin el CLI en marcha, las clases nuevas que escribas **no tendrán efecto** hasta que lo arranques.
+4. **`output.css` no se sube** al repositorio: es generado, como `dist/`.
+
+</Steps>
+
+## Crear la estructura
+
+<Tabs>
+	<TabItem label="Linux / macOS / Git Bash" icon="lucide:terminal">
+		```bash
+		mkdir -p di-tailwind/src
+		cd di-tailwind
+		touch .gitignore README.md src/input.css src/index.html
+
+		for apartado in 01-introduction 02-utilities 03-flexbox 04-grid \
+		                05-responsive 06-components 07-page-layouts 08-other-techniques; do
+		  mkdir -p "src/$apartado"
+		  touch "src/$apartado/index.html" "src/$apartado/exercises.html" "src/$apartado/README.md"
+		done
+		```
+	</TabItem>
+	<TabItem label="Windows (PowerShell)" icon="lucide:monitor">
+		```powershell
+		mkdir di-tailwind\src
+		cd di-tailwind
+		ni .gitignore, README.md, src\input.css, src\index.html
+
+		$apartados = "01-introduction","02-utilities","03-flexbox","04-grid",
+		             "05-responsive","06-components","07-page-layouts","08-other-techniques"
+
+		foreach ($a in $apartados) {
+		  ni -ItemType Directory -Force "src\$a"
+		  ni -ItemType File -Force "src\$a\index.html", "src\$a\exercises.html", "src\$a\README.md"
+		}
+		```
+	</TabItem>
+</Tabs>
+
+### Instalar Tailwind
+
+<Steps>
+
+1. **Inicializa** `package.json`:
+
+	```bash
+	npm init -y
+	```
+
+2. **Instala** Tailwind y su CLI como dependencias de desarrollo:
+
+	```bash
+	npm install -D tailwindcss @tailwindcss/cli
+	```
+
+3. **Comprueba** que el CLI responde:
+
+	```bash
+	npx @tailwindcss/cli --help
+	```
+
+</Steps>
+
+<Aside type="caution" title="Tailwind v4, no v3">
+	Si buscas tutoriales verás `npx tailwindcss init`, un archivo `tailwind.config.js` y tres líneas `@tailwind base; @tailwind components; @tailwind utilities;`. Eso es **Tailwind 3**. La versión 4 (2025) eliminó todo eso: **no hay archivo de configuración** y el CSS de entrada es una sola línea. Si un tutorial menciona `tailwind.config.js`, es antiguo.
+</Aside>
+
+### `src/input.css`
+
+Todo el CSS de entrada es esta línea. Tailwind la sustituye por sus estilos base y por las utilidades que detecte en tus archivos:
+
+```css title="src/input.css"
+@import "tailwindcss";
+```
+
+### `package.json`
+
+Añade dos scripts: `watch` para trabajar y `build` para generar la versión final minificada.
+
+```json title="package.json" {5-8}
+{
+	"name": "di-tailwind",
+	"version": "1.0.0",
+	"private": true,
+	"scripts": {
+		"watch": "tailwindcss -i ./src/input.css -o ./src/output.css --watch",
+		"build": "tailwindcss -i ./src/input.css -o ./src/output.css --minify"
+	},
+	"devDependencies": {
+		"@tailwindcss/cli": "^4.3.0",
+		"tailwindcss": "^4.3.0"
+	}
+}
+```
+
+<Aside type="note" title="Cómo sabe Tailwind qué clases usas">
+	El CLI **escanea automáticamente** todos los archivos del proyecto (salvo `node_modules/` y lo que ignore Git) buscando cadenas que parezcan clases de Tailwind. No hay que decirle dónde están los HTML. Por eso `output.css` contiene solo lo que realmente usas: unos pocos KB en lugar de los megabytes que ocuparía el framework completo.
+</Aside>
+
+### `.gitignore`
+
+```bash title=".gitignore"
+# Dependencias
+node_modules/
+
+# CSS generado: se regenera con npm run build
+src/output.css
+
+# Sistema operativo y editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+```
+
+### El índice de la raíz
+
+```html title="src/index.html"
+<!doctype html>
+<html lang="es">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Apuntes de Tailwind CSS</title>
+		<link rel="stylesheet" href="./output.css" />
+	</head>
+	<body class="mx-auto max-w-2xl p-8">
+		<h1 class="mb-6 text-3xl font-bold">Apuntes de Tailwind CSS</h1>
+		<ol class="list-inside list-decimal space-y-2">
+			<li><a class="text-blue-600 hover:underline" href="./01-introduction/">Introducción</a></li>
+			<li><a class="text-blue-600 hover:underline" href="./02-utilities/">Utilidades básicas</a></li>
+			<li><a class="text-blue-600 hover:underline" href="./03-flexbox/">Flexbox</a></li>
+			<li><a class="text-blue-600 hover:underline" href="./04-grid/">Grid</a></li>
+			<li><a class="text-blue-600 hover:underline" href="./05-responsive/">Diseño responsive</a></li>
+			<li><a class="text-blue-600 hover:underline" href="./06-components/">Componentes</a></li>
+			<li><a class="text-blue-600 hover:underline" href="./07-page-layouts/">Maquetación de páginas</a></li>
+			<li><a class="text-blue-600 hover:underline" href="./08-other-techniques/">Otras técnicas</a></li>
+		</ol>
+	</body>
+</html>
+```
+
+### La página de cada apartado
+
+Plantilla para los ocho `index.html` y sus `exercises.html`. Fíjate en la ruta del CSS: `../output.css`, un nivel por encima.
+
+```html title="src/01-introduction/index.html" {7}
+<!doctype html>
+<html lang="es">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>01 · Introducción</title>
+		<link rel="stylesheet" href="../output.css" />
+	</head>
+	<body class="p-8">
+		<h1 class="text-2xl font-bold">01 · Introducción</h1>
+		<!-- ejemplos -->
+	</body>
+</html>
+```
+
+<Aside type="caution" title="La etiqueta `viewport` es obligatoria">
+	Sin `<meta name="viewport" …>`, los móviles renderizan la página como si tuviera unos 980 px de ancho y la reducen. Ninguna clase `md:` o `lg:` funcionará como esperas. Está en la plantilla: no la borres.
+</Aside>
+
+### Documentar las soluciones
+
+Cada apartado tiene un `README.md` donde **explicas** tus soluciones a los ejercicios: título del ejercicio, explicación con tus palabras (qué clases has usado y **qué CSS generan**) y el fragmento HTML final en un bloque `html`. Mismo formato que en JavaScript; tienes la plantilla en [Preparar el proyecto de JavaScript](/jjcm/di/units/introduction/javascript/00-project-setup/#documentar-las-soluciones).
+
+## Compilar y ver los ejemplos
+
+El ciclo necesita **dos procesos** en marcha: el CLI de Tailwind y Live Server.
+
+<Steps>
+
+1. En una terminal, arranca el CLI en modo vigilancia y déjalo ahí. Genera `src/output.css` y lo actualiza cada vez que guardas un HTML:
+
+	```bash
+	npm run watch
+	```
+
+2. Haz clic derecho en `src/index.html` → **Open with Live Server**. Desde el índice navega a cualquier apartado.
+3. Añade una clase a un elemento (por ejemplo `bg-red-500`), guarda y comprueba que el cambio aparece. Si no aparece, mira la terminal del CLI: debe haber reconstruido el CSS.
+4. Abre `src/output.css` y busca `.bg-red-500`: verás la regla CSS que Tailwind ha generado a partir de tu clase.
+
+</Steps>
+
+<Aside type="tip" title="Pasa el ratón por las clases">
+	Con la extensión Tailwind CSS IntelliSense, al pasar el ratón por `bg-red-500` en el HTML verás el CSS exacto: `background-color: oklch(63.7% 0.237 25.331)`. Es la mejor forma de aprender qué hace cada clase mientras la escribes.
+</Aside>
+
+## Formatear el código
+
+El formateador integrado de VS Code entiende HTML y CSS; activa **Format On Save** como en [JavaScript](/jjcm/di/units/introduction/javascript/00-project-setup/#formatear-el-código). Prettier y ESLint siguen quedando para más adelante. Un consejo específico de Tailwind: cuando un elemento acumule muchas clases, escríbelas en **orden de dentro afuera** (layout → tamaño → espaciado → color → tipografía → estados) para poder leerlas; el apartado de componentes vuelve sobre ello.
+
+## Crear el repositorio Git
+
+<Steps>
+
+1. Sitúate en la raíz del proyecto e **inicializa** el repositorio:
+
+	```bash
+	git init
+	```
+
+2. **Comprueba** que `node_modules/` y `src/output.css` **no** aparecen. Si aparecen, revisa `.gitignore` antes de seguir:
+
+	```bash
+	git status
+	```
+
+3. **Prepara y confirma** el primer commit:
+
+	```bash
+	git add .
+	git commit -m "Estructura inicial de los apuntes de Tailwind"
+	```
+
+</Steps>
+
+## Publicar en GitHub
+
+<Tabs>
+	<TabItem label="Desde la web" icon="lucide:globe">
+
+		<Steps>
+
+		1. Entra en [github.com/new](https://github.com/new), pon **`di-tailwind`** como nombre y **no marques** ninguna opción de *Initialize this repository*.
+		2. Pulsa **Create repository** y **enlaza** el remoto desde tu terminal, sustituyendo `TU-USUARIO`:
+
+			```bash
+			git remote add origin https://github.com/TU-USUARIO/di-tailwind.git
+			git branch -M main
+			git push -u origin main
+			```
+
+		3. **Recarga** la página de GitHub: debe aparecer `src/` y `package.json`, pero **no** `node_modules/` ni `output.css`.
+
+		</Steps>
+
+	</TabItem>
+	<TabItem label="Con GitHub CLI" icon="lucide:terminal">
+
+		```bash
+		gh auth login
+		gh repo create di-tailwind --public --source=. --remote=origin --push
+		gh repo view --web
+		```
+
+	</TabItem>
+</Tabs>
+
+<Aside type="tip" title="Clonar en otro equipo">
+	Tras `git clone` hay que ejecutar **`npm install`** y después **`npm run watch`** (o `build`) para que exista `output.css`. Sin ese paso, las páginas se verán sin estilos.
+</Aside>
+
+## Flujo de trabajo diario
+
+<Steps>
+
+1. `npm run watch` en una terminal; Live Server en el navegador.
+2. **Escribe** HTML con clases, guarda y mira el resultado. Redimensiona la ventana para comprobar el comportamiento responsive.
+3. **Registra** el trabajo y **súbelo**:
+
+	```bash
+	git add .
+	git commit -m "Resuelve ejercicios de flexbox"
+	git push
+	```
+
+</Steps>
+
+## Comprobación final
+
+<Steps>
+
+1. `npx @tailwindcss/cli --help` responde.
+2. `src/` contiene `input.css`, `index.html` y las ocho carpetas, cada una con `index.html`, `exercises.html` y `README.md`.
+3. Con `npm run watch` en marcha, `src/output.css` existe y cambia al añadir una clase nueva en un HTML.
+4. Al abrir `src/index.html` con Live Server, el título se ve en negrita y grande (`text-3xl font-bold`), señal de que el CSS carga.
+5. `git status` **no** muestra `node_modules/` ni `src/output.css`.
+6. `git remote -v` muestra `origin` apuntando a tu repositorio de GitHub.
+
+</Steps>
+
+## Siguientes pasos
+
+<CardGrid stagger>
+	<LinkCard
+		href="/jjcm/di/units/introduction/tailwind/01-introduction/"
+		title="Introducción a Tailwind"
+		description="Qué significa utility-first y cómo leer y buscar clases."
+	/>
+	<LinkCard
+		href="/jjcm/di/units/introduction/javascript/00-project-setup/"
+		title="Preparar el proyecto (JavaScript)"
+		description="Git, GitHub, formateo y documentación de soluciones, con más detalle."
+	/>
+	<LinkCard
+		href="https://tailwindcss.com/docs/installation/tailwind-cli"
+		title="Instalación con Tailwind CLI"
+		description="Guía oficial de instalación de la versión 4."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss"
+		title="Tailwind CSS IntelliSense"
+		description="Extensión de VS Code con autocompletado y vista previa del CSS."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>

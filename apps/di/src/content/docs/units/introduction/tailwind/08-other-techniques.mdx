@@ -1,0 +1,382 @@
+---
+title: Otras técnicas
+description: Posicionamiento (relative, absolute, fixed, sticky) y z-index, proporciones y recorte de imágenes, container queries, modo oscuro, transiciones, transformaciones y animaciones, y el proyecto final de la unidad, una landing responsive completa.
+evaluations:
+  - id: RA1
+    statement: Genera interfaces gráficos de usuario mediante editores visuales utilizando las funcionalidades del editor y adaptando el código generado
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de interfaces gráficos.
+      - Se ha creado un interfaz gráfico utilizando las herramientas de un editor visual.
+    contents:
+      - Generación de interfaces de usuario
+sources:
+  - author: Tailwind Labs — Tailwind CSS Documentation
+    url: https://tailwindcss.com/docs
+  - author: MDN Web Docs — CSS layout
+    url: https://developer.mozilla.org/es/docs/Learn_web_development/Core/CSS_layout
+sidebar:
+  order: 8
+date: 2026-09-16
+updated: 2026-09-16
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+Con flex, grid y responsive resuelves el 90 % de la maquetación. Este apartado cubre el otro 10 %: cosas que aparecen en cualquier interfaz real y que conviene reconocer aunque las uses poco. Cierra con el **proyecto final** de la unidad, una landing completa que integra todo.
+
+<CardGrid stagger>
+	<Card title="Posicionar" icon="seti:pin">
+		`relative` + `absolute` para superponer; `fixed` y `sticky` para fijar; `z-*` para el orden de capas.
+	</Card>
+	<Card title="Adaptar" icon="setting">
+		Container queries: un componente que responde al ancho de **su contenedor**, no de la ventana. Modo oscuro con `dark:`.
+	</Card>
+	<Card title="Mover" icon="rocket">
+		`transition`, `duration-*`, `hover:scale-*`, `animate-*`: movimiento con una clase.
+	</Card>
+</CardGrid>
+
+## Posicionamiento
+
+| Clase | CSS | Comportamiento |
+| --- | --- | --- |
+| `static` | `position: static` | flujo normal (por defecto) |
+| `relative` | `relative` | en el flujo, pero puede desplazarse y **sirve de referencia** a los hijos `absolute` |
+| `absolute` | `absolute` | fuera del flujo; se coloca respecto al ancestro `relative` más cercano |
+| `fixed` | `fixed` | fuera del flujo; respecto a la **ventana**, no se mueve con el scroll |
+| `sticky` | `sticky` | en el flujo; se "pega" al llegar a `top-*` durante el scroll |
+
+Las coordenadas: `top-*`, `right-*`, `bottom-*`, `left-*` con la escala; `inset-0` para las cuatro a 0; `inset-x-0` / `inset-y-0`.
+
+### Superponer: `relative` + `absolute`
+
+El patrón más usado: un badge sobre una imagen, un botón de cerrar en la esquina de un modal, un icono dentro de un input.
+
+```html
+<div class="relative w-64">
+	<img class="aspect-video w-full rounded-lg object-cover" src="https://picsum.photos/400/225" alt="" />
+	<span class="absolute top-2 left-2 rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">Nuevo</span>
+	<button class="absolute top-2 right-2 rounded-full bg-white/80 p-1 hover:bg-white" aria-label="Guardar">♥</button>
+</div>
+```
+
+Sin `relative` en el contenedor, el badge se colocaría respecto a la página. `relative` no mueve nada; solo declara "los `absolute` de dentro se miden desde aquí".
+
+```html
+<!-- icono dentro de un input -->
+<div class="relative">
+	<span class="absolute inset-y-0 left-3 flex items-center text-gray-400">🔍</span>
+	<input class="w-full rounded-md border py-2 pl-10 pr-3" placeholder="Buscar…" />
+</div>
+```
+
+`inset-y-0` + `flex items-center` centra el icono verticalmente; `pl-10` en el input deja hueco para que el texto no lo pise.
+
+### Capas: `z-index`
+
+Cuando dos elementos posicionados se solapan, `z-*` decide cuál va encima: `z-0`, `z-10`, `z-20`, `z-30`, `z-40`, `z-50`. Cabecera sticky `z-10`, desplegables `z-20`, modales `z-50`.
+
+```html
+<!-- overlay de modal -->
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+	<div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+		<h2 class="text-lg font-semibold">¿Eliminar el pedido?</h2>
+		<div class="mt-6 flex justify-end gap-3">
+			<button class="rounded-md border px-4 py-2">Cancelar</button>
+			<button class="rounded-md bg-red-600 px-4 py-2 text-white">Eliminar</button>
+		</div>
+	</div>
+</div>
+```
+
+`fixed inset-0` cubre toda la ventana; `bg-black/50` oscurece; `flex items-center justify-center` centra la caja. Mostrar y ocultar es cuestión de `hidden` con JavaScript.
+
+<Aside type="note" title="`z-index` solo funciona en elementos posicionados">
+	`z-10` en un elemento `static` no hace nada. Si un `z-*` "no funciona", añade `relative`.
+</Aside>
+
+## Proporciones y recorte
+
+Ya usaste `aspect-video` y `object-cover`. Completan la familia:
+
+| Clase | CSS |
+| --- | --- |
+| `aspect-square` `aspect-video` `aspect-[4/3]` | `aspect-ratio` |
+| `object-cover` `object-contain` `object-fill` | `object-fit` |
+| `object-center` `object-top` `object-left` | `object-position`: qué parte se conserva al recortar |
+| `overflow-hidden` | recorta lo que sobresale (esquinas redondeadas sobre imágenes) |
+
+```html
+<div class="grid grid-cols-3 gap-2">
+	<img class="aspect-[4/3] w-full object-cover object-top" src="https://picsum.photos/300/500" alt="" />
+	<img class="aspect-[4/3] w-full object-cover object-center" src="https://picsum.photos/300/500" alt="" />
+	<img class="aspect-[4/3] w-full object-cover object-bottom" src="https://picsum.photos/300/500" alt="" />
+</div>
+```
+
+La misma imagen vertical recortada a 4:3 conservando la parte superior, central o inferior.
+
+## Container queries
+
+Los breakpoints `md:` miran el ancho de la **ventana**. Pero una tarjeta en la barra lateral y la misma tarjeta en el contenido principal tienen anchos muy distintos con la misma ventana. Las **container queries** hacen que un componente responda al ancho de **su contenedor**:
+
+```html
+<div class="@container">
+	<article class="flex flex-col gap-4 rounded-lg border p-4 @md:flex-row">
+		<img class="aspect-video w-full rounded object-cover @md:w-48" src="https://picsum.photos/400/225" alt="" />
+		<div>
+			<h3 class="font-semibold">Tarjeta adaptable</h3>
+			<p class="text-sm text-gray-600">En columna si el contenedor es estrecho; en fila si es ancho.</p>
+		</div>
+	</article>
+</div>
+```
+
+`@container` marca el contenedor; `@md:` (con arroba) se activa cuando **ese contenedor** mide al menos 28rem, sea cual sea la ventana. Pon la misma tarjeta en un `aside` de 300 px y en un `main` de 800 px: se adapta a cada uno.
+
+| Prefijo | Ancho del contenedor |
+| --- | --- |
+| `@sm:` | 24rem |
+| `@md:` | 28rem |
+| `@lg:` | 32rem |
+| `@xl:` | 36rem |
+
+<Aside type="tip" title="Cuándo usar cada cosa">
+	**Breakpoints** (`md:`) para la estructura de la página: número de columnas, lateral visible o no. **Container queries** (`@md:`) para componentes que se reutilizan en sitios de distinto ancho. Son complementarios; en React, los componentes agradecen las container queries porque no saben dónde los van a colocar.
+</Aside>
+
+## Modo oscuro
+
+El prefijo `dark:` aplica una clase cuando el sistema del usuario está en modo oscuro (`prefers-color-scheme: dark`). No hay que configurar nada:
+
+```html
+<body class="bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100">
+	<div class="rounded-lg border border-gray-200 bg-gray-50 p-6 dark:border-gray-700 dark:bg-gray-800">
+		<h2 class="text-lg font-semibold">Tarjeta</h2>
+		<p class="text-gray-600 dark:text-gray-400">Cambia con el tema del sistema.</p>
+		<button class="mt-4 rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400">Acción</button>
+	</div>
+</body>
+```
+
+Pruébalo en las DevTools: *Rendering* → *Emulate CSS media feature prefers-color-scheme* → `dark`. La regla práctica: fondos `white`/`gray-50` → `gray-900`/`gray-800`; texto `gray-900` → `gray-100`; bordes `gray-200` → `gray-700`; acentos un tono más claro (`blue-600` → `blue-500`).
+
+<Aside type="note" title="Interruptor manual">
+	Para un botón que cambie el tema (en lugar de seguir al sistema), Tailwind permite redefinir `dark:` para que dependa de una clase en `<html>`: una línea en `input.css` (`@custom-variant dark (&:where(.dark, .dark *));`) y un `classList.toggle("dark")` en JavaScript. Está explicado en la documentación enlazada abajo; no es necesario para esta unidad.
+</Aside>
+
+## Transiciones, transformaciones y animaciones
+
+### Transiciones
+
+`transition` anima el cambio de las propiedades habituales (color, opacidad, sombra, transform) en 150 ms. Se ajusta con `duration-*` y `ease-*`:
+
+```html
+<button class="rounded bg-blue-600 px-4 py-2 text-white transition duration-300 ease-in-out hover:bg-blue-700 hover:shadow-lg">
+	Suave
+</button>
+```
+
+| Clase | CSS |
+| --- | --- |
+| `transition` | `transition-property: color, background-color, border-color, box-shadow, transform, opacity…` |
+| `transition-colors` / `transition-transform` / `transition-opacity` | solo esa familia |
+| `duration-150` … `duration-1000` | `transition-duration` en ms |
+| `ease-in` `ease-out` `ease-in-out` | curva |
+
+### Transformaciones
+
+| Clase | CSS |
+| --- | --- |
+| `scale-105` `scale-95` | `scale: 1.05` |
+| `rotate-45` `-rotate-6` | `rotate: 45deg` |
+| `translate-x-2` `-translate-y-1` | desplazamiento |
+
+```html
+<a class="group block overflow-hidden rounded-lg" href="#">
+	<img class="aspect-video w-full object-cover transition duration-300 group-hover:scale-105" src="https://picsum.photos/400/225" alt="" />
+</a>
+
+<button class="rounded bg-gray-800 px-4 py-2 text-white transition hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0">
+	Se eleva
+</button>
+```
+
+`overflow-hidden` en el enlace hace que la imagen ampliada no sobresalga de las esquinas.
+
+### Animaciones
+
+Cuatro animaciones incluidas, para indicadores de estado:
+
+```html
+<div class="size-6 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600"></div>
+<div class="h-4 w-48 animate-pulse rounded bg-gray-300"></div>
+<span class="relative flex size-3">
+	<span class="absolute inline-flex size-full animate-ping rounded-full bg-green-400 opacity-75"></span>
+	<span class="relative inline-flex size-3 rounded-full bg-green-500"></span>
+</span>
+```
+
+`animate-spin` (cargando), `animate-pulse` (esqueleto de contenido), `animate-ping` (indicador "en línea"), `animate-bounce`.
+
+<Aside type="caution" title="Movimiento con moderación">
+	Las transiciones de 150–300 ms en hover mejoran la sensación; animaciones continuas o de más de medio segundo cansan y pueden molestar a personas con sensibilidad al movimiento. `motion-reduce:transition-none` y `motion-reduce:animate-none` respetan la preferencia del sistema *reducir movimiento*.
+</Aside>
+
+## Resumen rápido
+
+<Tabs>
+	<TabItem label="Posición">
+		```txt
+		relative                    referencia para hijos absolute
+		absolute top-2 right-2      superponer
+		absolute inset-0            cubrir el padre
+		fixed inset-0 z-50          overlay de modal
+		sticky top-0 z-10           cabecera
+		z-0 … z-50                  capas (solo posicionados)
+		```
+	</TabItem>
+	<TabItem label="Adaptar y mover">
+		```txt
+		aspect-[4/3] object-cover object-top
+		@container  +  @md:flex-row          container query
+		dark:bg-gray-900 dark:text-gray-100  modo oscuro
+		transition duration-300 ease-out
+		hover:scale-105  hover:-translate-y-0.5  rotate-45
+		animate-spin  animate-pulse  animate-ping
+		motion-reduce:transition-none
+		```
+	</TabItem>
+</Tabs>
+
+## Convención práctica
+
+<Steps>
+
+1. Superponer = **`relative` en el padre, `absolute` en el hijo**; sin `relative`, el hijo se pierde.
+2. Escala de `z-*` fija en el proyecto: `10` cabecera, `20` desplegables, `50` modales.
+3. **Container queries** para componentes reutilizables; **breakpoints** para la estructura de página.
+4. Si añades `dark:`, hazlo en **todos** los colores del componente, no solo en el fondo.
+5. `transition` en todo lo que tenga `hover:`; animaciones continuas solo para estados de carga.
+
+</Steps>
+
+## Ejercicios
+
+Resuélvelos en `src/08-other-techniques/exercises.html`.
+
+### Básicos
+
+1. Una imagen con un badge en la esquina superior izquierda y un botón ♥ en la superior derecha, con `relative`/`absolute`. Quita `relative` y describe dónde acaban.
+2. Un input con icono a la izquierda (`absolute inset-y-0 left-3`) y `pl-10`. Añade un botón "×" a la derecha para limpiar.
+3. Un overlay de modal `fixed inset-0 z-50 bg-black/50` con una caja centrada, y un botón que lo muestre y oculte con `classList.toggle("hidden")`.
+4. La misma tarjeta con `@container` colocada dentro de un `aside` de `w-72` y dentro de un `main` de `w-full`. Comprueba que se ve en columna en uno y en fila en el otro con la misma ventana.
+5. Una tarjeta con `dark:` en fondo, borde, texto y botón. Emula el modo oscuro en las DevTools.
+6. Tres botones: uno con `transition hover:scale-105`, otro con `hover:-translate-y-0.5 hover:shadow-lg` y otro con `hover:rotate-3`. Añade `duration-300` a uno y compara.
+
+### Para pensar
+
+7. Un `z-10` en un elemento que "no sube por encima" de otro. Reproduce el caso (elemento `static` con `z-10` solapado por un `absolute`) y explica en el README por qué y cómo se arregla.
+8. Cabecera `sticky top-0` dentro de un contenedor con `overflow-hidden`. ¿Sigue pegándose? Investiga por qué y anota la respuesta.
+9. Explica con un ejemplo en qué situación `md:flex-row` y `@md:flex-row` producen resultados **distintos** para la misma tarjeta.
+10. Añade `motion-reduce:transition-none` a los botones del ejercicio 6 y activa *Emulate CSS prefers-reduced-motion* en las DevTools. ¿Qué cambia? ¿Por qué importa?
+
+### Reto: proyecto final de la unidad
+
+Construye en `src/08-other-techniques/landing.html` la landing completa de **"Academia DI"**, integrando toda la unidad. Debe verse correctamente en **375, 768 y 1280 px**, sin scroll horizontal, y contener:
+
+<Steps>
+
+1. **Cabecera** `sticky top-0 z-10` con fondo translúcido, logo, enlaces `hidden md:flex` y menú móvil funcional con botón ☰.
+2. **Hero** en dos columnas desde `md:` (texto + imagen `aspect-video object-cover`), botones apilados en móvil y en fila desde `sm:`, con `transition` y `hover:`.
+3. **Sección de cursos**: rejilla de 6 tarjetas (1 → 2 → 3 columnas) con imagen, badge superpuesto con `absolute`, título, `line-clamp-2`, precio y botón pegado abajo; todas de la misma altura; la imagen se amplía con `group-hover:scale-105`.
+4. **Sección de características** con 3 columnas desde `lg:` usando `auto-fit`, cada una con un icono (un `div` redondo), título y texto.
+5. **Formulario de contacto** en 2 columnas desde `md:` (datos a la izquierda, mensaje a la derecha), con `focus:` visible en todos los campos y validación con `peer-invalid:` en el correo.
+6. **Pie** con tres columnas de enlaces que se apilan en móvil y una fila inferior con copyright e iconos.
+7. **Modo oscuro** completo con `dark:` (pruébalo emulándolo) y **`motion-reduce`** en las transiciones.
+
+</Steps>
+
+Documenta en el `README.md` de la carpeta: una captura o descripción de cada breakpoint, qué contenedor es grid y cuál flex en cada sección, y la lista de clases con prefijo que hacen el cambio de móvil a escritorio. Esta landing es la **entrega evaluable** de la unidad.
+
+### Entrega
+
+<Steps>
+
+1. Copia en `src/08-other-techniques/index.html` los ejemplos de este apartado que hayas probado y confírmalos:
+
+	```bash
+	git add src/08-other-techniques/index.html
+	git commit -m "Añade ejemplos de otras técnicas"
+	```
+
+2. Resuelve los ejercicios en `exercises.html`, documéntalos en `README.md` y confírmalos:
+
+	```bash
+	git add src/08-other-techniques/exercises.html src/08-other-techniques/README.md
+	git commit -m "Resuelve ejercicios de otras técnicas"
+	```
+
+3. Construye la landing y confírmala en su **propio commit** (o en varios, sección a sección):
+
+	```bash
+	git add src/08-other-techniques/landing.html src/08-other-techniques/README.md
+	git commit -m "Añade la landing responsive de Academia DI"
+	```
+
+4. Sube todo a GitHub con `git push`. Con esto la unidad queda **completa** en tu repositorio: comprueba que las ocho carpetas de `src/` tienen contenido y que la landing se ve bien desde el índice.
+
+</Steps>
+
+## Siguientes pasos
+
+<CardGrid stagger>
+	<LinkCard
+		href="/jjcm/di/units/introduction/tailwind/00-project-setup/"
+		title="Volver al inicio de la unidad"
+		description="Estructura del proyecto y configuración inicial."
+	/>
+	<LinkCard
+		href="https://tailwindcss.com/docs/responsive-design#container-queries"
+		title="Container queries (docs)"
+		description="@container y los prefijos @sm, @md, @lg."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://tailwindcss.com/docs/dark-mode"
+		title="Dark mode (docs)"
+		description="dark: automático y cómo hacer un interruptor manual."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://tailwindcss.com/docs/transition-property"
+		title="Transitions (docs)"
+		description="transition, duration, ease y las animaciones incluidas."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+{/* Oculto hasta que el repositorio esté publicado. Para mostrarlo, quita este comentario.
+<Aside type="tip" title="Ejemplos ejecutables">
+	En el repositorio [dam-di-tailwind](https://github.com/IESJJCM/dam-di-tailwind) tienes este apartado en [`src/08-other-techniques/`](https://github.com/IESJJCM/dam-di-tailwind/tree/main/src/08-other-techniques): `index.html` con los ejemplos de los apuntes y `exercises.html` con los ejercicios. Clona, ejecuta `npm install` y `npm run watch`, y ábrelo con Live Server.
+</Aside>
+*/}
