@@ -1,0 +1,401 @@
+---
+title: Flexbox
+description: "Maquetar en una dimensión con flexbox y Tailwind: dirección, alineación, distribución del espacio, crecimiento de los hijos, envoltura y los patrones de layout más habituales."
+evaluations:
+  - id: RA1
+    statement: Genera interfaces gráficos de usuario mediante editores visuales utilizando las funcionalidades del editor y adaptando el código generado
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de interfaces gráficos.
+      - Se ha creado un interfaz gráfico utilizando las herramientas de un editor visual.
+    contents:
+      - Generación de interfaces de usuario
+sources:
+  - author: Tailwind Labs — Tailwind CSS Documentation
+    url: https://tailwindcss.com/docs
+  - author: MDN Web Docs — CSS layout
+    url: https://developer.mozilla.org/es/docs/Learn_web_development/Core/CSS_layout
+sidebar:
+  order: 3
+date: 2026-09-16
+updated: 2026-09-16
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+**Flexbox** coloca los hijos de un contenedor en **una dimensión**: una fila o una columna. Decide cómo se reparten el espacio sobrante, cómo se alinean y qué pasa cuando no caben. Es la herramienta para barras de navegación, filas de botones, tarjetas con el pie pegado abajo y, en general, para cualquier cosa que sea "estos elementos, uno al lado del otro". Tailwind expone cada propiedad de flexbox como una clase con el mismo nombre.
+
+<CardGrid stagger>
+	<Card title="Contenedor" icon="list-format">
+		`flex` activa flexbox. `flex-row`/`flex-col` marcan la dirección. `justify-*` y `items-*` alinean.
+	</Card>
+	<Card title="Hijos" icon="puzzle">
+		`flex-1`, `grow`, `shrink-0`, `basis-*` deciden cuánto crece o encoge cada hijo. `self-*` alinea uno solo.
+	</Card>
+	<Card title="Dos ejes" icon="setting">
+		El **eje principal** sigue la dirección (`justify-*`); el **eje transversal** es el otro (`items-*`).
+	</Card>
+</CardGrid>
+
+## Activar flex y dirección
+
+| Clase | CSS |
+| --- | --- |
+| `flex` | `display: flex` |
+| `flex-row` | `flex-direction: row` (por defecto) |
+| `flex-col` | `flex-direction: column` |
+| `flex-row-reverse` / `flex-col-reverse` | invertido |
+| `inline-flex` | `display: inline-flex` |
+
+```html
+<div class="flex gap-4 bg-gray-100 p-4">
+	<div class="bg-blue-300 p-4">1</div>
+	<div class="bg-blue-400 p-4">2</div>
+	<div class="bg-blue-500 p-4">3</div>
+</div>
+
+<div class="mt-4 flex flex-col gap-4 bg-gray-100 p-4">
+	<div class="bg-green-300 p-4">A</div>
+	<div class="bg-green-400 p-4">B</div>
+</div>
+```
+
+Sin `flex`, tres `div` se apilan en vertical ocupando todo el ancho. Con `flex`, se ponen en fila y **encogen al tamaño de su contenido**. `gap-4` es `gap: 1rem`: separación entre hijos sin márgenes.
+
+## Los dos ejes
+
+Todo en flexbox se entiende con dos ejes:
+
+- **Eje principal**: la dirección de `flex-direction`. En `flex-row` es horizontal; en `flex-col`, vertical. Se controla con `justify-*`.
+- **Eje transversal**: el perpendicular. Se controla con `items-*`.
+
+Es decir: `justify-center` centra **a lo largo** de la fila y `items-center` centra **a lo alto** de la fila. Si cambias a `flex-col`, se intercambian.
+
+## Distribuir en el eje principal: `justify-*`
+
+| Clase | CSS | Efecto en `flex-row` |
+| --- | --- | --- |
+| `justify-start` | `justify-content: flex-start` | pegados a la izquierda (por defecto) |
+| `justify-end` | `flex-end` | pegados a la derecha |
+| `justify-center` | `center` | agrupados en el centro |
+| `justify-between` | `space-between` | primero y último en los extremos, resto repartido |
+| `justify-around` | `space-around` | espacio igual alrededor de cada uno |
+| `justify-evenly` | `space-evenly` | espacio igual entre todos, bordes incluidos |
+
+```html
+<div class="flex justify-between bg-gray-100 p-4">
+	<div class="bg-pink-300 p-4">Izquierda</div>
+	<div class="bg-pink-400 p-4">Centro</div>
+	<div class="bg-pink-500 p-4">Derecha</div>
+</div>
+```
+
+`justify-between` es la clase de las **barras de navegación**: logo a un lado, menú al otro.
+
+## Alinear en el eje transversal: `items-*`
+
+| Clase | CSS | Efecto en `flex-row` |
+| --- | --- | --- |
+| `items-stretch` | `align-items: stretch` | todos con la altura del más alto (por defecto) |
+| `items-start` | `flex-start` | arriba |
+| `items-center` | `center` | centrados verticalmente |
+| `items-end` | `flex-end` | abajo |
+| `items-baseline` | `baseline` | alineados por la línea base del texto |
+
+```html
+<div class="flex h-32 items-center gap-4 bg-gray-100 p-4">
+	<div class="bg-purple-300 p-2">bajo</div>
+	<div class="bg-purple-400 p-6">medio</div>
+	<div class="bg-purple-500 p-10">alto</div>
+</div>
+```
+
+Un hijo puede desmarcarse del grupo con `self-*`: `self-start`, `self-center`, `self-end`, `self-stretch`.
+
+### Centrar algo, de una vez por todas
+
+La combinación más buscada de la historia del CSS es una línea:
+
+```html
+<div class="flex h-64 items-center justify-center bg-gray-200">
+	<div class="bg-white p-6 shadow">Centrado en ambos ejes</div>
+</div>
+```
+
+`items-center` centra en vertical y `justify-center` en horizontal. Funciona con cualquier contenido y cualquier tamaño.
+
+## Cómo crecen y encogen los hijos
+
+Por defecto los hijos **no crecen**: ocupan lo que mide su contenido y el espacio sobrante queda vacío. Estas clases van en los **hijos**, no en el contenedor:
+
+| Clase | CSS | Significado |
+| --- | --- | --- |
+| `flex-1` | `flex: 1 1 0%` | crece y encoge, **repartiendo el espacio a partes iguales** ignorando el contenido |
+| `flex-auto` | `flex: 1 1 auto` | crece y encoge, pero **partiendo del tamaño del contenido** |
+| `flex-none` | `flex: none` | tamaño fijo: ni crece ni encoge |
+| `grow` | `flex-grow: 1` | solo crece |
+| `shrink-0` | `flex-shrink: 0` | nunca encoge por debajo de su tamaño |
+| `basis-{n}` / `basis-1/3` | `flex-basis` | tamaño inicial antes de repartir |
+
+```html
+<div class="flex gap-4 bg-gray-100 p-4">
+	<div class="flex-1 bg-indigo-300 p-4">flex-1</div>
+	<div class="flex-1 bg-indigo-400 p-4">flex-1 con más contenido dentro</div>
+	<div class="flex-none bg-indigo-500 p-4">fijo</div>
+</div>
+```
+
+Los dos primeros miden **lo mismo** aunque tengan distinto contenido (`flex-1` parte de 0); el tercero mide lo que ocupa su texto.
+
+<Aside type="tip" title="El patrón de la barra lateral">
+	`shrink-0` en un elemento con ancho fijo (`w-64 shrink-0`) y `flex-1` en el otro produce "columna fija + resto flexible". Es la base de cualquier layout con sidebar, y lo verás en [maquetación de páginas](/jjcm/di/units/introduction/tailwind/07-page-layouts/).
+</Aside>
+
+### Empujar un elemento al extremo
+
+`ml-auto` en un hijo consume todo el espacio sobrante a su izquierda, empujándolo al final. Es más flexible que `justify-between` cuando hay varios grupos:
+
+```html
+<nav class="flex items-center gap-6 bg-gray-800 p-4 text-white">
+	<span class="font-bold">Logo</span>
+	<a href="#">Inicio</a>
+	<a href="#">Cursos</a>
+	<a class="ml-auto rounded bg-blue-500 px-3 py-1" href="#">Entrar</a>
+</nav>
+```
+
+## Envoltura: `flex-wrap`
+
+Por defecto los hijos **no saltan de línea**: si no caben, encogen o desbordan. `flex-wrap` permite que pasen a la siguiente fila:
+
+| Clase | CSS |
+| --- | --- |
+| `flex-nowrap` | `flex-wrap: nowrap` (por defecto) |
+| `flex-wrap` | `wrap` |
+| `flex-wrap-reverse` | `wrap-reverse` |
+
+```html
+<div class="flex flex-wrap gap-2">
+	<span class="rounded-full bg-gray-200 px-3 py-1">JavaScript</span>
+	<span class="rounded-full bg-gray-200 px-3 py-1">TypeScript</span>
+	<span class="rounded-full bg-gray-200 px-3 py-1">Tailwind</span>
+	<span class="rounded-full bg-gray-200 px-3 py-1">React</span>
+	<span class="rounded-full bg-gray-200 px-3 py-1">Node</span>
+	<span class="rounded-full bg-gray-200 px-3 py-1">Electron</span>
+</div>
+```
+
+Con varias líneas, `content-*` (`content-start`, `content-center`, `content-between`) reparte las **líneas** en el eje transversal, igual que `justify-*` reparte los elementos.
+
+## Orden
+
+`order-{n}` cambia el orden visual sin tocar el HTML. `order-first` y `order-last` son los casos útiles: un botón que en móvil va arriba y en escritorio al final.
+
+```html
+<div class="flex gap-4">
+	<div class="order-last bg-red-300 p-4">Primero en el HTML</div>
+	<div class="bg-red-400 p-4">Segundo</div>
+	<div class="bg-red-500 p-4">Tercero</div>
+</div>
+```
+
+<Aside type="caution" title="Orden visual ≠ orden de lectura">
+	Los lectores de pantalla y la navegación por teclado siguen el orden del **HTML**, no el de `order-*`. Úsalo para ajustes menores; si el orden lógico cambia, cambia el HTML.
+</Aside>
+
+## Patrones que vas a usar
+
+<Tabs>
+	<TabItem label="Barra de navegación">
+		```html
+		<header class="flex items-center justify-between bg-white px-6 py-4 shadow">
+			<a class="text-xl font-bold" href="#">Academia DI</a>
+			<nav class="flex gap-6">
+				<a class="hover:text-blue-600" href="#">Cursos</a>
+				<a class="hover:text-blue-600" href="#">Precios</a>
+				<a class="hover:text-blue-600" href="#">Contacto</a>
+			</nav>
+			<button class="rounded bg-blue-600 px-4 py-2 text-white">Acceder</button>
+		</header>
+		```
+	</TabItem>
+	<TabItem label="Tarjeta con pie abajo">
+		```html
+		<div class="flex h-64 w-64 flex-col rounded-lg bg-white p-4 shadow">
+			<h3 class="text-lg font-semibold">Título</h3>
+			<p class="mt-2 text-gray-600">Texto de longitud variable.</p>
+			<button class="mt-auto rounded bg-blue-600 py-2 text-white">Acción</button>
+		</div>
+		```
+
+		`flex-col` + `mt-auto` en el botón: el margen automático absorbe el espacio sobrante y **pega el botón abajo** sin importar cuánto texto haya.
+	</TabItem>
+	<TabItem label="Fila de medios">
+		```html
+		<div class="flex items-start gap-4">
+			<img class="size-16 shrink-0 rounded-full" src="https://picsum.photos/64" alt="" />
+			<div>
+				<p class="font-semibold">Ana García</p>
+				<p class="text-sm text-gray-600">Un comentario que puede ocupar varias líneas sin que el avatar se deforme.</p>
+			</div>
+		</div>
+		```
+
+		`shrink-0` evita que la imagen encoja cuando el texto es largo.
+	</TabItem>
+	<TabItem label="Formulario en línea">
+		```html
+		<form class="flex gap-2">
+			<input class="flex-1 rounded border px-3 py-2" placeholder="Tu email" />
+			<button class="rounded bg-blue-600 px-4 py-2 text-white">Suscribirme</button>
+		</form>
+		```
+
+		`flex-1` en el input: ocupa todo lo que el botón no necesite.
+	</TabItem>
+</Tabs>
+
+## Resumen rápido
+
+<Tabs>
+	<TabItem label="Contenedor">
+		```txt
+		flex  inline-flex          display
+		flex-row  flex-col         dirección (eje principal)
+		justify-start|center|end|between|around|evenly
+		items-stretch|start|center|end|baseline
+		flex-wrap  flex-nowrap     salto de línea
+		content-*                  alinear las líneas (con wrap)
+		gap-4  gap-x-2  gap-y-4    separación
+		```
+	</TabItem>
+	<TabItem label="Hijos">
+		```txt
+		flex-1  flex-auto  flex-none
+		grow  grow-0  shrink  shrink-0
+		basis-1/3  basis-64
+		self-start|center|end|stretch
+		order-first  order-last  order-2
+		ml-auto  mt-auto            empujar al extremo
+		```
+	</TabItem>
+</Tabs>
+
+## Convención práctica
+
+<Steps>
+
+1. Antes de escribir `flex`, decide la **dirección** y con ello qué eje controla `justify-*` y cuál `items-*`.
+2. **`gap-*`** para separar hijos; nunca márgenes en cada hijo.
+3. **`flex-1`** para "reparte el resto a partes iguales"; **`shrink-0`** para lo que no debe deformarse (imágenes, iconos, columnas fijas).
+4. **`mt-auto` / `ml-auto`** para empujar un elemento al extremo; es más simple que anidar contenedores.
+5. Flexbox es para **una dimensión**. Si estás alineando filas **y** columnas a la vez, es un trabajo para grid.
+
+</Steps>
+
+## Ejercicios
+
+Resuélvelos en `src/03-flexbox/exercises.html`. Da a cada ejemplo un fondo y padding para ver el contenedor.
+
+### Básicos
+
+1. Tres cajas en fila con `gap-4`. Después, las mismas en columna. Después, en fila con `justify-between`.
+2. Un contenedor de `h-64` con una caja **centrada en ambos ejes**.
+3. Cuatro cajas de distinta altura (`p-2`, `p-4`, `p-8`, `p-12`) alineadas con `items-start`, `items-center`, `items-end` e `items-stretch`: cuatro contenedores, uno por variante.
+4. Una fila con tres hijos: el primero `w-32 shrink-0`, el segundo `flex-1`, el tercero `w-32 shrink-0`. Estrecha la ventana y comprueba que los laterales no encogen.
+5. Diez etiquetas redondeadas en un contenedor `flex flex-wrap gap-2`. Quita `flex-wrap` y observa qué ocurre al estrechar.
+6. Una barra de navegación con logo a la izquierda, tres enlaces centrados con `gap-6` y un botón a la derecha usando `ml-auto`.
+
+### Para pensar
+
+7. Dos contenedores con dos hijos cada uno, uno con `flex-1` en ambos hijos y otro con `flex-auto`. Pon un texto largo en el primer hijo de cada uno. Explica en el README por qué los anchos difieren.
+8. Sin ejecutarlo, dibuja (o describe) cómo se ve este contenedor. Después compruébalo:
+
+	```html
+	<div class="flex h-48 flex-col items-end justify-between bg-gray-100 p-4">
+		<div class="bg-blue-300 p-2">A</div>
+		<div class="bg-blue-400 p-2">B</div>
+		<div class="bg-blue-500 p-2">C</div>
+	</div>
+	```
+
+9. Tarjeta con título, texto de longitud variable y botón que **siempre** queda abajo. Hazla dos veces con textos de distinta longitud, ambas de `h-64`. Explica cómo `mt-auto` consigue el efecto.
+10. Reproduce el "patrón de la barra lateral": un contenedor `flex min-h-screen` con un `aside` de `w-64 shrink-0 bg-gray-800` y un `main` `flex-1 p-8`. ¿Qué pasa si quitas `shrink-0` y el `main` tiene una imagen muy ancha?
+
+### Reto
+
+Maqueta el **pie de página** de una web con flexbox: una fila superior con tres columnas (logo y descripción; lista de enlaces "Producto"; lista de enlaces "Empresa"), cada columna `flex-1`, y una fila inferior con el copyright a la izquierda y tres iconos sociales (círculos de `size-8`) a la derecha, separados por un `border-t`. Las listas de enlaces son `flex flex-col gap-2`. Todo sobre fondo `gray-900` con texto `gray-300` y enlaces que pasan a blanco con `hover:`. Todavía no es responsive; lo será en dos apartados.
+
+### Entrega
+
+<Steps>
+
+1. Copia en `src/03-flexbox/index.html` los ejemplos de este apartado que hayas probado y confírmalos:
+
+	```bash
+	git add src/03-flexbox/index.html
+	git commit -m "Añade ejemplos de flexbox"
+	```
+
+2. Resuelve los ejercicios en `src/03-flexbox/exercises.html`, documéntalos en `src/03-flexbox/README.md` y confírmalos en un commit aparte:
+
+	```bash
+	git add src/03-flexbox/exercises.html src/03-flexbox/README.md
+	git commit -m "Resuelve ejercicios de flexbox"
+	```
+
+3. Sube ambos commits a GitHub con `git push`.
+
+</Steps>
+
+## Siguientes pasos
+
+<CardGrid stagger>
+	<LinkCard
+		href="/jjcm/di/units/introduction/tailwind/04-grid/"
+		title="Grid"
+		description="Maquetar en dos dimensiones: filas y columnas a la vez."
+	/>
+	<LinkCard
+		href="https://tailwindcss.com/docs/flex"
+		title="Flex (docs)"
+		description="flex-1, flex-auto, flex-none y sus equivalentes CSS."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/CSS/CSS_flexible_box_layout/Basic_concepts_of_flexbox"
+		title="Conceptos básicos de flexbox (MDN)"
+		description="La explicación de los ejes y las propiedades, sin Tailwind."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://flexboxfroggy.com/#es"
+		title="Flexbox Froggy"
+		description="Juego para practicar justify, align y wrap con ranas."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+{/* Oculto hasta que el repositorio esté publicado. Para mostrarlo, quita este comentario.
+<Aside type="tip" title="Ejemplos ejecutables">
+	En el repositorio [dam-di-tailwind](https://github.com/IESJJCM/dam-di-tailwind) tienes este apartado en [`src/03-flexbox/`](https://github.com/IESJJCM/dam-di-tailwind/tree/main/src/03-flexbox): `index.html` con los ejemplos de los apuntes y `exercises.html` con los ejercicios. Clona, ejecuta `npm install` y `npm run watch`, y ábrelo con Live Server.
+</Aside>
+*/}

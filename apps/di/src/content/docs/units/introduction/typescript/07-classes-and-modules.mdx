@@ -1,0 +1,468 @@
+---
+title: Clases y módulos
+description: Clases con propiedades tipadas, modificadores public, private, protected y readonly, propiedades de parámetro, implements, herencia, y módulos ES en TypeScript con import type.
+evaluations:
+  - id: RA1
+    statement: Genera interfaces gráficos de usuario mediante editores visuales utilizando las funcionalidades del editor y adaptando el código generado
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de interfaces gráficos.
+      - Se ha creado un interfaz gráfico utilizando las herramientas de un editor visual.
+    contents:
+      - Generación de interfaces de usuario
+sources:
+  - author: Microsoft — TypeScript Handbook
+    url: https://www.typescriptlang.org/docs/handbook/intro.html
+  - author: Fernando Herrera
+    url: https://cursos.devtalles.com/courses/typescript
+sidebar:
+  order: 7
+date: 2026-09-16
+updated: 2026-09-16
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+Las clases de TypeScript son las de JavaScript con **propiedades declaradas y tipadas** y unos pocos añadidos (modificadores de acceso, `implements`) que solo existen al compilar. Los módulos son exactamente los ES Modules que ya conoces; la novedad está en cómo se importan y exportan los **tipos**, y en un detalle de las extensiones que confunde a todo el mundo la primera vez.
+
+<CardGrid stagger>
+	<Card title="Propiedades declaradas" icon="pencil">
+		Cada propiedad se declara **con su tipo** en el cuerpo de la clase, antes del constructor.
+	</Card>
+	<Card title="Visibilidad" icon="seti:lock">
+		`public`, `private`, `protected` y `readonly` controlan quién puede leer o cambiar cada miembro.
+	</Card>
+	<Card title="Módulos" icon="open-book">
+		`import`/`export` igual que en JavaScript, más `import type` para lo que no existe en ejecución.
+	</Card>
+</CardGrid>
+
+## Declarar una clase
+
+```ts
+class Producto {
+	nombre: string;
+	precio: number;
+	stock: number;
+
+	constructor(nombre: string, precio: number, stock = 0) {
+		this.nombre = nombre;
+		this.precio = precio;
+		this.stock = stock;
+	}
+
+	valorInventario(): number {
+		return this.precio * this.stock;
+	}
+}
+
+const teclado = new Producto("Teclado", 49.99, 12);
+console.log(teclado.valorInventario()); // 599.88
+```
+
+La diferencia con JavaScript son las tres primeras líneas: TypeScript exige **declarar cada propiedad** y, con `strict`, comprueba que el constructor la **inicializa**.
+
+```ts
+class Usuario {
+	nombre: string;
+	email: string;
+	// Error: Property 'email' has no initializer and is not definitely assigned in the constructor.
+
+	constructor(nombre: string) {
+		this.nombre = nombre;
+	}
+}
+```
+
+### Propiedades de parámetro
+
+Declarar la propiedad, recibirla en el constructor y asignarla son tres repeticiones del mismo nombre. TypeScript las fusiona: un modificador delante del parámetro **crea y asigna** la propiedad:
+
+```ts
+class Producto {
+	constructor(
+		public nombre: string,
+		public precio: number,
+		public stock = 0,
+	) {}
+
+	valorInventario(): number {
+		return this.precio * this.stock;
+	}
+}
+```
+
+Es equivalente a la versión anterior y es la forma habitual en código TypeScript.
+
+## Modificadores de acceso
+
+| Modificador | Quién puede acceder |
+| --- | --- |
+| `public` | Cualquiera. Es el valor por defecto. |
+| `private` | Solo la propia clase. |
+| `protected` | La clase y las que heredan de ella. |
+| `readonly` | Cualquiera puede **leer**; solo se asigna al declarar o en el constructor. |
+
+```ts
+class CuentaBancaria {
+	readonly iban: string;
+	private saldo: number;
+
+	constructor(iban: string, saldoInicial = 0) {
+		this.iban = iban;
+		this.saldo = saldoInicial;
+	}
+
+	ingresar(cantidad: number): void {
+		if (cantidad <= 0) throw new Error("La cantidad debe ser positiva");
+		this.saldo += cantidad;
+	}
+
+	consultar(): number {
+		return this.saldo;
+	}
+}
+
+const cuenta = new CuentaBancaria("ES00 1234", 100);
+cuenta.ingresar(50);
+console.log(cuenta.consultar()); // 150
+
+cuenta.saldo = 1000000;
+// Error: Property 'saldo' is private and only accessible within class 'CuentaBancaria'.
+cuenta.iban = "otro";
+// Error: Cannot assign to 'iban' because it is a read-only property.
+```
+
+<Aside type="caution" title="`private` desaparece al compilar">
+	Como todo lo de TypeScript, `private` se comprueba **al compilar** y se borra: en el JavaScript resultante `saldo` es una propiedad normal. Si necesitas privacidad real en ejecución, usa el `#saldo` de JavaScript, que TypeScript también entiende. Para el código de esta unidad, `private` es suficiente y más legible.
+</Aside>
+
+## Getters y setters
+
+Permiten exponer un valor calculado o validar una asignación con sintaxis de propiedad:
+
+```ts
+class Temperatura {
+	private _celsius = 0;
+
+	get celsius(): number {
+		return this._celsius;
+	}
+
+	set celsius(valor: number) {
+		if (valor < -273.15) throw new Error("Por debajo del cero absoluto");
+		this._celsius = valor;
+	}
+
+	get fahrenheit(): number {
+		return this._celsius * 1.8 + 32;
+	}
+}
+
+const t = new Temperatura();
+t.celsius = 25;
+console.log(t.fahrenheit); // 77
+```
+
+## `implements`
+
+Una clase puede comprometerse a **cumplir una interfaz**. TypeScript comprueba que tiene todo lo que la interfaz exige:
+
+```ts
+interface Reproducible {
+	reproducir(): void;
+	pausar(): void;
+	readonly duracion: number;
+}
+
+class Cancion implements Reproducible {
+	constructor(
+		public titulo: string,
+		public readonly duracion: number,
+	) {}
+
+	reproducir(): void {
+		console.log(`▶ ${this.titulo}`);
+	}
+
+	pausar(): void {
+		console.log(`⏸ ${this.titulo}`);
+	}
+}
+```
+
+Si falta `pausar`, el error aparece en la declaración de la clase, no donde se use. Gracias al tipado estructural, cualquier función que espere un `Reproducible` acepta una `Cancion`, con o sin `implements`; la palabra clave sirve para que **el error aparezca cuanto antes**.
+
+## Herencia
+
+`extends` y `super` funcionan como en JavaScript; TypeScript añade `protected` y comprueba que los métodos sobrescritos sean compatibles:
+
+```ts
+class Empleado {
+	constructor(
+		public nombre: string,
+		protected salarioBase: number,
+	) {}
+
+	salario(): number {
+		return this.salarioBase;
+	}
+}
+
+class Directivo extends Empleado {
+	constructor(nombre: string, salarioBase: number, private bonus: number) {
+		super(nombre, salarioBase);
+	}
+
+	override salario(): number {
+		return this.salarioBase + this.bonus; // salarioBase es protected: accesible aquí
+	}
+}
+
+const d = new Directivo("Eva", 40000, 8000);
+console.log(d.salario()); // 48000
+```
+
+<Aside type="tip" title="`override`">
+	Marca explícitamente que un método sobrescribe al del padre. Es opcional, pero con `noImplicitOverride` en `tsconfig` se vuelve obligatorio, y evita el clásico error de "sobrescribir" un método que en realidad está mal escrito y no existe en el padre.
+</Aside>
+
+### Clases abstractas
+
+Una clase que no se puede instanciar, solo heredar; define qué deben implementar las hijas:
+
+```ts
+abstract class Figura {
+	constructor(public nombre: string) {}
+
+	abstract area(): number;
+
+	describir(): string {
+		return `${this.nombre}: ${this.area().toFixed(2)}`;
+	}
+}
+
+class Circulo extends Figura {
+	constructor(private radio: number) {
+		super("Círculo");
+	}
+
+	area(): number {
+		return Math.PI * this.radio ** 2;
+	}
+}
+
+new Figura("x");
+// Error: Cannot create an instance of an abstract class.
+```
+
+<Aside type="note" title="¿Clases o interfaces y funciones?">
+	En React apenas escribirás clases: los componentes son funciones y los datos, objetos con interfaces. Las clases importan para leer código, modelar entidades con comportamiento y para entender librerías. No fuerces una clase donde una `interface` y unas funciones bastan.
+</Aside>
+
+## Módulos
+
+Todo lo del apartado de [Módulos en JavaScript](/jjcm/di/units/introduction/javascript/06-modules/) sigue igual. Con `"module": "NodeNext"` y `"type": "module"`, cada archivo `.ts` es un módulo ES.
+
+```ts
+// shapes.ts
+export interface Punto {
+	x: number;
+	y: number;
+}
+
+export function distancia(a: Punto, b: Punto): number {
+	return Math.hypot(b.x - a.x, b.y - a.y);
+}
+
+export default class Segmento {
+	constructor(public inicio: Punto, public fin: Punto) {}
+
+	longitud(): number {
+		return distancia(this.inicio, this.fin);
+	}
+}
+```
+
+```ts
+// examples.ts
+import Segmento, { distancia, type Punto } from "./shapes.js";
+
+const a: Punto = { x: 0, y: 0 };
+const b: Punto = { x: 3, y: 4 };
+
+console.log(distancia(a, b));            // 5
+console.log(new Segmento(a, b).longitud()); // 5
+```
+
+### La extensión es `.js`, aunque el archivo sea `.ts`
+
+Es la parte que despista. El `import` se resuelve **después de compilar**, cuando `shapes.ts` ya es `shapes.js` en `dist/`. Node exige la extensión en los imports de módulos ES, así que hay que escribir la que existirá en ejecución. TypeScript lo entiende y busca `shapes.ts` al comprobar los tipos.
+
+```ts
+import { distancia } from "./shapes";
+// Error: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'.
+```
+
+<Aside type="note" title="Con Vite o React no hace falta">
+	Los bundlers resuelven los imports por su cuenta y admiten omitir la extensión. Este requisito es específico de ejecutar con Node directamente, que es lo que hacemos en esta unidad.
+</Aside>
+
+### `import type`
+
+Las interfaces y los alias **no existen** en el JavaScript compilado. Importarlos como valores funciona, pero `import type` deja claro que se borrarán y evita problemas con algunas herramientas:
+
+```ts
+import type { Punto } from "./shapes.js";              // solo tipos
+import { distancia, type Punto } from "./shapes.js";   // mezcla: type inline
+```
+
+Usa `import type` cuando el archivo solo necesite tipos de ese módulo, y `type` inline cuando mezcle tipos y valores.
+
+## Resumen rápido
+
+<Tabs>
+	<TabItem label="Clases">
+		```ts
+		class C implements I extends Base {
+			readonly id: number;
+			private secreto: string;
+			protected interno: number;
+			constructor(public nombre: string) { super(); }
+			get valor(): number { … }
+			set valor(v: number) { … }
+			override metodo(): void { … }
+			static crear(): C { … }
+		}
+		abstract class A { abstract m(): void; }
+		```
+	</TabItem>
+	<TabItem label="Módulos">
+		```ts
+		export interface T { … }
+		export function f() { … }
+		export default class D { … }
+
+		import D, { f, type T } from "./mod.js";  // extensión .js
+		import type { T } from "./mod.js";
+		```
+	</TabItem>
+</Tabs>
+
+## Convención práctica
+
+<Steps>
+
+1. Usa **propiedades de parámetro** en el constructor; ahorran tres líneas por propiedad sin perder claridad.
+2. Marca `private` todo lo que no forme parte de la interfaz pública de la clase, y `readonly` lo que no cambie tras construir.
+3. `implements` en toda clase que cumpla una interfaz declarada: adelanta los errores.
+4. En imports relativos con Node, **extensión `.js`** siempre; `import type` para archivos que solo aporten tipos.
+5. Prefiere interfaces y funciones a clases salvo que haya **estado y comportamiento** que mantener juntos.
+
+</Steps>
+
+## Ejercicios
+
+Resuélvelos en `src/07-classes-and-modules/exercises.ts`. Los ejercicios de módulos necesitan archivos adicionales en la misma carpeta; recuerda la extensión `.js` en los imports.
+
+### Básicos
+
+1. Escribe `class Libro` con `titulo`, `autor` y `paginas` como **propiedades de parámetro** públicas, y un método `resumen(): string`.
+2. Añade a `Libro` una propiedad `private prestado = false` y los métodos `prestar()` y `devolver()`, que lancen un `Error` si el estado no lo permite, y un getter `disponible`. Intenta acceder a `prestado` desde fuera y deja el error comentado.
+3. Declara `interface Comparable` con `comparar(otro: this): number` y haz que `Libro` la implemente comparando por número de páginas. Ordena un array de libros con ella.
+4. Escribe `class Vehiculo` con `marca` y `protected velocidad = 0`, y `acelerar(cantidad: number)`. Crea `class Coche extends Vehiculo` que sobrescriba `acelerar` (con `override`) limitando la velocidad a 120.
+5. Crea `geometry.ts` que exporte `interface Punto`, una función `distancia` y una clase `Circulo` por defecto. Impórtalos en `exercises.ts` usando `type` para la interfaz.
+
+### Para pensar
+
+6. Este código compila y funciona, pero rompe una regla de diseño. Explica cuál en un comentario y corrígelo con modificadores:
+
+	```ts
+	class Contador {
+		valor = 0;
+		incrementar() { this.valor++; }
+	}
+	const c = new Contador();
+	c.valor = -50;
+	```
+
+7. Escribe `abstract class Notificacion` con `abstract enviar(): void` y un método concreto `programar(segundos: number)` que llame a `enviar` tras ese tiempo con `setTimeout`. Implementa `NotificacionEmail` y `NotificacionSMS`. ¿Por qué no puedes hacer `new Notificacion()`?
+8. Quita la extensión `.js` de un import y anota el mensaje de error completo. Después cámbiala por `.ts` y anota qué ocurre. Explica en un comentario por qué la correcta es `.js`.
+9. ¿Qué diferencia hay entre `private saldo` y `#saldo`? Escribe la misma clase con ambos, compila y compara los dos `.js` generados en `dist/`.
+
+### Reto
+
+Modela un pequeño **inventario** en tres archivos:
+
+- `product.ts`: `interface ProductoDatos` (`nombre`, `precio`, `stock`) y `class Producto implements ProductoDatos` con propiedades de parámetro, `readonly id` generado automáticamente (un contador `static`) y un método `retirar(cantidad)` que no permita dejar el stock negativo.
+- `inventory.ts`: `class Inventario` con un array `private` de productos y los métodos `agregar(datos: ProductoDatos): Producto`, `buscar(id: number): Producto | undefined`, `valorTotal(): number` y `listar(): readonly Producto[]`.
+- `exercises.ts`: importa ambos (con `import type` donde corresponda), crea un inventario con tres productos, retira stock de uno, intenta retirar más del disponible capturando el error, e imprime el valor total.
+
+Comprueba con líneas comentadas que TypeScript rechaza modificar el `id` de un producto y acceder al array interno del inventario desde fuera.
+
+### Entrega
+
+<Steps>
+
+1. Copia en `src/07-classes-and-modules/examples.ts` y `src/07-classes-and-modules/shapes.ts` los ejemplos de este apartado que hayas probado y confírmalos:
+
+	```bash
+	git add src/07-classes-and-modules/examples.ts src/07-classes-and-modules/shapes.ts
+	git commit -m "Añade ejemplos de clases y módulos"
+	```
+
+2. Resuelve los ejercicios, documéntalos en `README.md` y confirma **todos** los archivos nuevos de la carpeta en un commit aparte:
+
+	```bash
+	git add src/07-classes-and-modules
+	git commit -m "Resuelve ejercicios de clases y módulos"
+	```
+
+3. Sube ambos commits a GitHub con `git push`.
+
+</Steps>
+
+## Siguientes pasos
+
+<CardGrid stagger>
+	<LinkCard
+		href="/jjcm/di/units/introduction/typescript/08-tsconfig/"
+		title="tsconfig y buenas prácticas"
+		description="Qué hace cada opción del compilador y cómo preparar un proyecto para React."
+	/>
+	<LinkCard
+		href="https://www.typescriptlang.org/docs/handbook/2/classes.html"
+		title="Classes (Handbook)"
+		description="Propiedades, modificadores, herencia, abstractas y relación con interfaces."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://www.typescriptlang.org/docs/handbook/modules/introduction.html"
+		title="Modules (Handbook)"
+		description="Cómo TypeScript compila y resuelve módulos, e import type."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+{/* Oculto hasta que el repositorio esté publicado. Para mostrarlo, quita este comentario.
+<Aside type="tip" title="Ejemplos ejecutables">
+	En el repositorio [dam-di-typescript](https://github.com/IESJJCM/dam-di-typescript) tienes este apartado en [`src/07-classes-and-modules/`](https://github.com/IESJJCM/dam-di-typescript/tree/main/src/07-classes-and-modules): `examples.ts` y `shapes.ts` con el código de los apuntes y `exercises.ts` con los ejercicios. Clona, ejecuta `npm install` y `npm run build`.
+</Aside>
+*/}

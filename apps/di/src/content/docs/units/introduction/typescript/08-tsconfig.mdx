@@ -1,0 +1,333 @@
+---
+title: tsconfig y buenas prácticas
+description: Qué hace cada opción de tsconfig.json, el significado de strict, tipos de librerías con @types, y cómo se conecta todo con Vite y React.
+evaluations:
+  - id: RA1
+    statement: Genera interfaces gráficos de usuario mediante editores visuales utilizando las funcionalidades del editor y adaptando el código generado
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de interfaces gráficos.
+      - Se ha creado un interfaz gráfico utilizando las herramientas de un editor visual.
+    contents:
+      - Generación de interfaces de usuario
+sources:
+  - author: Microsoft — TypeScript Handbook
+    url: https://www.typescriptlang.org/docs/handbook/intro.html
+  - author: Fernando Herrera
+    url: https://cursos.devtalles.com/courses/typescript
+sidebar:
+  order: 8
+date: 2026-09-16
+updated: 2026-09-16
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+Has usado `tsconfig.json` desde el primer día sin mirarlo. Este apartado explica **qué hace cada opción** que copiaste, qué otras vas a encontrarte en proyectos reales y cómo cambia todo cuando el compilador deja de ser `tsc` y pasa a ser Vite, que es lo que usarás con React. Cierra con las prácticas que resumen la unidad.
+
+<CardGrid stagger>
+	<Card title="Qué compilar" icon="document">
+		`include`, `rootDir`: qué archivos lee el compilador y desde dónde calcula la estructura de salida.
+	</Card>
+	<Card title="Cómo comprobar" icon="approve-check">
+		`strict` y su familia: cuánto exige el compilador. Cuanto más estricto, más errores detecta.
+	</Card>
+	<Card title="Qué generar" icon="rocket">
+		`target`, `module`, `outDir`: qué JavaScript sale y dónde se escribe. Con Vite, casi nada de esto importa.
+	</Card>
+</CardGrid>
+
+## El archivo, opción por opción
+
+Este es el `tsconfig.json` del proyecto, ahora con cada línea explicada:
+
+```json title="tsconfig.json"
+{
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "NodeNext",
+		"rootDir": "src",
+		"outDir": "dist",
+		"strict": true,
+		"skipLibCheck": true
+	},
+	"include": ["src"]
+}
+```
+
+<Steps>
+
+1. **`target`**: versión de JavaScript que se genera. Con `ES2022`, `tsc` deja intactas las clases, `async/await` o el operador `??`; con `ES5` los traduciría a código antiguo y mucho más largo. Node moderno y los navegadores actuales entienden `ES2022`.
+2. **`module`**: sistema de módulos del código generado. `NodeNext` produce ES Modules siguiendo las reglas de Node (de ahí la extensión `.js` obligatoria en los imports). En proyectos con bundler verás `ESNext`.
+3. **`rootDir`** y **`outDir`**: `tsc` toma la estructura de carpetas bajo `rootDir` y la reproduce bajo `outDir`. Sin `rootDir`, TypeScript la calcula y a veces te sorprende con un `dist/src/`.
+4. **`strict`**: activa a la vez todas las comprobaciones estrictas. Es la opción más importante del archivo; se detalla abajo.
+5. **`skipLibCheck`**: no comprueba los tipos de los archivos `.d.ts` de `node_modules/`. Acelera la compilación y evita errores ajenos; es habitual activarlo.
+6. **`include`**: qué archivos compilar. Todo lo que cuelga de `src/`. Lo que no esté aquí, `tsc` no lo mira.
+
+</Steps>
+
+<Aside type="tip" title="`tsc --init` y la referencia">
+	`npx tsc --init` genera un `tsconfig.json` con las opciones más habituales comentadas. Y en [typescriptlang.org/tsconfig](https://www.typescriptlang.org/tsconfig/) tienes cada opción explicada con ejemplos; es la referencia a consultar cuando un proyecto tenga alguna que no reconozcas.
+</Aside>
+
+## Qué activa `strict`
+
+`strict: true` equivale a poner a `true` todas estas. Conviene saber qué hace cada una para entender los errores que produce:
+
+| Opción | Qué comprueba | Error típico que evita |
+| --- | --- | --- |
+| `noImplicitAny` | Que nada quede como `any` sin que lo escribas | Parámetros de función sin tipo |
+| `strictNullChecks` | Que `null`/`undefined` se traten antes de usar el valor | `Cannot read properties of undefined` |
+| `strictFunctionTypes` | Compatibilidad estricta de parámetros de función | Callbacks con el tipo de argumento equivocado |
+| `strictPropertyInitialization` | Que el constructor inicialice cada propiedad | Propiedades `undefined` en objetos recién creados |
+| `noImplicitThis` | Que `this` tenga un tipo conocido | `this` perdido en callbacks |
+| `useUnknownInCatchVariables` | Que el `error` de un `catch` sea `unknown`, no `any` | Acceder a `error.message` sin comprobar que es un `Error` |
+
+<Tabs>
+	<TabItem label="Sin strict">
+		```ts
+		function saludar(nombre) {          // nombre: any, sin aviso
+			return "Hola " + nombre.toUpperCase();
+		}
+		const lista: string[] = [];
+		lista[0].length;                     // compila; undefined.length en ejecución
+		```
+	</TabItem>
+	<TabItem label="Con strict">
+		```ts
+		function saludar(nombre) {
+		// Error: Parameter 'nombre' implicitly has an 'any' type.
+			return "Hola " + nombre.toUpperCase();
+		}
+		const lista: string[] = [];
+		lista[0].length;                     // compila igual: ver noUncheckedIndexedAccess
+		```
+	</TabItem>
+</Tabs>
+
+<Aside type="caution" title="Nunca desactives `strict` para que compile">
+	Cada error que `strict` produce señala un problema real o una información que falta. Desactivarlo hace desaparecer los avisos, no los problemas. Un proyecto nuevo se empieza **siempre** con `strict: true`; solo en migraciones de JavaScript antiguo tiene sentido activarlo por partes.
+</Aside>
+
+## Opciones que verás en proyectos reales
+
+Además de `strict`, estas aparecen en casi todas las plantillas (Vite, Next, Astro…):
+
+<Tabs>
+	<TabItem label="Más estrictas">
+		```json
+		"noUnusedLocals": true,             // error si declaras y no usas
+		"noUnusedParameters": true,         // idem con parámetros
+		"noFallthroughCasesInSwitch": true, // case sin break
+		"noUncheckedIndexedAccess": true,   // arr[i] es T | undefined
+		"noImplicitOverride": true          // override obligatorio
+		```
+
+		`noUncheckedIndexedAccess` es la que más cambia el día a día: obliga a comprobar cada acceso por índice, que es de donde salen muchos `undefined` inesperados.
+	</TabItem>
+	<TabItem label="Para bundlers">
+		```json
+		"module": "ESNext",
+		"moduleResolution": "Bundler",   // imports sin extensión
+		"noEmit": true,                  // tsc solo comprueba; Vite genera el JS
+		"isolatedModules": true,         // cada archivo compilable por separado
+		"jsx": "react-jsx",              // sintaxis JSX de React
+		"lib": ["ES2022", "DOM"]         // APIs disponibles: navegador
+		```
+
+		Es lo que encontrarás al crear un proyecto React con Vite. Fíjate en `noEmit`: TypeScript **deja de generar código** y se limita a comprobar tipos.
+	</TabItem>
+	<TabItem label="Rutas y salida">
+		```json
+		"baseUrl": ".",                  // obsoleta desde TS 5; evitar
+		"paths": { "@/*": ["./src/*"] }, // alias de importación
+		"declaration": true,             // genera .d.ts (para librerías)
+		"sourceMap": true                // mapas para depurar el .ts en el navegador
+		```
+	</TabItem>
+</Tabs>
+
+## Tipos de librerías
+
+Cuando instalas una librería de npm, TypeScript necesita conocer sus tipos. Hay tres situaciones:
+
+<Steps>
+
+1. **La librería incluye sus tipos** (`.d.ts` dentro del paquete). Es lo habitual en librerías modernas; no hay que hacer nada. Lo ves en npm con la etiqueta *TS* junto al nombre.
+2. **Los tipos están en un paquete aparte** `@types/nombre`, mantenido por la comunidad en *DefinitelyTyped*. Se instalan como dependencia de desarrollo:
+
+	```bash
+	npm install -D @types/node
+	```
+
+	`@types/node` es el que necesitarás en cuanto uses `process`, `fs` o `path` en este proyecto; sin él, TypeScript no sabe que existen.
+
+3. **No hay tipos**. La librería se importa como `any`. Puedes escribir un archivo `.d.ts` mínimo con `declare module "nombre";` para silenciar el error, sabiendo que pierdes la comprobación.
+
+</Steps>
+
+<Aside type="note" title="`lib` y el DOM">
+	Por defecto, `tsc` incluye los tipos del **navegador** (`document`, `window`, `fetch`) aunque compiles para Node. Por eso `document.getElementById` compila en este proyecto y falla al ejecutar. En un proyecto de Node puro se ajusta con `"lib": ["ES2022"]` y `@types/node`; en uno de navegador, con `"lib": ["ES2022", "DOM"]`.
+</Aside>
+
+## Lo que cambia con Vite y React
+
+En la siguiente unidad no ejecutarás `tsc` a mano. El flujo pasa a ser:
+
+<Steps>
+
+1. **Vite** transforma cada `.ts`/`.tsx` **borrando los tipos sin comprobarlos** (con esbuild, muy rápido). Es lo que sirve la página en desarrollo y lo que empaqueta para producción.
+2. **La comprobación de tipos** la hace el **editor** en tiempo real y, opcionalmente, `tsc --noEmit` en el script de build para que un error de tipos impida desplegar.
+3. **`tsconfig.json`** cambia a `module: ESNext`, `moduleResolution: Bundler`, `noEmit: true` y `jsx: react-jsx`. Lo genera la plantilla; no lo escribes tú.
+4. Los imports vuelven a **no llevar extensión** y aparecen los alias `@/`.
+
+</Steps>
+
+Lo que **no** cambia: todo lo de esta unidad. Interfaces para las props, uniones discriminadas para el estado, genéricos en `useState<T>` y en las respuestas de la API, `unknown` para lo que llega de fuera.
+
+## Resumen rápido
+
+<Tabs>
+	<TabItem label="tsconfig mínimo (Node)">
+		```json
+		{
+			"compilerOptions": {
+				"target": "ES2022",
+				"module": "NodeNext",
+				"rootDir": "src",
+				"outDir": "dist",
+				"strict": true,
+				"skipLibCheck": true
+			},
+			"include": ["src"]
+		}
+		```
+	</TabItem>
+	<TabItem label="Comandos">
+		```bash
+		npx tsc --init          # generar tsconfig comentado
+		npx tsc                 # compilar según tsconfig
+		npx tsc --noEmit        # solo comprobar tipos
+		npx tsc --watch         # recompilar al guardar
+		npm install -D @types/x # tipos de una librería
+		```
+	</TabItem>
+</Tabs>
+
+## Convención práctica
+
+Las reglas que resumen toda la unidad:
+
+<Steps>
+
+1. **`strict: true`** desde el primer día, sin excepciones.
+2. **Cero `any`**. Datos externos como `unknown` y comprobación antes de usarlos.
+3. **Interfaces para objetos, `type` para uniones**; nombres en PascalCase.
+4. **Uniones de literales** para conjuntos cerrados y **uniones discriminadas** para estados, cerradas con `never`.
+5. **Deja inferir** lo que TypeScript puede deducir; anota parámetros, retornos públicos y lo que venga de fuera.
+6. **Genéricos** solo cuando dos cosas se diferencien únicamente en un tipo; **utility types** antes que redefinir a mano.
+7. **Lee el error completo** antes de tocar nada. Casi siempre te dice qué falta.
+
+</Steps>
+
+## Ejercicios
+
+Resuélvelos en `src/08-tsconfig/exercises.ts`. Varios ejercicios piden **cambiar `tsconfig.json`**: hazlo, observa el efecto y **restaura** el archivo original antes de hacer commit.
+
+### Básicos
+
+1. Cambia `target` a `ES5`, compila y compara el `dist/` de una clase o de un `async/await` con la versión `ES2022`. Anota en un comentario dos diferencias que veas en el código generado.
+2. Pon `strict: false`, escribe una función con un parámetro sin tipo y comprueba que compila. Vuelve a `true` y copia el error que aparece.
+3. Añade `noUnusedLocals: true`, declara una variable que no uses y anota el error. Decide si dejarías esta opción activada en tus proyectos y por qué.
+4. Ejecuta `npx tsc --noEmit` con un error de tipos deliberado. Comprueba que informa del error pero **no** toca `dist/`.
+5. Instala `@types/node` y escribe un ejemplo que use `process.argv` para leer un argumento de la línea de comandos y `path.basename` para procesarlo. Anota qué error daba antes de instalarlo.
+
+### Para pensar
+
+6. Activa `noUncheckedIndexedAccess` y compila el proyecto entero. ¿Cuántos errores nuevos aparecen y en qué apartados? Corrige **dos** de ellos con la comprobación adecuada y explica en un comentario si el error señalaba un fallo real.
+7. Borra `rootDir` de `tsconfig.json` y compila. ¿Cambia la estructura de `dist/`? Añade un archivo `test.ts` fuera de `src/` (en la raíz), vuelve a compilar y explica lo que ocurre y por qué `include` no lo impide del todo.
+8. Explica en un comentario por qué `document.getElementById("x")` compila en este proyecto de Node y qué opción de `tsconfig` haría que dejara de compilar. Aplícala y comprueba.
+9. Con `strict` activado, escribe un `try/catch` que capture un error y acceda a `error.message`. Anota el error del compilador y resuélvelo con narrowing (`instanceof Error`).
+
+### Reto
+
+Prepara el proyecto para que un error de tipos **impida el build**, como se hará en React:
+
+1. Añade a `package.json` un script `"check": "tsc --noEmit"` y modifica `"build"` para que ejecute la comprobación **y después** genere `dist/` solo si no hay errores (pista: `&&`).
+2. Introduce un error de tipos en cualquier apartado, ejecuta `npm run build` y comprueba que `dist/` **no se actualiza**. Corrige el error y comprueba que sí.
+3. Añade `"noUnusedLocals": true` y `"noImplicitOverride": true` a `tsconfig.json` y deja el proyecto entero compilando sin avisos (esta vez sí se conservan en el commit).
+4. Documenta en el `README.md` de la raíz del proyecto los tres scripts (`build`, `watch`, `check`) y cuándo usar cada uno.
+
+### Entrega
+
+<Steps>
+
+1. Copia en `src/08-tsconfig/examples.ts` los ejemplos de este apartado que hayas probado y confírmalos:
+
+	```bash
+	git add src/08-tsconfig/examples.ts
+	git commit -m "Añade ejemplos de tsconfig"
+	```
+
+2. Resuelve los ejercicios, documéntalos en `src/08-tsconfig/README.md` y confírmalos junto con los cambios de configuración del reto:
+
+	```bash
+	git add src/08-tsconfig package.json tsconfig.json README.md
+	git commit -m "Resuelve ejercicios de tsconfig y endurece la configuración"
+	```
+
+3. Sube ambos commits a GitHub con `git push`. Con esto la unidad queda **completa** en tu repositorio: comprueba que las ocho carpetas de `src/` tienen sus archivos con contenido y que `npm run build` sigue pasando limpio.
+
+</Steps>
+
+## Siguientes pasos
+
+<CardGrid stagger>
+	<LinkCard
+		href="/jjcm/di/units/introduction/typescript/00-project-setup/"
+		title="Volver al inicio de la unidad"
+		description="Estructura del proyecto y configuración inicial."
+	/>
+	<LinkCard
+		href="https://www.typescriptlang.org/tsconfig/"
+		title="Referencia de tsconfig"
+		description="Todas las opciones del compilador, una a una, con ejemplos."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://www.typescriptlang.org/docs/handbook/2/basic-types.html#strictness"
+		title="Strictness (Handbook)"
+		description="Qué activa strict y por qué conviene."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://react.dev/learn/typescript"
+		title="Using TypeScript (React)"
+		description="Cómo se aplica todo esto a componentes, props y hooks."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+{/* Oculto hasta que el repositorio esté publicado. Para mostrarlo, quita este comentario.
+<Aside type="tip" title="Ejemplos ejecutables">
+	En el repositorio [dam-di-typescript](https://github.com/IESJJCM/dam-di-typescript) tienes este apartado en [`src/08-tsconfig/`](https://github.com/IESJJCM/dam-di-typescript/tree/main/src/08-tsconfig): `examples.ts` con el código de los apuntes y `exercises.ts` con los ejercicios. Clona, ejecuta `npm install` y `npm run build`.
+</Aside>
+*/}

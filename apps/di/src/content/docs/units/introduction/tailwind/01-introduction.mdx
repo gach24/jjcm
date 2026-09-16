@@ -1,0 +1,326 @@
+---
+title: Introducción a Tailwind
+description: Qué es un framework utility-first, cómo se compara con CSS tradicional, anatomía de una clase de Tailwind, la escala de espaciado y cómo buscar en la documentación.
+evaluations:
+  - id: RA1
+    statement: Genera interfaces gráficos de usuario mediante editores visuales utilizando las funcionalidades del editor y adaptando el código generado
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de interfaces gráficos.
+      - Se ha creado un interfaz gráfico utilizando las herramientas de un editor visual.
+    contents:
+      - Generación de interfaces de usuario
+sources:
+  - author: Tailwind Labs — Tailwind CSS Documentation
+    url: https://tailwindcss.com/docs
+  - author: MDN Web Docs — CSS layout
+    url: https://developer.mozilla.org/es/docs/Learn_web_development/Core/CSS_layout
+sidebar:
+  order: 1
+date: 2026-09-16
+updated: 2026-09-16
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+Tailwind CSS es un framework **utility-first**: en lugar de escribir CSS en un archivo aparte, aplicas **clases pequeñas de un solo propósito** directamente en el HTML. `p-4` es padding, `flex` es `display: flex`, `text-center` es `text-align: center`. No inventa nada: cada clase se corresponde con una o dos propiedades CSS que ya existen. El objetivo de esta unidad no es memorizar clases, sino usar Tailwind para **maquetar interfaces responsive** entendiendo el CSS que hay debajo.
+
+<CardGrid stagger>
+	<Card title="Una clase, una propiedad" icon="pencil">
+		`mt-4` → `margin-top: 1rem`. Sabiendo CSS, deduces la clase; sabiendo la clase, deduces el CSS.
+	</Card>
+	<Card title="Todo en el HTML" icon="document">
+		No saltas entre archivos ni inventas nombres (`.card-header-title-wrapper`). El estilo está donde está el elemento.
+	</Card>
+	<Card title="Solo lo que usas" icon="rocket">
+		El CLI genera únicamente las clases que aparecen en tu código. El CSS final pesa unos KB.
+	</Card>
+</CardGrid>
+
+## CSS tradicional frente a utilidades
+
+La misma tarjeta, de las dos formas:
+
+<Tabs>
+	<TabItem label="CSS tradicional">
+		```html
+		<div class="tarjeta">
+			<h2 class="tarjeta-titulo">Teclado mecánico</h2>
+			<p class="tarjeta-precio">79,99 €</p>
+		</div>
+		```
+
+		```css
+		.tarjeta {
+			padding: 1.5rem;
+			border-radius: 0.5rem;
+			background-color: white;
+			box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+		}
+		.tarjeta-titulo {
+			font-size: 1.125rem;
+			font-weight: 600;
+		}
+		.tarjeta-precio {
+			margin-top: 0.5rem;
+			color: #4b5563;
+		}
+		```
+	</TabItem>
+	<TabItem label="Tailwind">
+		```html
+		<div class="rounded-lg bg-white p-6 shadow">
+			<h2 class="text-lg font-semibold">Teclado mecánico</h2>
+			<p class="mt-2 text-gray-600">79,99 €</p>
+		</div>
+		```
+
+		Sin archivo CSS, sin nombres que inventar. Cada clase es una propiedad del CSS de la izquierda.
+	</TabItem>
+</Tabs>
+
+<Aside type="note" title="Ventajas e inconvenientes, sin vender nada">
+	**A favor**: no hay que nombrar clases ni buscar dónde se define un estilo; el CSS no crece con el tiempo; el responsive y los estados (`hover:`) se escriben en línea. **En contra**: el HTML se llena de clases y cuesta leerlo al principio; repetir el mismo bloque de clases en veinte sitios es un problema (que en React se resuelve con componentes). Es el estándar de facto en proyectos React y por eso lo aprendes aquí.
+</Aside>
+
+## Anatomía de una clase
+
+Casi todas las clases siguen el patrón **propiedad-valor**, con prefijos opcionales para condiciones:
+
+```txt
+      md:hover:bg-blue-500
+      │  │     │  │    └── valor (tono 500 de la escala)
+      │  │     │  └─────── color
+      │  │     └────────── propiedad (background)
+      │  └──────────────── estado: solo al pasar el ratón
+      └─────────────────── breakpoint: solo desde 768 px
+```
+
+| Clase | CSS que genera |
+| --- | --- |
+| `p-4` | `padding: 1rem` |
+| `px-4` | `padding-left: 1rem; padding-right: 1rem` |
+| `mt-2` | `margin-top: 0.5rem` |
+| `text-xl` | `font-size: 1.25rem; line-height: 1.75rem` |
+| `bg-blue-500` | `background-color: oklch(…)` (azul medio) |
+| `rounded-lg` | `border-radius: 0.5rem` |
+| `hidden` | `display: none` |
+| `flex` | `display: flex` |
+
+Los prefijos se **apilan**: `md:hover:bg-blue-500` significa "desde 768 px de ancho, al pasar el ratón, fondo azul". Los verás a fondo en [responsive](/jjcm/di/units/introduction/tailwind/05-responsive/) y [componentes](/jjcm/di/units/introduction/tailwind/06-components/).
+
+## La escala de espaciado
+
+Los números de `p-4`, `m-2`, `gap-6` o `w-64` no son píxeles: son **múltiplos de 0.25rem (4 px)**. Es la misma escala en todas las propiedades de tamaño y separación, y merece la pena fijarla:
+
+| Clase | Valor | Píxeles |
+| --- | --- | --- |
+| `p-0` | `0` | 0 |
+| `p-1` | `0.25rem` | 4 |
+| `p-2` | `0.5rem` | 8 |
+| `p-4` | `1rem` | 16 |
+| `p-6` | `1.5rem` | 24 |
+| `p-8` | `2rem` | 32 |
+| `p-12` | `3rem` | 48 |
+| `p-16` | `4rem` | 64 |
+| `p-px` | `1px` | 1 |
+
+Usar siempre la escala hace que los espacios sean **coherentes** entre sí: no tendrás un margen de 13 px al lado de otro de 15 px. Cuando de verdad necesitas un valor concreto, existen los **valores arbitrarios** entre corchetes: `p-[13px]`, `w-[37%]`. Úsalos poco.
+
+<Aside type="tip" title="rem, no px">
+	La escala está en `rem` para que todo escale si el usuario cambia el tamaño de fuente del navegador. Un `p-4` sigue siendo "un espacio de una línea de texto" aunque la letra sea más grande.
+</Aside>
+
+## Preflight: el reseteo de estilos
+
+Al importar Tailwind se aplica **Preflight**, un conjunto de reglas base que elimina los estilos por defecto del navegador: los `h1` dejan de ser grandes, las listas pierden las viñetas, los enlaces pierden el subrayado y el color, los márgenes de `body` desaparecen.
+
+```html
+<h1>Este título se ve como texto normal</h1>
+<ul>
+	<li>Sin viñeta</li>
+</ul>
+<a href="#">Sin subrayado ni color</a>
+```
+
+No es un fallo: es el punto de partida. Tú decides el aspecto de cada elemento con clases, y así un `h1` en una tarjeta y otro en el pie pueden ser distintos sin pelear con el navegador.
+
+```html
+<h1 class="text-3xl font-bold">Ahora sí es un título</h1>
+<ul class="list-inside list-disc">
+	<li>Con viñeta</li>
+</ul>
+<a class="text-blue-600 underline" href="#">Enlace visible</a>
+```
+
+## Buscar en la documentación
+
+No vas a memorizar cientos de clases. Lo que necesitas es saber **buscarlas**:
+
+<Steps>
+
+1. Piensa en la **propiedad CSS** que quieres: "quiero `justify-content: space-between`".
+2. En [tailwindcss.com/docs](https://tailwindcss.com/docs) pulsa `Ctrl+K` y escribe la propiedad o el efecto: `justify`. La página de cada utilidad muestra la tabla completa **clase → CSS**.
+3. En VS Code, con IntelliSense, empieza a escribir `justify-` y el autocompletado lista las opciones con su CSS.
+4. Si sospechas que una clase no existe, mira `output.css`: si Tailwind no la ha generado, es que no la reconoce (y no da error: simplemente no hace nada).
+
+</Steps>
+
+<Aside type="caution" title="Una clase mal escrita no avisa">
+	`text-centre`, `bg-blue-550` o `p-4.5` no producen ningún error: Tailwind no las reconoce y las ignora en silencio. Si un estilo "no funciona", lo primero es comprobar la ortografía de la clase con IntelliSense.
+</Aside>
+
+## Primer ejemplo completo
+
+```html
+<body class="bg-gray-100 p-8">
+	<div class="mx-auto max-w-md rounded-lg bg-white p-6 shadow-md">
+		<h1 class="text-2xl font-bold text-gray-900">Hola, Tailwind</h1>
+		<p class="mt-2 text-gray-600">
+			Una tarjeta centrada, con fondo blanco, esquinas redondeadas y sombra.
+		</p>
+		<button class="mt-4 rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
+			Aceptar
+		</button>
+	</div>
+</body>
+```
+
+Léelo clase a clase: `mx-auto` centra horizontalmente (márgenes laterales automáticos), `max-w-md` limita el ancho a 28rem, `p-6` separa el contenido del borde, `hover:bg-blue-700` oscurece el botón al pasar el ratón. Cada una es una línea de CSS que podrías escribir a mano.
+
+## Resumen rápido
+
+<Tabs>
+	<TabItem label="Conceptos">
+		```txt
+		utility-first  → una clase, una propiedad CSS
+		escala         → n × 0.25rem  (4 = 1rem = 16px)
+		prefijos       → md:  hover:  se apilan
+		Preflight      → reseteo: h1, ul, a sin estilo inicial
+		[valor]        → valor arbitrario, usar poco
+		```
+	</TabItem>
+	<TabItem label="Clases vistas">
+		```txt
+		p-4 px-4 py-2 mt-2 mx-auto      espaciado
+		text-2xl font-bold text-center   tipografía
+		bg-white text-gray-600           color
+		rounded-lg shadow-md             bordes y sombra
+		max-w-md hidden flex             tamaño y display
+		hover:bg-blue-700                estado
+		```
+	</TabItem>
+</Tabs>
+
+## Convención práctica
+
+<Steps>
+
+1. Piensa primero en el **CSS** que quieres y después busca la clase; no al revés.
+2. Usa la **escala** de espaciado; valores arbitrarios solo con una razón.
+3. Instala **IntelliSense** y pasa el ratón por cada clase nueva hasta que sepas qué genera.
+4. Si algo no se ve, comprueba en orden: ¿está el CLI en marcha?, ¿la clase está bien escrita?, ¿el `<link>` apunta a `../output.css`?
+5. No copies bloques de clases sin entenderlos: en el `README.md` de cada apartado tendrás que explicar qué CSS producen.
+
+</Steps>
+
+## Ejercicios
+
+Resuélvelos en `src/01-introduction/exercises.html`. Ten `npm run watch` en marcha y la página abierta con Live Server.
+
+### Básicos
+
+1. Crea un `div` con fondo azul (`bg-blue-500`), texto blanco y padding de 1rem que diga "Hola Tailwind". Anota en un comentario HTML el CSS que genera cada clase.
+2. Añade un `h1` con `text-3xl font-bold text-center` y, debajo, el mismo `h1` **sin clases**. Explica en el README por qué el segundo no parece un título.
+3. Crea tres `div` seguidos con `p-2`, `p-4` y `p-8`, todos con `bg-green-300` y `mb-2`. Mide con las DevTools (pestaña *Computed*) el padding de cada uno en píxeles y anótalo.
+4. Reproduce la tarjeta del "Primer ejemplo completo" y cambia el color del botón a verde y el radio a `rounded-full`.
+5. Escribe una clase mal a propósito (`text-centre`) y comprueba en `output.css` que no aparece. Corrígela y comprueba que sí.
+
+### Para pensar
+
+6. Sin ejecutarlo, escribe en el README el CSS equivalente de este elemento, propiedad a propiedad. Después compruébalo con IntelliSense o con `output.css`.
+
+	```html
+	<p class="mx-auto mt-6 max-w-sm rounded border border-gray-300 px-4 py-2 text-sm text-gray-700">…</p>
+	```
+
+7. `w-64` y `w-[256px]` producen el mismo ancho hoy. Explica en el README en qué caso dejarían de coincidir y cuál conviene usar.
+8. Escribe la misma tarjeta con CSS tradicional en un `<style>` dentro de `exercises.html` (clases `.tarjeta`, `.tarjeta-titulo`…) y con Tailwind. Cuenta las líneas de cada versión y anota una ventaja y un inconveniente de cada una que hayas notado **tú** al escribirlas.
+
+### Reto
+
+Construye una **tarjeta de perfil** solo con las clases vistas en este apartado: fondo blanco sobre página gris, ancho máximo `max-w-sm`, centrada, con un círculo de color (un `div` con `rounded-full` y ancho/alto fijos) a modo de avatar, nombre en negrita, un texto secundario en gris y dos botones con colores distintos que cambien al pasar el ratón. En el README documenta **cada clase** con su CSS.
+
+### Entrega
+
+<Steps>
+
+1. Copia en `src/01-introduction/index.html` los ejemplos de este apartado que hayas probado y confírmalos:
+
+	```bash
+	git add src/01-introduction/index.html
+	git commit -m "Añade ejemplos de introducción a Tailwind"
+	```
+
+2. Resuelve los ejercicios en `src/01-introduction/exercises.html`, documéntalos en `src/01-introduction/README.md` y confírmalos en un commit aparte:
+
+	```bash
+	git add src/01-introduction/exercises.html src/01-introduction/README.md
+	git commit -m "Resuelve ejercicios de introducción a Tailwind"
+	```
+
+3. Sube ambos commits a GitHub con `git push`. Comprueba que `output.css` **no** ha subido.
+
+</Steps>
+
+## Siguientes pasos
+
+<CardGrid stagger>
+	<LinkCard
+		href="/jjcm/di/units/introduction/tailwind/02-utilities/"
+		title="Utilidades básicas"
+		description="Espaciado, tamaños, colores, tipografía, bordes y estados."
+	/>
+	<LinkCard
+		href="https://tailwindcss.com/docs/styling-with-utility-classes"
+		title="Styling with utility classes"
+		description="La filosofía utility-first explicada por los autores."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://tailwindcss.com/docs/preflight"
+		title="Preflight"
+		description="Qué estilos base aplica Tailwind y por qué."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://play.tailwindcss.com/"
+		title="Tailwind Play"
+		description="Prueba clases en el navegador sin instalar nada."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+{/* Oculto hasta que el repositorio esté publicado. Para mostrarlo, quita este comentario.
+<Aside type="tip" title="Ejemplos ejecutables">
+	En el repositorio [dam-di-tailwind](https://github.com/IESJJCM/dam-di-tailwind) tienes este apartado en [`src/01-introduction/`](https://github.com/IESJJCM/dam-di-tailwind/tree/main/src/01-introduction): `index.html` con los ejemplos de los apuntes y `exercises.html` con los ejercicios. Clona, ejecuta `npm install` y `npm run watch`, y ábrelo con Live Server.
+</Aside>
+*/}

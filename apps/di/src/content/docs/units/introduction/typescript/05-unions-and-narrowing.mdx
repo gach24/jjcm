@@ -1,0 +1,425 @@
+---
+title: Uniones y narrowing
+description: Tipos unión, tipos literales, estrechamiento con typeof, in e instanceof, uniones discriminadas, comprobación exhaustiva con never y manejo de null y undefined.
+evaluations:
+  - id: RA1
+    statement: Genera interfaces gráficos de usuario mediante editores visuales utilizando las funcionalidades del editor y adaptando el código generado
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de interfaces gráficos.
+      - Se ha creado un interfaz gráfico utilizando las herramientas de un editor visual.
+    contents:
+      - Generación de interfaces de usuario
+sources:
+  - author: Microsoft — TypeScript Handbook
+    url: https://www.typescriptlang.org/docs/handbook/intro.html
+  - author: Fernando Herrera
+    url: https://cursos.devtalles.com/courses/typescript
+sidebar:
+  order: 5
+date: 2026-09-16
+updated: 2026-09-16
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+Un valor no siempre es de un único tipo: un identificador puede ser `string` o `number`, un resultado puede ser un dato o `null`, un estado puede ser una de tres palabras. Las **uniones** describen esas alternativas y el **narrowing** (estrechamiento) es cómo TypeScript va descartando opciones a medida que compruebas el valor en el código. Es el mecanismo detrás de casi todo el código TypeScript "idiomático", y en React aparece en cada componente con estado de carga.
+
+<CardGrid stagger>
+	<Card title="Unión" icon="list-format">
+		`A | B`: el valor es **o** de tipo A **o** de tipo B. Solo puedes usar lo que tengan en común.
+	</Card>
+	<Card title="Literal" icon="pencil">
+		`"listo"` es un tipo: el único valor posible es esa cadena. Combinados en unión, sustituyen a los enums.
+	</Card>
+	<Card title="Narrowing" icon="magnifier">
+		Cada `if (typeof …)`, `in` o `instanceof` **estrecha** el tipo dentro del bloque. TypeScript sigue tu lógica.
+	</Card>
+</CardGrid>
+
+## Tipos unión
+
+```ts
+let id: string | number;
+
+id = 42;      // ok
+id = "abc";   // ok
+id = true;    // Error: Type 'boolean' is not assignable to type 'string | number'.
+```
+
+Con una unión solo puedes usar lo que **todos** los miembros comparten:
+
+```ts
+function mostrar(id: string | number): void {
+	console.log(id.toString());  // ok: existe en string y en number
+	console.log(id.toUpperCase());
+	// Error: Property 'toUpperCase' does not exist on type 'number'.
+}
+```
+
+Para usar algo específico de un miembro, primero hay que **estrechar**.
+
+## Narrowing con `typeof`
+
+Dentro de un `if (typeof x === "...")`, TypeScript sabe qué tipo tiene `x`:
+
+```ts
+function formatearId(id: string | number): string {
+	if (typeof id === "string") {
+		return id.toUpperCase();   // aquí id es string
+	}
+	return id.toFixed(0);          // aquí id es number: la otra rama ya descartó string
+}
+```
+
+Fíjate en la segunda línea: no hace falta un `else`. Como la rama del `if` termina con `return`, TypeScript deduce que después del bloque `id` **solo puede ser** `number`.
+
+<Aside type="tip" title="Pasa el ratón">
+	En VS Code, coloca el cursor sobre `id` en distintas líneas de la función: verás cómo el tipo cambia de `string | number` a `string` y a `number`. Es la mejor forma de entender qué está haciendo el compilador.
+</Aside>
+
+## Narrowing con `in` e `instanceof`
+
+Para uniones de **objetos**, `typeof` no sirve (siempre devuelve `"object"`). Se usa `in` para comprobar si existe una propiedad, o `instanceof` para clases:
+
+```ts
+interface Perro { ladrar(): void }
+interface Gato { maullar(): void }
+
+function hablar(animal: Perro | Gato): void {
+	if ("ladrar" in animal) {
+		animal.ladrar();   // Perro
+	} else {
+		animal.maullar();  // Gato
+	}
+}
+```
+
+```ts
+function describir(valor: Date | string): string {
+	if (valor instanceof Date) {
+		return valor.toISOString();
+	}
+	return valor.trim();
+}
+```
+
+## Tipos literales
+
+Un literal es un tipo con **un único valor posible**. Solos no sirven de mucho; en unión describen un conjunto cerrado de opciones:
+
+```ts
+type Direccion = "norte" | "sur" | "este" | "oeste";
+
+let rumbo: Direccion = "norte";
+rumbo = "arriba";
+// Error: Type '"arriba"' is not assignable to type 'Direccion'.
+```
+
+También funcionan con números y booleanos:
+
+```ts
+type DadoSeis = 1 | 2 | 3 | 4 | 5 | 6;
+type Respuesta = true | "pendiente";
+```
+
+<Aside type="note" title="Literales en lugar de enums">
+	TypeScript tiene `enum`, pero una unión de literales cubre el mismo caso con menos sintaxis, sin generar código en ejecución y con mejor autocompletado. Es la opción recomendada en código moderno y la única que usarás en esta unidad.
+</Aside>
+
+### Cuidado con la inferencia
+
+`const` infiere el literal; `let` infiere el tipo ancho:
+
+```ts
+const a = "norte";  // tipo: "norte"
+let b = "norte";    // tipo: string
+
+let rumbo: Direccion = b;
+// Error: Type 'string' is not assignable to type 'Direccion'.
+```
+
+Cuando construyas objetos con propiedades literales, anota el tipo o usa `as const`:
+
+```ts
+const config = { modo: "oscuro" };            // modo: string
+const config2 = { modo: "oscuro" } as const;  // modo: "oscuro", readonly
+```
+
+## Uniones discriminadas
+
+El patrón más importante del apartado. Cada miembro de la unión tiene una propiedad **común** con un valor **literal distinto** (el *discriminante*). Comprobar esa propiedad estrecha al miembro correcto:
+
+```ts
+interface Circulo {
+	tipo: "circulo";
+	radio: number;
+}
+
+interface Rectangulo {
+	tipo: "rectangulo";
+	base: number;
+	altura: number;
+}
+
+type Figura = Circulo | Rectangulo;
+
+function area(figura: Figura): number {
+	switch (figura.tipo) {
+		case "circulo":
+			return Math.PI * figura.radio ** 2;        // figura es Circulo
+		case "rectangulo":
+			return figura.base * figura.altura;        // figura es Rectangulo
+	}
+}
+```
+
+En React, este patrón modela el **estado de una petición**, y lo verás en cada componente que cargue datos:
+
+```ts
+type EstadoPeticion =
+	| { estado: "cargando" }
+	| { estado: "listo"; datos: string[] }
+	| { estado: "error"; mensaje: string };
+
+function render(p: EstadoPeticion): string {
+	switch (p.estado) {
+		case "cargando":
+			return "Cargando…";
+		case "listo":
+			return `${p.datos.length} elementos`;     // datos solo existe aquí
+		case "error":
+			return `Error: ${p.mensaje}`;              // mensaje solo existe aquí
+	}
+}
+```
+
+<Aside type="tip" title="Por qué es mejor que tres booleanos">
+	Con `{ cargando: boolean; datos?: string[]; error?: string }` es posible un estado absurdo: `cargando: true` **y** `error: "…"` a la vez. Con la unión discriminada, los estados imposibles **no se pueden representar**, y TypeScript te obliga a tratar cada uno.
+</Aside>
+
+## Comprobación exhaustiva con `never`
+
+Si mañana añades `Triangulo` a `Figura`, ¿cómo te aseguras de actualizar todas las funciones? Con un `default` que asigne a `never`:
+
+```ts
+function area(figura: Figura): number {
+	switch (figura.tipo) {
+		case "circulo":
+			return Math.PI * figura.radio ** 2;
+		case "rectangulo":
+			return figura.base * figura.altura;
+		default: {
+			const nunca: never = figura;
+			throw new Error(`Figura desconocida: ${JSON.stringify(nunca)}`);
+		}
+	}
+}
+```
+
+Mientras todos los casos estén cubiertos, en el `default` `figura` es `never` y la asignación compila. En cuanto añadas un miembro sin su `case`, `figura` será `Triangulo` en el `default`, y `Triangulo` **no** es asignable a `never`: error de compilación exactamente donde falta el caso.
+
+## `null` y `undefined`
+
+Con `strict`, `null` y `undefined` **no** son asignables a otros tipos. Un valor que puede faltar se declara como unión y hay que comprobarlo antes de usarlo:
+
+```ts
+function buscar(nombres: string[], letra: string): string | undefined {
+	return nombres.find(n => n.startsWith(letra));
+}
+
+const resultado = buscar(["Ana", "Luis"], "L");
+
+resultado.toUpperCase();
+// Error: 'resultado' is possibly 'undefined'.
+
+if (resultado !== undefined) {
+	resultado.toUpperCase();   // ok
+}
+```
+
+JavaScript moderno ofrece dos operadores que TypeScript entiende como narrowing:
+
+```ts
+resultado?.toUpperCase();              // undefined si resultado falta
+const nombre = resultado ?? "nadie";   // "nadie" si resultado es null o undefined
+```
+
+<Aside type="caution" title="El operador `!`">
+	`resultado!.toUpperCase()` le dice al compilador "sé que no es `undefined`". Como `as`, **no comprueba nada**: si te equivocas, error en ejecución. Úsalo solo cuando la comprobación real esté a la vista y TypeScript no la haya podido seguir.
+</Aside>
+
+## Funciones de guarda
+
+Cuando la comprobación es compleja o se repite, puedes encapsularla en una función que **devuelve un predicado de tipo**:
+
+```ts
+function esCirculo(figura: Figura): figura is Circulo {
+	return figura.tipo === "circulo";
+}
+
+const figuras: Figura[] = [
+	{ tipo: "circulo", radio: 2 },
+	{ tipo: "rectangulo", base: 3, altura: 4 },
+];
+
+const circulos = figuras.filter(esCirculo);  // Circulo[], no Figura[]
+```
+
+`figura is Circulo` indica que, si la función devuelve `true`, el argumento es un `Circulo`. Es lo que permite que `filter` devuelva `Circulo[]` en lugar de `Figura[]`.
+
+## Resumen rápido
+
+<Tabs>
+	<TabItem label="Declarar">
+		```ts
+		type U = A | B;                        // unión
+		type L = "a" | "b" | 1 | true;         // literales
+		type D = { k: "x"; … } | { k: "y"; … }; // discriminada
+		let v: string | null;                  // puede faltar
+		```
+	</TabItem>
+	<TabItem label="Estrechar">
+		```ts
+		typeof x === "string"    // primitivos
+		"prop" in x              // objetos por propiedad
+		x instanceof Clase       // instancias
+		x.tipo === "literal"     // discriminante
+		x !== undefined          // nulos
+		x?.prop   x ?? valor     // opcional y nullish
+		function g(x): x is T    // guarda de tipo
+		const n: never = x;      // exhaustividad
+		```
+	</TabItem>
+</Tabs>
+
+## Convención práctica
+
+<Steps>
+
+1. Modela **conjuntos cerrados** de opciones con uniones de literales, no con `string` ni con enums.
+2. Modela **estados** con uniones discriminadas: una propiedad `tipo`/`estado` literal por miembro.
+3. Cierra cada `switch` sobre un discriminante con un `default` que asigne a `never`.
+4. Nunca uses `!` para quitar un `undefined` que puedas comprobar con un `if`, `?.` o `??`.
+5. Si una comprobación se repite en varios sitios, conviértela en una **guarda de tipo**.
+
+</Steps>
+
+## Ejercicios
+
+Resuélvelos en `src/05-unions-and-narrowing/exercises.ts`.
+
+### Básicos
+
+1. Escribe `formatear(valor: string | number): string` que devuelva el texto en mayúsculas o el número con dos decimales, según el tipo.
+2. Declara `type Talla = "S" | "M" | "L" | "XL"` y una función `precioPorTalla(talla: Talla): number`. Intenta llamarla con `"XXL"` y deja el error comentado.
+3. Escribe `longitud(valor: string | string[]): number` que devuelva la longitud del texto o el número de elementos del array. Pista: `Array.isArray` también estrecha.
+4. Escribe `primerElemento(lista: number[]): number | undefined` y úsala de tres formas: con `if`, con `?.` y con `??`.
+5. Declara `interface Coche { ruedas: 4; marca: string }` e `interface Moto { ruedas: 2; marca: string }`, y una función `describir(v: Coche | Moto)` que use el número de ruedas para decir qué es.
+
+### Para pensar
+
+6. Predice el tipo de `x` en cada línea marcada **antes** de comprobarlo con el ratón:
+
+	```ts
+	function f(x: string | number | null) {
+		if (x === null) return;
+		// (a) x es …
+		if (typeof x === "number") {
+			// (b) x es …
+			return;
+		}
+		// (c) x es …
+	}
+	```
+
+7. Este código compila con `let` pero no con `const`... o al revés. Averigua cuál, explica por qué y arréglalo sin cambiar `Direccion`:
+
+	```ts
+	type Direccion = "norte" | "sur";
+	let d = "norte";
+	const rumbo: Direccion = d;
+	```
+
+8. Modela con una unión discriminada `Resultado` los dos desenlaces de una operación: `{ ok: true; valor: number }` y `{ ok: false; error: string }`. Escribe `dividir(a: number, b: number): Resultado` y una función que la use e imprima el valor o el error. Explica en un comentario qué ventaja tiene frente a lanzar excepciones.
+
+9. Añade `Triangulo` (`tipo: "triangulo"`, `base`, `altura`) al ejemplo de `Figura` del apartado **sin** tocar la función `area`. Observa dónde aparece el error gracias al `default: never`, y después completa el `case`.
+
+### Reto
+
+Modela el **estado de un formulario de login** con una unión discriminada de cuatro miembros: `inactivo`, `enviando` (con `intentos: number`), `exito` (con `usuario: string` y `token: string`) y `fallo` (con `mensaje: string` e `intentos: number`).
+
+Escribe:
+
+- `describirEstado(e: EstadoLogin): string` con `switch` y comprobación exhaustiva.
+- `puedeReintentar(e: EstadoLogin): boolean`, que solo es `true` en `fallo` con menos de 3 intentos.
+- Una guarda `esExito(e: EstadoLogin): e is …` y úsala con `filter` sobre un array de estados para obtener solo los tokens.
+
+Comprueba con dos líneas comentadas que TypeScript rechaza acceder a `token` fuera del estado `exito` y un estado con nombre inexistente.
+
+### Entrega
+
+<Steps>
+
+1. Copia en `src/05-unions-and-narrowing/examples.ts` los ejemplos de este apartado que hayas probado y confírmalos:
+
+	```bash
+	git add src/05-unions-and-narrowing/examples.ts
+	git commit -m "Añade ejemplos de uniones y narrowing"
+	```
+
+2. Resuelve los ejercicios en `src/05-unions-and-narrowing/exercises.ts`, documéntalos en `src/05-unions-and-narrowing/README.md` y confírmalos en un commit aparte:
+
+	```bash
+	git add src/05-unions-and-narrowing/exercises.ts src/05-unions-and-narrowing/README.md
+	git commit -m "Resuelve ejercicios de uniones y narrowing"
+	```
+
+3. Sube ambos commits a GitHub con `git push`.
+
+</Steps>
+
+## Siguientes pasos
+
+<CardGrid stagger>
+	<LinkCard
+		href="/jjcm/di/units/introduction/typescript/06-generics/"
+		title="Genéricos"
+		description="Escribir código que funciona con cualquier tipo sin perder la comprobación."
+	/>
+	<LinkCard
+		href="https://www.typescriptlang.org/docs/handbook/2/narrowing.html"
+		title="Narrowing (Handbook)"
+		description="typeof, in, instanceof, guardas, uniones discriminadas y never."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#literal-types"
+		title="Literal Types"
+		description="Literales de string, number y boolean, y la inferencia con const."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+{/* Oculto hasta que el repositorio esté publicado. Para mostrarlo, quita este comentario.
+<Aside type="tip" title="Ejemplos ejecutables">
+	En el repositorio [dam-di-typescript](https://github.com/IESJJCM/dam-di-typescript) tienes este apartado en [`src/05-unions-and-narrowing/`](https://github.com/IESJJCM/dam-di-typescript/tree/main/src/05-unions-and-narrowing): `examples.ts` con el código de los apuntes y `exercises.ts` con los ejercicios. Clona, ejecuta `npm install` y `npm run build`.
+</Aside>
+*/}

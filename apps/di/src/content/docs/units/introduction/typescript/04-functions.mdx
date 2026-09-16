@@ -1,0 +1,348 @@
+---
+title: Funciones
+description: Tipar parámetros y retornos, parámetros opcionales, por defecto y rest, tipos de función, callbacks y sobrecargas en TypeScript.
+evaluations:
+  - id: RA1
+    statement: Genera interfaces gráficos de usuario mediante editores visuales utilizando las funcionalidades del editor y adaptando el código generado
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de interfaces gráficos.
+      - Se ha creado un interfaz gráfico utilizando las herramientas de un editor visual.
+    contents:
+      - Generación de interfaces de usuario
+sources:
+  - author: Microsoft — TypeScript Handbook
+    url: https://www.typescriptlang.org/docs/handbook/intro.html
+  - author: Fernando Herrera
+    url: https://cursos.devtalles.com/courses/typescript
+sidebar:
+  order: 4
+date: 2026-09-16
+updated: 2026-09-16
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+Las funciones son donde TypeScript aporta más: los **parámetros** son lo único que el compilador no puede inferir, y el **tipo de retorno** documenta qué esperar de cada llamada. Todo lo que sabes de funciones en JavaScript (declaraciones, expresiones, arrow functions, closures) sigue igual; solo se añaden anotaciones.
+
+<CardGrid stagger>
+	<Card title="Parámetros" icon="pencil">
+		Se anotan **siempre**. Sin anotación son `any` y, con `strict`, un error.
+	</Card>
+	<Card title="Retorno" icon="approve-check">
+		Se puede inferir, pero anotarlo evita devolver algo inesperado por un `return` olvidado.
+	</Card>
+	<Card title="Funciones como tipo" icon="puzzle">
+		`(a: number) => string` describe una función. Es la base de los **callbacks** tipados.
+	</Card>
+</CardGrid>
+
+## Parámetros y retorno
+
+```ts
+function sumar(a: number, b: number): number {
+	return a + b;
+}
+
+const restar = function (a: number, b: number): number {
+	return a - b;
+};
+
+const multiplicar = (a: number, b: number): number => a * b;
+```
+
+Las tres formas se tipan igual: `: tipo` tras cada parámetro y `: tipo` tras los paréntesis para el retorno. TypeScript comprueba **ambas direcciones**: que las llamadas pasen los argumentos correctos y que el cuerpo devuelva lo prometido.
+
+```ts
+function dividir(a: number, b: number): number {
+	if (b === 0) {
+		return "No se puede dividir por cero";
+		// Error: Type 'string' is not assignable to type 'number'.
+	}
+	return a / b;
+}
+```
+
+<Aside type="tip" title="Inferencia del retorno">
+	Si omites `: number`, TypeScript lo infiere del `return`. Para funciones cortas es aceptable; para las demás, anótalo: si un día cambias un `return` por error, el compilador lo detectará en la función, no tres archivos más lejos.
+</Aside>
+
+## Parámetros opcionales y por defecto
+
+Un parámetro con `?` puede omitirse y dentro de la función vale `tipo | undefined`:
+
+```ts
+function saludar(nombre: string, titulo?: string): string {
+	if (titulo) {
+		return `Hola, ${titulo} ${nombre}`;
+	}
+	return `Hola, ${nombre}`;
+}
+
+saludar("Ana");          // "Hola, Ana"
+saludar("Ana", "Dra.");  // "Hola, Dra. Ana"
+```
+
+Un parámetro con **valor por defecto** también es opcional, pero nunca es `undefined` dentro de la función. El tipo se infiere del valor:
+
+```ts
+function crearUsuario(nombre: string, rol = "visitante", activo = true) {
+	return { nombre, rol, activo };
+}
+
+crearUsuario("Ana");                 // rol: "visitante", activo: true
+crearUsuario("Luis", "admin");
+crearUsuario("Eva", "editor", false);
+```
+
+<Aside type="caution" title="Los opcionales van al final">
+	`function f(a?: string, b: string)` es un error: un parámetro obligatorio no puede seguir a uno opcional, porque TypeScript no sabría a cuál corresponde el primer argumento.
+</Aside>
+
+## Parámetros rest
+
+Igual que en JavaScript, pero tipado como **array**:
+
+```ts
+function sumarTodos(...numeros: number[]): number {
+	return numeros.reduce((acc, n) => acc + n, 0);
+}
+
+sumarTodos(1, 2, 3);      // 6
+sumarTodos();             // 0
+sumarTodos(1, "2");       // Error: Argument of type 'string' is not assignable to parameter of type 'number'.
+```
+
+## Funciones como tipo
+
+Una función es un valor, y como tal tiene tipo. La sintaxis se parece a una arrow function sin cuerpo:
+
+```ts
+type OperacionBinaria = (a: number, b: number) => number;
+
+const sumar: OperacionBinaria = (a, b) => a + b;
+const restar: OperacionBinaria = (a, b) => a - b;
+```
+
+Fíjate en que `a` y `b` **no llevan anotación** en las arrow functions: TypeScript las infiere del tipo `OperacionBinaria`. Esto se llama **tipado contextual** y es lo que hace que los callbacks de `map`, `filter` o `addEventListener` no necesiten anotar sus parámetros.
+
+```ts
+const numeros = [1, 2, 3];
+numeros.map(n => n * 2);           // n es number, inferido del array
+numeros.filter(n => n > 1);        // idem
+```
+
+### Callbacks tipados
+
+Cuando una función recibe otra función, el tipo del parámetro describe qué callback se espera:
+
+```ts
+function procesar(valores: number[], transformar: (n: number) => number): number[] {
+	return valores.map(transformar);
+}
+
+procesar([1, 2, 3], n => n * 10);         // [10, 20, 30]
+procesar([1, 2, 3], n => n.toFixed(2));
+// Error: Type 'string' is not assignable to type 'number'.
+```
+
+Con `interface` también se puede describir una función, aunque es menos habitual:
+
+```ts
+interface Comparador {
+	(a: string, b: string): number;
+}
+
+const porLongitud: Comparador = (a, b) => a.length - b.length;
+["aaa", "b", "cc"].sort(porLongitud); // ["b", "cc", "aaa"]
+```
+
+## `void` en callbacks
+
+Un callback declarado como `() => void` **acepta funciones que devuelven algo**; TypeScript simplemente ignora el valor. Es lo que permite pasar `console.log` o una arrow con retorno implícito donde solo se espera un efecto:
+
+```ts
+function repetir(veces: number, accion: () => void): void {
+	for (let i = 0; i < veces; i++) accion();
+}
+
+repetir(3, () => console.log("hola"));   // ok
+repetir(2, () => 42);                     // ok: el 42 se descarta
+```
+
+## Funciones que devuelven funciones
+
+Los closures se tipan indicando el tipo de la función devuelta:
+
+```ts
+function multiplicador(factor: number): (n: number) => number {
+	return n => n * factor;
+}
+
+const doble = multiplicador(2);
+const triple = multiplicador(3);
+
+console.log(doble(5));  // 10
+console.log(triple(5)); // 15
+```
+
+## Sobrecargas
+
+Cuando una función se comporta distinto según el tipo de sus argumentos, puedes declarar **varias firmas** y una única implementación:
+
+```ts
+function formatear(valor: number): string;
+function formatear(valor: Date): string;
+function formatear(valor: number | Date): string {
+	if (valor instanceof Date) {
+		return valor.toLocaleDateString("es-ES");
+	}
+	return valor.toFixed(2);
+}
+
+formatear(3.14159);      // "3.14"
+formatear(new Date());   // "16/9/2026"
+formatear("texto");      // Error: No overload matches this call.
+```
+
+<Aside type="note" title="Úsalas poco">
+	Las sobrecargas son útiles para leer librerías (verás muchas en las definiciones del DOM), pero en tu código casi siempre una **unión** en el parámetro (`valor: number | Date`) es suficiente y más simple. Las verás en detalle en el siguiente apartado.
+</Aside>
+
+## Resumen rápido
+
+<Tabs>
+	<TabItem label="Declarar">
+		```ts
+		function f(a: number, b?: string, c = 10, ...rest: number[]): string
+		const g = (n: number): boolean => n > 0;
+		function nada(): void {}
+		function siempreFalla(): never { throw new Error(); }
+		```
+	</TabItem>
+	<TabItem label="Tipos de función">
+		```ts
+		type Fn = (a: number) => string;
+		interface Cmp { (a: string, b: string): number }
+		function alta(cb: (x: number) => void): void
+		function devuelve(): (n: number) => number
+		```
+	</TabItem>
+</Tabs>
+
+## Convención práctica
+
+<Steps>
+
+1. **Anota todos los parámetros**; deja sin anotar solo los de callbacks cuyo tipo ya viene dado por contexto.
+2. **Anota el retorno** en funciones exportadas, largas o con varios `return`.
+3. Prefiere **valores por defecto** a parámetros opcionales cuando exista un valor razonable: evita comprobar `undefined` dentro.
+4. Da **nombre con `type`** a los tipos de función que se repitan (`type Handler = (e: Evento) => void`).
+5. Evita sobrecargas si una unión resuelve el caso.
+
+</Steps>
+
+## Ejercicios
+
+Resuélvelos en `src/04-functions/exercises.ts`.
+
+### Básicos
+
+1. Escribe `saludar(nombre: string): string` como declaración, `sumar` como expresión de función y `multiplicar` como arrow function, todas con parámetros y retorno tipados.
+2. Escribe `esMayorDeEdad(edad: number): boolean`. Llámala con un `string`; deja la llamada comentada con el error.
+3. Añade a `saludar` un segundo parámetro opcional `saludo?: string` que, si se pasa, sustituya a `"Hola"`. Llámala con y sin él.
+4. Escribe `crearProducto(nombre: string, precio: number, stock = 0, activo = true)` con valores por defecto y comprueba, pasando el ratón, qué tipo infiere TypeScript para el objeto devuelto.
+5. Escribe `promedio(...notas: number[]): number` que devuelva `0` si no recibe ninguna nota.
+
+### Para pensar
+
+6. Declara `type Validador = (texto: string) => boolean` y escribe tres validadores con ese tipo: `noVacio`, `esEmail` (contiene `@`) y `longitudMinima` (al menos 8 caracteres). Fíjate en que no necesitas anotar `texto` en ninguno; explica por qué en un comentario.
+7. Escribe `aplicarTodos(texto: string, validadores: Validador[]): boolean` que devuelva `true` solo si todos los validadores pasan. Pruébala con los tres anteriores.
+8. Este código no compila. Explica el error en un comentario **sin cambiar** la firma de `procesar`, y luego corrige la llamada:
+
+	```ts
+	function procesar(valores: number[], fn: (n: number) => number): number[] {
+		return valores.map(fn);
+	}
+	procesar([1, 2, 3], n => `${n}€`);
+	```
+
+9. Escribe `crearContador(inicial = 0): { incrementar: () => number; valor: () => number }`. ¿Puedes extraer ese tipo de retorno a una `interface Contador`? Hazlo.
+
+### Reto
+
+Escribe una función `pipe` que reciba **una lista de funciones** de `number` a `number` y devuelva **una nueva función** que las aplique en orden, pasando el resultado de cada una a la siguiente:
+
+```ts
+const transformar = pipe(n => n + 1, n => n * 2, n => n - 3);
+console.log(transformar(5)); // (5 + 1) * 2 - 3 = 9
+```
+
+Tipa la firma completa (parámetros rest y retorno). Después escribe `pipeTexto` haciendo lo mismo para funciones de `string` a `string`, y comprueba con una llamada comentada que no puedes mezclar una función de números en `pipeTexto`. En el siguiente apartado sobre genéricos verás cómo escribir una sola versión que sirva para ambos.
+
+### Entrega
+
+<Steps>
+
+1. Copia en `src/04-functions/examples.ts` los ejemplos de este apartado que hayas probado y confírmalos:
+
+	```bash
+	git add src/04-functions/examples.ts
+	git commit -m "Añade ejemplos de funciones"
+	```
+
+2. Resuelve los ejercicios en `src/04-functions/exercises.ts`, documéntalos en `src/04-functions/README.md` y confírmalos en un commit aparte:
+
+	```bash
+	git add src/04-functions/exercises.ts src/04-functions/README.md
+	git commit -m "Resuelve ejercicios de funciones"
+	```
+
+3. Sube ambos commits a GitHub con `git push`.
+
+</Steps>
+
+## Siguientes pasos
+
+<CardGrid stagger>
+	<LinkCard
+		href="/jjcm/di/units/introduction/typescript/05-unions-and-narrowing/"
+		title="Uniones y narrowing"
+		description="Un valor que puede ser de varios tipos, y cómo trabajar con él de forma segura."
+	/>
+	<LinkCard
+		href="https://www.typescriptlang.org/docs/handbook/2/functions.html"
+		title="More on Functions (Handbook)"
+		description="Tipos de función, parámetros opcionales, rest, sobrecargas y void."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://www.typescriptlang.org/docs/handbook/type-inference.html#contextual-typing"
+		title="Contextual Typing"
+		description="Por qué los parámetros de los callbacks no necesitan anotación."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+{/* Oculto hasta que el repositorio esté publicado. Para mostrarlo, quita este comentario.
+<Aside type="tip" title="Ejemplos ejecutables">
+	En el repositorio [dam-di-typescript](https://github.com/IESJJCM/dam-di-typescript) tienes este apartado en [`src/04-functions/`](https://github.com/IESJJCM/dam-di-typescript/tree/main/src/04-functions): `examples.ts` con el código de los apuntes y `exercises.ts` con los ejercicios. Clona, ejecuta `npm install` y `npm run build`.
+</Aside>
+*/}

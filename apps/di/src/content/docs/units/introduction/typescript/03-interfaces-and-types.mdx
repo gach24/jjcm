@@ -1,0 +1,377 @@
+---
+title: Interfaces y type
+description: Nombrar tipos de objeto con interface y type, propiedades opcionales y readonly, extensión, intersección, tipado estructural y cuándo usar cada uno.
+evaluations:
+  - id: RA1
+    statement: Genera interfaces gráficos de usuario mediante editores visuales utilizando las funcionalidades del editor y adaptando el código generado
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de interfaces gráficos.
+      - Se ha creado un interfaz gráfico utilizando las herramientas de un editor visual.
+    contents:
+      - Generación de interfaces de usuario
+sources:
+  - author: Microsoft — TypeScript Handbook
+    url: https://www.typescriptlang.org/docs/handbook/intro.html
+  - author: Fernando Herrera
+    url: https://cursos.devtalles.com/courses/typescript
+sidebar:
+  order: 3
+date: 2026-09-16
+updated: 2026-09-16
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+Escribir `{ nombre: string; edad: number }` cada vez que aparece una persona no escala. TypeScript permite **dar nombre a un tipo** y reutilizarlo con dos herramientas casi equivalentes: `interface` y `type`. Son la pieza central de cualquier código TypeScript, y en React describirán las **props** de cada componente.
+
+<CardGrid stagger>
+	<Card title="interface" icon="document">
+		Describe la **forma** de un objeto. Se puede **extender** y **reabrir**. La opción por defecto para objetos.
+	</Card>
+	<Card title="type" icon="pencil">
+		Da nombre a **cualquier** tipo: objetos, uniones, tuplas, funciones. Imprescindible para lo que no es un objeto.
+	</Card>
+	<Card title="Estructural" icon="puzzle">
+		TypeScript compara por **forma**, no por nombre. Si tiene las propiedades necesarias, encaja.
+	</Card>
+</CardGrid>
+
+## `interface`
+
+```ts
+interface Persona {
+	nombre: string;
+	edad: number;
+}
+
+const ana: Persona = { nombre: "Ana", edad: 30 };
+
+function saludar(p: Persona): string {
+	return `Hola, ${p.nombre}`;
+}
+```
+
+Una vez declarada, `Persona` se usa como cualquier otro tipo: en variables, parámetros, retornos y arrays (`Persona[]`).
+
+### Propiedades opcionales y de solo lectura
+
+```ts
+interface Producto {
+	readonly id: number;
+	nombre: string;
+	precio: number;
+	descripcion?: string;
+}
+
+const teclado: Producto = { id: 1, nombre: "Teclado", precio: 49.99 };
+
+teclado.precio = 44.99;   // ok
+teclado.id = 2;           // Error: Cannot assign to 'id' because it is a read-only property.
+console.log(teclado.descripcion?.length); // descripcion es string | undefined
+```
+
+<Aside type="tip" title="Opcional significa `| undefined`">
+	`descripcion?: string` equivale a `descripcion: string | undefined`. Antes de usar la propiedad, TypeScript te obligará a comprobar que existe (o a usar `?.`). Es molesto al principio y salva errores después.
+</Aside>
+
+### Extender una interfaz
+
+`extends` crea una interfaz nueva con todas las propiedades de otra más las suyas:
+
+```ts
+interface Persona {
+	nombre: string;
+	edad: number;
+}
+
+interface Empleado extends Persona {
+	puesto: string;
+	salario: number;
+}
+
+const luis: Empleado = {
+	nombre: "Luis",
+	edad: 41,
+	puesto: "Desarrollador",
+	salario: 32000,
+};
+
+function saludar(p: Persona): string {
+	return `Hola, ${p.nombre}`;
+}
+
+saludar(luis); // ok: un Empleado tiene todo lo que necesita una Persona
+```
+
+### Métodos
+
+Una interfaz también puede declarar **funciones**:
+
+```ts
+interface Contador {
+	valor: number;
+	incrementar(): void;
+	sumar(cantidad: number): number;
+}
+
+const contador: Contador = {
+	valor: 0,
+	incrementar() {
+		this.valor++;
+	},
+	sumar(cantidad) {
+		this.valor += cantidad;
+		return this.valor;
+	},
+};
+```
+
+## `type`
+
+Un **alias de tipo** da nombre a cualquier tipo, no solo a objetos. Para objetos, la sintaxis es casi idéntica a `interface`:
+
+```ts
+type Punto = {
+	x: number;
+	y: number;
+};
+
+const origen: Punto = { x: 0, y: 0 };
+```
+
+Donde `type` es imprescindible es para todo lo que **no** es un objeto:
+
+```ts
+type Identificador = string | number;      // unión
+type Coordenada = [number, number];         // tupla
+type Callback = (error: Error | null) => void; // función
+type Estado = "cargando" | "listo" | "error";  // literales (siguiente apartado)
+```
+
+### Intersección
+
+`&` combina tipos, el equivalente de `extends` para alias:
+
+```ts
+type ConNombre = { nombre: string };
+type ConEdad = { edad: number };
+
+type Persona = ConNombre & ConEdad;
+
+const ana: Persona = { nombre: "Ana", edad: 30 };
+```
+
+## `interface` frente a `type`
+
+Para describir objetos, las dos funcionan. Las diferencias reales son pocas:
+
+| | `interface` | `type` |
+| --- | --- | --- |
+| Objetos | Sí | Sí |
+| Uniones, tuplas, funciones, literales | No | Sí |
+| Extender | `extends` | `&` |
+| Declarar dos veces el mismo nombre | Se **fusionan** | Error |
+| Mensajes de error | Muestran el nombre | A veces muestran la estructura expandida |
+
+<Aside type="note" title="Regla para esta unidad">
+	**`interface` para objetos, `type` para todo lo demás.** Es la convención más extendida, coincide con la recomendación oficial y evita tener que decidir cada vez. En React verás ambas para las props; cualquiera de las dos es correcta.
+</Aside>
+
+## Tipado estructural
+
+TypeScript **no** comprueba el nombre del tipo, sino su **forma**. Si un valor tiene las propiedades que el tipo exige, es compatible, se llame como se llame:
+
+```ts
+interface Punto {
+	x: number;
+	y: number;
+}
+
+const p3d = { x: 1, y: 2, z: 3 };
+
+function distancia(p: Punto): number {
+	return Math.sqrt(p.x ** 2 + p.y ** 2);
+}
+
+distancia(p3d); // ok: tiene x e y; la z sobrante no molesta
+```
+
+Pero un **literal** escrito directamente en la llamada sí se comprueba estrictamente, para cazar erratas:
+
+```ts
+distancia({ x: 1, y: 2, z: 3 });
+// Error: Object literal may only specify known properties, and 'z' does not exist in type 'Punto'.
+```
+
+<Aside type="tip" title="Por qué importa">
+	Significa que no necesitas "convertir" objetos entre tipos: un objeto que llega de una API con más campos de los que te interesan se puede pasar directamente a una función que espera solo algunos. Y también que dos interfaces con las mismas propiedades son **intercambiables**.
+</Aside>
+
+## Firmas de índice
+
+Cuando no conoces los nombres de las propiedades de antemano pero sí su tipo:
+
+```ts
+interface Diccionario {
+	[palabra: string]: string;
+}
+
+const traducciones: Diccionario = {
+	hola: "hello",
+	adios: "goodbye",
+};
+
+traducciones.gracias = "thanks"; // ok
+traducciones.numero = 42;        // Error: Type 'number' is not assignable to type 'string'.
+```
+
+Para este caso, `Record<string, string>` (que verás en genéricos) es una alternativa más corta.
+
+## Resumen rápido
+
+<Tabs>
+	<TabItem label="interface">
+		```ts
+		interface A { x: number; y?: string; readonly z: boolean }
+		interface B extends A { w: number }
+		interface C { metodo(arg: number): void }
+		interface D { [clave: string]: number }
+		```
+	</TabItem>
+	<TabItem label="type">
+		```ts
+		type Obj = { x: number };
+		type Union = string | number;
+		type Tupla = [string, number];
+		type Fn = (a: number) => string;
+		type Mezcla = Obj & { y: string };
+		```
+	</TabItem>
+</Tabs>
+
+## Convención práctica
+
+<Steps>
+
+1. **`interface` para objetos, `type` para el resto** (uniones, tuplas, funciones).
+2. Nombres en **PascalCase** (`Producto`, `EstadoPedido`), sin prefijo `I` ni sufijo `Type`.
+3. Marca `readonly` lo que no deba cambiar (identificadores, fechas de creación) y `?` solo lo que de verdad pueda faltar.
+4. Prefiere **extender** o **componer** tipos pequeños a escribir uno enorme con todo.
+5. Declara los tipos **cerca de donde se usan**; cuando los compartan varios archivos, muévelos a un módulo propio.
+
+</Steps>
+
+## Ejercicios
+
+Resuélvelos en `src/03-interfaces-and-types/exercises.ts`.
+
+### Básicos
+
+1. Declara una `interface Libro` con `titulo` y `autor` (string), `paginas` (number) y `leido` (boolean). Crea un array `biblioteca: Libro[]` con tres libros.
+2. Añade a `Libro` una propiedad `readonly isbn: string` y una opcional `valoracion?: number`. Actualiza los tres libros e intenta modificar el `isbn` de uno de ellos; deja el error comentado.
+3. Declara `interface LibroDigital extends Libro` con `formato: string` y `tamanoMB: number`. Crea uno y pásalo a una función `resumen(libro: Libro): string`. Explica en un comentario por qué lo acepta.
+4. Declara con `type` un alias `Identificador = string | number` y una tupla `Rango = [number, number]`. Usa ambos en variables.
+5. Escribe `interface Reproductor` con una propiedad `volumen` y los métodos `subir(): void`, `bajar(): void` y `silenciar(): boolean`. Implementa un objeto que la cumpla.
+
+### Para pensar
+
+6. Predice cuáles de estas asignaciones compilan **antes** de probarlas y explica cada fallo en un comentario:
+
+	```ts
+	interface Punto { x: number; y: number }
+
+	const a: Punto = { x: 1, y: 2 };
+	const b: Punto = { x: 1 };
+	const c: Punto = { x: 1, y: 2, z: 3 };
+	const objeto = { x: 1, y: 2, z: 3 };
+	const d: Punto = objeto;
+	```
+
+7. `Persona` está declarada dos veces. ¿Compila? ¿Qué tipo tiene `ana` al final? Reescribe lo mismo con `type` y anota qué ocurre.
+
+	```ts
+	interface Persona { nombre: string }
+	interface Persona { edad: number }
+	const ana: Persona = { nombre: "Ana", edad: 30 };
+	```
+
+8. Escribe la misma forma de objeto (`Coche` con `marca`, `modelo` y `anio`) una vez con `interface` y otra con `type`. Declara una variable de cada uno y **asigna una a la otra** en ambos sentidos. Explica en un comentario por qué funciona.
+
+### Reto
+
+Modela un pequeño **sistema de pedidos** con tipos:
+
+- `interface Cliente` con `id` (readonly), `nombre` y `email` opcional.
+- `interface LineaPedido` con `producto` (string), `cantidad` y `precioUnitario`.
+- `interface Pedido` con `id` (readonly), `cliente: Cliente`, `lineas: LineaPedido[]` y `fecha: Date`.
+- `type EstadoPedido = "pendiente" | "enviado" | "entregado"` y añade `estado: EstadoPedido` a `Pedido`.
+
+Escribe `totalPedido(pedido: Pedido): number` y `resumenPedido(pedido: Pedido): string` que devuelva algo como `"Pedido 7 de Ana: 3 líneas, 128.47 € (enviado)"`. Crea un pedido de prueba e imprime el resumen. Demuestra con dos líneas comentadas que TypeScript rechaza un estado inexistente (`"perdido"`) y un pedido sin `fecha`.
+
+### Entrega
+
+<Steps>
+
+1. Copia en `src/03-interfaces-and-types/examples.ts` los ejemplos de este apartado que hayas probado y confírmalos:
+
+	```bash
+	git add src/03-interfaces-and-types/examples.ts
+	git commit -m "Añade ejemplos de interfaces y type"
+	```
+
+2. Resuelve los ejercicios en `src/03-interfaces-and-types/exercises.ts`, documéntalos en `src/03-interfaces-and-types/README.md` y confírmalos en un commit aparte:
+
+	```bash
+	git add src/03-interfaces-and-types/exercises.ts src/03-interfaces-and-types/README.md
+	git commit -m "Resuelve ejercicios de interfaces y type"
+	```
+
+3. Sube ambos commits a GitHub con `git push`.
+
+</Steps>
+
+## Siguientes pasos
+
+<CardGrid stagger>
+	<LinkCard
+		href="/jjcm/di/units/introduction/typescript/04-functions/"
+		title="Funciones"
+		description="Tipar parámetros, retornos, funciones como valores y callbacks."
+	/>
+	<LinkCard
+		href="https://www.typescriptlang.org/docs/handbook/2/objects.html"
+		title="Object Types (Handbook)"
+		description="Propiedades opcionales, readonly, extensión e intersección."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#differences-between-type-aliases-and-interfaces"
+		title="Interface vs type alias"
+		description="Las diferencias oficiales, con ejemplos."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+{/* Oculto hasta que el repositorio esté publicado. Para mostrarlo, quita este comentario.
+<Aside type="tip" title="Ejemplos ejecutables">
+	En el repositorio [dam-di-typescript](https://github.com/IESJJCM/dam-di-typescript) tienes este apartado en [`src/03-interfaces-and-types/`](https://github.com/IESJJCM/dam-di-typescript/tree/main/src/03-interfaces-and-types): `examples.ts` con el código de los apuntes y `exercises.ts` con los ejercicios. Clona, ejecuta `npm install` y `npm run build`.
+</Aside>
+*/}

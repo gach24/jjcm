@@ -1,0 +1,407 @@
+---
+title: Componentes
+description: "Construir con Tailwind los componentes de interfaz habituales (botones, tarjetas, formularios, navegación con menú móvil, alertas) y cómo reutilizarlos sin repetir clases: copiar, @apply con moderación y componentes de React."
+evaluations:
+  - id: RA1
+    statement: Genera interfaces gráficos de usuario mediante editores visuales utilizando las funcionalidades del editor y adaptando el código generado
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de interfaces gráficos.
+      - Se ha creado un interfaz gráfico utilizando las herramientas de un editor visual.
+    contents:
+      - Generación de interfaces de usuario
+sources:
+  - author: Tailwind Labs — Tailwind CSS Documentation
+    url: https://tailwindcss.com/docs
+  - author: MDN Web Docs — CSS layout
+    url: https://developer.mozilla.org/es/docs/Learn_web_development/Core/CSS_layout
+sidebar:
+  order: 6
+date: 2026-09-16
+updated: 2026-09-16
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+Una interfaz se compone de piezas que se repiten: botones, tarjetas, campos de formulario, barras de navegación. Este apartado construye las más habituales con lo que ya sabes y aborda la pregunta que aparece en cuanto tienes dos botones iguales: **¿cómo evito repetir veinte clases?** La respuesta corta es que en React lo resolverá un componente; hasta entonces, hay dos técnicas y una regla.
+
+<CardGrid stagger>
+	<Card title="Piezas" icon="puzzle">
+		Botón, tarjeta, input, badge, alerta, navbar con menú móvil. Con las mismas clases de siempre.
+	</Card>
+	<Card title="Estados" icon="approve-check">
+		`hover:`, `focus:`, `disabled:`, `group-hover:` y `peer-*` hacen que la pieza responda al usuario.
+	</Card>
+	<Card title="Reutilizar" icon="seti:react">
+		Repetir clases está bien al principio. `@apply` con moderación. El componente de React es la solución real.
+	</Card>
+</CardGrid>
+
+## Orden de las clases
+
+Con quince clases en un elemento, el orden importa para **leerlas**. Una convención que funciona: de fuera adentro.
+
+```txt
+1. layout        flex grid hidden relative
+2. tamaño        w-full max-w-md h-12
+3. espaciado     mx-auto mt-4 px-6 py-2
+4. borde y forma rounded-lg border shadow
+5. color         bg-white text-gray-900
+6. tipografía    text-sm font-semibold
+7. estados       hover:… focus:…
+8. responsive    md:… lg:…
+```
+
+Prettier con el plugin oficial de Tailwind ordena las clases automáticamente; hasta entonces, la extensión IntelliSense avisa de clases repetidas o en conflicto. No es obligatorio, pero un botón cuyas clases siguen siempre el mismo orden se lee de un vistazo.
+
+## Botones
+
+```html
+<!-- primario -->
+<button class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50">
+	Guardar
+</button>
+
+<!-- secundario -->
+<button class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none">
+	Cancelar
+</button>
+
+<!-- peligro -->
+<button class="inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700">
+	Eliminar
+</button>
+
+<!-- deshabilitado -->
+<button class="rounded-md bg-blue-600 px-4 py-2 text-white disabled:opacity-50" disabled>Enviando…</button>
+```
+
+| Clase | Para qué |
+| --- | --- |
+| `inline-flex items-center justify-center` | centra texto e icono, y permite `gap-2` si hay icono |
+| `focus-visible:ring-2 … ring-offset-2` | anillo de foco solo con teclado, separado del borde |
+| `focus-visible:outline-none` | quita el contorno por defecto, sustituido por el anillo |
+| `disabled:opacity-50 disabled:cursor-not-allowed` | aspecto y cursor de deshabilitado |
+| `transition` | suaviza el cambio de color |
+
+<Aside type="caution" title="Nunca quites el foco sin sustituirlo">
+	`outline-none` a secas deja a quien navega con teclado sin saber dónde está. Siempre acompáñalo de un `focus-visible:ring-*`. Es el error de accesibilidad más frecuente con Tailwind.
+</Aside>
+
+## Tarjeta
+
+```html
+<article class="max-w-sm overflow-hidden rounded-xl bg-white shadow-md transition hover:shadow-xl">
+	<img class="aspect-video w-full object-cover" src="https://picsum.photos/400/225" alt="" />
+	<div class="p-5">
+		<span class="inline-block rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">Curso</span>
+		<h3 class="mt-2 text-lg font-semibold text-gray-900">Maquetación con Tailwind</h3>
+		<p class="mt-1 line-clamp-2 text-sm text-gray-600">
+			Una descripción que puede ser larga pero se corta a dos líneas gracias a line-clamp.
+		</p>
+		<div class="mt-4 flex items-center justify-between">
+			<span class="text-xl font-bold">29 €</span>
+			<a class="text-sm font-medium text-blue-600 hover:underline" href="#">Ver más →</a>
+		</div>
+	</div>
+</article>
+```
+
+`overflow-hidden` en la tarjeta hace que la imagen respete las esquinas redondeadas. `line-clamp-2` corta el texto a dos líneas con puntos suspensivos: es lo que mantiene todas las tarjetas de una rejilla con la misma altura.
+
+## Formulario
+
+```html
+<form class="mx-auto max-w-md space-y-5 rounded-xl bg-white p-6 shadow">
+	<div>
+		<label class="block text-sm font-medium text-gray-700" for="email">Correo</label>
+		<input
+			class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
+			id="email" type="email" placeholder="tu@correo.com" />
+	</div>
+
+	<div>
+		<label class="block text-sm font-medium text-gray-700" for="nivel">Nivel</label>
+		<select class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none" id="nivel">
+			<option>Principiante</option>
+			<option>Intermedio</option>
+		</select>
+	</div>
+
+	<div>
+		<label class="block text-sm font-medium text-gray-700" for="msg">Mensaje</label>
+		<textarea class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none" id="msg" rows="3"></textarea>
+		<p class="mt-1 text-xs text-gray-500">Máximo 500 caracteres.</p>
+	</div>
+
+	<label class="flex items-center gap-2 text-sm">
+		<input class="size-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" type="checkbox" />
+		Acepto las condiciones
+	</label>
+
+	<button class="w-full rounded-md bg-blue-600 py-2 font-semibold text-white hover:bg-blue-700" type="submit">
+		Enviar
+	</button>
+</form>
+```
+
+Patrón de cada campo: `label` en bloque, `input` con `mt-1 block w-full`, borde gris, y `focus:` que cambia borde y añade anillo. `space-y-5` en el `form` separa los campos sin márgenes individuales.
+
+### Validación visual con `peer`
+
+Un `input` con la clase `peer` permite que su **hermano siguiente** reaccione a su estado con `peer-invalid:`, `peer-focus:`, etc. Sin JavaScript:
+
+```html
+<div>
+	<input class="peer block w-full rounded-md border border-gray-300 px-3 py-2 invalid:border-red-500" type="email" placeholder="tu@correo.com" required />
+	<p class="mt-1 hidden text-xs text-red-600 peer-invalid:block">Introduce un correo válido.</p>
+</div>
+```
+
+## Alertas y badges
+
+```html
+<div class="rounded-md border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+	<strong class="font-semibold">Guardado.</strong> Los cambios se han aplicado.
+</div>
+
+<div class="mt-3 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+	<strong class="font-semibold">Error.</strong> No se pudo conectar con el servidor.
+</div>
+
+<div class="mt-3 flex gap-2">
+	<span class="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">Borrador</span>
+	<span class="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">Pendiente</span>
+	<span class="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">Publicado</span>
+</div>
+```
+
+La regla de tonos del apartado de utilidades: fondo `50`, borde `200`, texto `800`. Cambiando solo el nombre del color tienes todas las variantes.
+
+## Navegación con menú móvil
+
+El componente que **necesita** responsive y un poco de JavaScript: en escritorio, enlaces en fila; en móvil, un botón que despliega el menú.
+
+```html
+<header class="bg-white shadow">
+	<div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+		<a class="text-xl font-bold" href="#">Academia DI</a>
+
+		<!-- enlaces: ocultos en móvil -->
+		<nav class="hidden gap-6 md:flex">
+			<a class="text-gray-700 hover:text-blue-600" href="#">Cursos</a>
+			<a class="text-gray-700 hover:text-blue-600" href="#">Precios</a>
+			<a class="text-gray-700 hover:text-blue-600" href="#">Contacto</a>
+		</nav>
+
+		<!-- botón: solo en móvil -->
+		<button class="rounded p-2 hover:bg-gray-100 md:hidden" id="menu-btn" aria-label="Abrir menú" aria-expanded="false">
+			☰
+		</button>
+	</div>
+
+	<!-- menú desplegable móvil -->
+	<nav class="hidden flex-col gap-1 border-t px-4 py-3 md:hidden" id="menu-movil">
+		<a class="rounded px-3 py-2 hover:bg-gray-100" href="#">Cursos</a>
+		<a class="rounded px-3 py-2 hover:bg-gray-100" href="#">Precios</a>
+		<a class="rounded px-3 py-2 hover:bg-gray-100" href="#">Contacto</a>
+	</nav>
+</header>
+
+<script>
+	const btn = document.getElementById("menu-btn");
+	const menu = document.getElementById("menu-movil");
+	btn.addEventListener("click", () => {
+		const abierto = menu.classList.toggle("hidden") === false;
+		menu.classList.toggle("flex", abierto);
+		btn.setAttribute("aria-expanded", String(abierto));
+	});
+</script>
+```
+
+Tres piezas: los enlaces de escritorio con `hidden md:flex`, el botón con `md:hidden`, y el menú móvil con `hidden md:hidden` (oculto siempre, salvo cuando el script le quita `hidden` y le pone `flex`). En `md` y superior, el menú móvil no se ve nunca aunque esté "abierto".
+
+<Aside type="tip" title="`group` para hover en el padre">
+	`group` en un contenedor y `group-hover:` en un hijo hacen que el hijo cambie cuando el ratón está sobre **el padre**: `<a class="group"><img class="group-hover:scale-105" …></a>`. Útil en tarjetas enlazadas donde la imagen debe reaccionar al pasar por cualquier parte de la tarjeta.
+</Aside>
+
+## Reutilizar sin repetir
+
+Dos botones primarios significan dos copias de quince clases. Opciones, de más a menos recomendable **en esta unidad**:
+
+<Tabs>
+	<TabItem label="Copiar (sí, en serio)">
+		Para páginas pequeñas, copiar el bloque de clases es aceptable: no hay nada que mantener sincronizado si el HTML es corto. Un buscador con "reemplazar todo" cambia el color de todos los botones en un segundo. Los autores de Tailwind lo defienden como punto de partida.
+	</TabItem>
+	<TabItem label="@apply en input.css">
+		```css
+		@import "tailwindcss";
+
+		@layer components {
+			.btn-primary {
+				@apply inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700;
+			}
+		}
+		```
+
+		```html
+		<button class="btn-primary">Guardar</button>
+		<button class="btn-primary w-full">Guardar</button>
+		```
+
+		`@apply` crea una clase normal a partir de utilidades. Resuelve la repetición, pero devuelve el problema que Tailwind evitaba: nombres que inventar y CSS que mantener aparte. **Úsalo solo para 3–4 piezas muy repetidas** (botones, inputs); si te encuentras escribiendo `.card-header-title`, has vuelto al CSS tradicional.
+	</TabItem>
+	<TabItem label="Componente de React (pronto)">
+		```jsx
+		function Button({ children }) {
+			return (
+				<button className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
+					{children}
+				</button>
+			);
+		}
+
+		<Button>Guardar</Button>
+		<Button>Cancelar</Button>
+		```
+
+		Es la solución real y por eso Tailwind encaja tan bien con React: las clases se escriben **una vez** en el componente, y el HTML de la página solo dice `<Button>`. Todo lo aprendido aquí se traslada tal cual.
+	</TabItem>
+</Tabs>
+
+## Resumen rápido
+
+<Tabs>
+	<TabItem label="Estados">
+		```txt
+		hover:  focus:  focus-visible:  active:  disabled:
+		group + group-hover:       hijo reacciona al padre
+		peer + peer-invalid:       hermano reacciona al input
+		invalid:  checked:  required:
+		```
+	</TabItem>
+	<TabItem label="Piezas">
+		```txt
+		botón     inline-flex items-center rounded-md px-4 py-2 font-semibold + estados
+		tarjeta   overflow-hidden rounded-xl shadow + aspect-video object-cover + line-clamp-2
+		input     block w-full rounded-md border px-3 py-2 focus:border-* focus:ring-*
+		badge     rounded-full px-2.5 py-0.5 text-xs font-medium bg-*-100 text-*-800
+		alerta    rounded-md border bg-*-50 border-*-200 text-*-800 p-4
+		navbar    hidden md:flex  /  md:hidden  +  toggle de hidden con JS
+		```
+	</TabItem>
+</Tabs>
+
+## Convención práctica
+
+<Steps>
+
+1. **Mismo orden de clases** en todos los elementos: layout → tamaño → espacio → forma → color → texto → estados → responsive.
+2. Todo elemento interactivo: **`hover:` + `focus-visible:ring-*`**, y `disabled:` si puede deshabilitarse.
+3. Tarjetas en rejilla: `overflow-hidden`, imagen con `aspect-*`, texto con `line-clamp-*` para que **midan lo mismo**.
+4. Formularios: `label` + `input` en bloque, `space-y-*` en el formulario, `focus:` en cada campo.
+5. **No abstraigas antes de tiempo**: copia hasta que duela; `@apply` para 3–4 piezas; el componente de React es el destino.
+
+</Steps>
+
+## Ejercicios
+
+Resuélvelos en `src/06-components/exercises.html`.
+
+### Básicos
+
+1. Cuatro botones: primario, secundario, peligro y deshabilitado, todos con `hover:`, `focus-visible:ring-*` y `transition`. Comprueba el anillo navegando con `Tab`.
+2. Una tarjeta de curso como la del apartado, con `line-clamp-2`. Ponle una descripción de cinco líneas y verifica que se corta.
+3. Un formulario con correo, contraseña, un `select`, un `checkbox` y un botón `w-full`. Cada campo con `focus:` visible.
+4. Tres alertas (éxito, aviso, error) y cuatro badges de colores distintos siguiendo la regla `50 / 200 / 800`.
+5. Reproduce la barra de navegación con menú móvil, incluido el `<script>`. Comprueba con las DevTools que en 375 px el botón abre y cierra el menú, y que en 1024 px ni el botón ni el menú móvil se ven.
+
+### Para pensar
+
+6. Reordena las clases de este botón según la convención del apartado y explica en el README qué has cambiado:
+
+	```html
+	<button class="text-white hover:bg-blue-700 px-4 bg-blue-600 rounded-md py-2 md:px-6 font-semibold inline-flex items-center">…</button>
+	```
+
+7. Un enlace-tarjeta con `group`: al pasar el ratón por **cualquier parte** de la tarjeta, la imagen se amplía (`group-hover:scale-105` con `transition`) y el título cambia a azul. ¿Por qué no bastaría con `hover:` en la imagen?
+8. Con `peer`, un campo de correo que muestre un mensaje de error **solo** cuando el valor no es válido y el campo ha perdido el foco. Pista: `peer-invalid:` y `peer-focus:` combinados con `hidden`/`block`.
+9. Crea `.btn-primary` con `@apply` en `input.css` y úsalo en dos botones, uno de ellos con `w-full` añadido. Explica en el README qué ventaja y qué inconveniente tiene frente a copiar las clases.
+
+### Reto
+
+Construye una **rejilla de 6 tarjetas de curso** responsive (1 → 2 → 3 columnas) donde cada tarjeta tenga imagen `aspect-video`, badge de categoría, título, descripción con `line-clamp-2`, precio y botón; todas con la **misma altura** en cada fila y el botón **pegado abajo** (flex-col + mt-auto). Encima, la barra de navegación con menú móvil funcionando. Todo dentro del contenedor `mx-auto max-w-6xl`. Documenta en el README qué combinación de clases garantiza que las tarjetas midan lo mismo aunque los textos difieran.
+
+### Entrega
+
+<Steps>
+
+1. Copia en `src/06-components/index.html` los ejemplos de este apartado que hayas probado y confírmalos:
+
+	```bash
+	git add src/06-components/index.html
+	git commit -m "Añade ejemplos de componentes"
+	```
+
+2. Resuelve los ejercicios en `src/06-components/exercises.html`, documéntalos en `src/06-components/README.md` y confírmalos en un commit aparte (incluye `src/input.css` si has usado `@apply`):
+
+	```bash
+	git add src/06-components/exercises.html src/06-components/README.md src/input.css
+	git commit -m "Resuelve ejercicios de componentes"
+	```
+
+3. Sube ambos commits a GitHub con `git push`.
+
+</Steps>
+
+## Siguientes pasos
+
+<CardGrid stagger>
+	<LinkCard
+		href="/jjcm/di/units/introduction/tailwind/07-page-layouts/"
+		title="Maquetación de páginas"
+		description="Estructuras completas: cabecera, lateral, contenido y pie."
+	/>
+	<LinkCard
+		href="https://tailwindcss.com/docs/hover-focus-and-other-states#styling-based-on-parent-state"
+		title="group y peer (docs)"
+		description="Estilos según el estado del padre o de un hermano."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://tailwindcss.com/docs/functions-and-directives#apply-directive"
+		title="@apply (docs)"
+		description="Cómo y cuándo extraer utilidades a una clase."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://github.com/tailwindlabs/prettier-plugin-tailwindcss"
+		title="prettier-plugin-tailwindcss"
+		description="Ordena las clases automáticamente. Para cuando llegue Prettier."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+{/* Oculto hasta que el repositorio esté publicado. Para mostrarlo, quita este comentario.
+<Aside type="tip" title="Ejemplos ejecutables">
+	En el repositorio [dam-di-tailwind](https://github.com/IESJJCM/dam-di-tailwind) tienes este apartado en [`src/06-components/`](https://github.com/IESJJCM/dam-di-tailwind/tree/main/src/06-components): `index.html` con los ejemplos de los apuntes y `exercises.html` con los ejercicios. Clona, ejecuta `npm install` y `npm run watch`, y ábrelo con Live Server.
+</Aside>
+*/}

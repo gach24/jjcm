@@ -1,0 +1,368 @@
+---
+title: Diseño responsive
+description: "Mobile-first con Tailwind: breakpoints, prefijos sm, md, lg, xl, cómo cambiar layout, tamaño y visibilidad según el ancho, contenedores centrados, imágenes fluidas y cómo probarlo en las DevTools."
+evaluations:
+  - id: RA1
+    statement: Genera interfaces gráficos de usuario mediante editores visuales utilizando las funcionalidades del editor y adaptando el código generado
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de interfaces gráficos.
+      - Se ha creado un interfaz gráfico utilizando las herramientas de un editor visual.
+    contents:
+      - Generación de interfaces de usuario
+sources:
+  - author: Tailwind Labs — Tailwind CSS Documentation
+    url: https://tailwindcss.com/docs
+  - author: MDN Web Docs — CSS layout
+    url: https://developer.mozilla.org/es/docs/Learn_web_development/Core/CSS_layout
+sidebar:
+  order: 5
+date: 2026-09-16
+updated: 2026-09-16
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+Una interfaz **responsive** se adapta al ancho de la pantalla: una columna en el móvil, dos en la tableta, cuatro en el escritorio. En CSS eso son *media queries*; en Tailwind es un **prefijo** delante de cualquier clase: `md:grid-cols-2` significa "desde 768 px, dos columnas". Este apartado junta todo lo anterior (utilidades, flex, grid) y lo hace cambiar según el tamaño. Es el núcleo de la unidad.
+
+<CardGrid stagger>
+	<Card title="Mobile-first" icon="seti:smarty">
+		Las clases sin prefijo se aplican **siempre**. Los prefijos añaden cambios **a partir de** un ancho. Diseñas primero el móvil.
+	</Card>
+	<Card title="Breakpoints" icon="setting">
+		`sm` 640 · `md` 768 · `lg` 1024 · `xl` 1280 · `2xl` 1536 píxeles. Cinco umbrales; con dos o tres basta.
+	</Card>
+	<Card title="Cualquier clase" icon="approve-check">
+		Layout, tamaño, color, tipografía, visibilidad: todo acepta prefijo. `lg:hidden`, `md:text-xl`, `sm:flex-row`.
+	</Card>
+</CardGrid>
+
+## Mobile-first: cómo funcionan los prefijos
+
+Cada prefijo genera una media query de **ancho mínimo**:
+
+| Prefijo | CSS | Se aplica |
+| --- | --- | --- |
+| *(ninguno)* | — | siempre, desde 0 px |
+| `sm:` | `@media (width >= 640px)` | tabletas pequeñas en horizontal y mayores |
+| `md:` | `@media (width >= 768px)` | tabletas y mayores |
+| `lg:` | `@media (width >= 1024px)` | portátiles y mayores |
+| `xl:` | `@media (width >= 1280px)` | escritorio |
+| `2xl:` | `@media (width >= 1536px)` | pantallas grandes |
+
+La consecuencia importante: `md:flex-row` no significa "en tableta", significa "**desde** tableta **hacia arriba**". Una clase con prefijo sigue activa en todos los anchos mayores, hasta que otro prefijo mayor la sustituya.
+
+```html
+<div class="flex flex-col gap-4 md:flex-row">
+	<div class="flex-1 bg-indigo-300 p-4">Izquierda</div>
+	<div class="flex-1 bg-indigo-400 p-4">Derecha</div>
+</div>
+```
+
+Léelo así: "columna (móvil); desde 768 px, fila". Estrecha y ensancha la ventana para verlo cambiar exactamente en 768 px.
+
+<Aside type="caution" title="El error más común: pensar en 'móvil' como excepción">
+	`sm:` **no** es "solo en móvil". Es "desde 640 px". Si escribes `sm:hidden` para ocultar algo en móvil, lo estás ocultando en **todo menos** en móvil. Para el móvil se escriben las clases **sin prefijo**, y los prefijos añaden lo que cambia al crecer.
+</Aside>
+
+## Apilar breakpoints
+
+Puedes usar varios prefijos en el mismo elemento; cada uno toma el relevo al superar su ancho:
+
+```html
+<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+	<div class="bg-purple-300 p-4">1</div>
+	<div class="bg-purple-400 p-4">2</div>
+	<div class="bg-purple-500 p-4">3</div>
+	<div class="bg-purple-600 p-4">4</div>
+</div>
+```
+
+- 0–639 px: `grid-cols-1`
+- 640–1023 px: `sm:grid-cols-2`
+- 1024+ px: `lg:grid-cols-4`
+
+Entre `sm` y `lg` no hay `md:`, así que en 768–1023 siguen las dos columnas de `sm`. No hace falta repetir la clase en cada breakpoint.
+
+### Rango acotado: `max-*`
+
+Para aplicar algo **solo hasta** un ancho, existe el prefijo `max-`: `max-md:hidden` es "oculto por debajo de 768 px". Combinando ambos se acota un rango: `md:max-lg:text-sm` solo entre 768 y 1023.
+
+## Qué cosas cambian con el ancho
+
+<Tabs>
+	<TabItem label="Layout">
+		```html
+		<!-- columna en móvil, fila desde md -->
+		<div class="flex flex-col md:flex-row">…</div>
+
+		<!-- 1 → 2 → 3 columnas -->
+		<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3">…</div>
+
+		<!-- sidebar solo desde lg -->
+		<div class="grid grid-cols-1 lg:grid-cols-[250px_1fr]">…</div>
+		```
+	</TabItem>
+	<TabItem label="Tipografía y espacio">
+		```html
+		<h1 class="text-2xl font-bold md:text-4xl lg:text-5xl">Título que crece</h1>
+		<section class="p-4 md:p-8 lg:p-12">Más aire en pantallas grandes</section>
+		<p class="text-sm md:text-base">Texto</p>
+		```
+	</TabItem>
+	<TabItem label="Visibilidad">
+		```html
+		<!-- menú completo solo desde md; botón hamburguesa solo en móvil -->
+		<nav class="hidden md:flex md:gap-6">…</nav>
+		<button class="md:hidden">☰</button>
+
+		<!-- columna secundaria solo en pantallas grandes -->
+		<aside class="hidden xl:block">…</aside>
+		```
+
+		`hidden md:flex`: oculto por defecto, `display: flex` desde 768. `md:hidden`: visible por defecto, oculto desde 768. Son complementarios.
+	</TabItem>
+	<TabItem label="Orden y alineación">
+		```html
+		<div class="flex flex-col md:flex-row">
+			<img class="order-first md:order-last" src="…" alt="" />
+			<div>Texto: en móvil la imagen va arriba; en escritorio, a la derecha</div>
+		</div>
+
+		<div class="text-center md:text-left">Centrado en móvil, alineado en escritorio</div>
+		```
+	</TabItem>
+</Tabs>
+
+## Contenedores centrados
+
+En pantallas anchas el contenido no debe estirarse de borde a borde. El patrón es un ancho máximo, centrado, con padding lateral que crece:
+
+```html
+<div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+	<h1 class="text-3xl font-bold">Contenido</h1>
+	<p>Nunca más ancho que 72rem, centrado, con márgenes laterales que crecen.</p>
+</div>
+```
+
+| Clase | Efecto |
+| --- | --- |
+| `max-w-6xl` | ancho máximo de 72rem (1152 px) |
+| `mx-auto` | centrado horizontal |
+| `px-4 sm:px-6 lg:px-8` | 1rem de margen lateral en móvil, 1.5 en tableta, 2 en escritorio |
+
+Envuelve cada sección de la página con este contenedor y el resultado se ve bien desde 320 hasta 2560 px.
+
+<Aside type="note" title="La clase `container`">
+	Tailwind tiene una clase `container` que fija `max-width` al breakpoint actual (640, 768, 1024…), dando saltos al redimensionar. El patrón `mx-auto max-w-*` es más predecible y es el que usan la mayoría de proyectos; `container` la verás en código ajeno.
+</Aside>
+
+## Imágenes fluidas
+
+Una imagen con ancho fijo desborda en móvil. Las clases que la hacen adaptable:
+
+| Clase | CSS | Para qué |
+| --- | --- | --- |
+| `w-full` | `width: 100%` | ocupa el ancho del contenedor |
+| `h-auto` | `height: auto` | mantiene la proporción |
+| `max-w-full` | `max-width: 100%` | nunca supera al contenedor, pero no crece |
+| `object-cover` | `object-fit: cover` | rellena el hueco recortando |
+| `object-contain` | `object-fit: contain` | cabe entero, con bandas |
+| `aspect-video` / `aspect-square` | `aspect-ratio: 16/9` / `1/1` | reserva el espacio con proporción fija |
+
+```html
+<img class="h-auto w-full rounded-lg" src="https://picsum.photos/800/400" alt="Fluida" />
+
+<img class="aspect-video w-full object-cover" src="https://picsum.photos/800/600" alt="Recortada a 16:9" />
+
+<div class="grid grid-cols-2 gap-2 md:grid-cols-4">
+	<img class="aspect-square w-full object-cover" src="https://picsum.photos/300?1" alt="" />
+	<img class="aspect-square w-full object-cover" src="https://picsum.photos/300?2" alt="" />
+	<img class="aspect-square w-full object-cover" src="https://picsum.photos/300?3" alt="" />
+	<img class="aspect-square w-full object-cover" src="https://picsum.photos/300?4" alt="" />
+</div>
+```
+
+`aspect-square` + `object-cover` es la receta de las galerías: todas las miniaturas cuadradas sin deformar, sea cual sea la imagen original.
+
+## Probar el responsive
+
+<Steps>
+
+1. Abre las DevTools (`F12`) y activa el **modo dispositivo** con `Ctrl+Shift+M` (icono de móvil y tableta).
+2. En el desplegable de arriba elige *Responsive* y **arrastra** el borde para pasar por todos los anchos. Los breakpoints de Tailwind aparecen como cambios bruscos en 640, 768, 1024 y 1280.
+3. Prueba también los presets (*iPhone*, *iPad*): tienen las proporciones y densidades reales.
+4. Comprueba que **no hay scroll horizontal** en ningún ancho: es el síntoma de que algo (una imagen, una tabla, un `w-` fijo) desborda.
+5. Revisa que el texto se lee sin hacer zoom en 375 px, el ancho de móvil más habitual.
+
+</Steps>
+
+<Aside type="tip" title="Empieza por el móvil de verdad">
+	Diseña con la ventana estrecha, sin prefijos, hasta que se vea bien. Después ensancha y añade `md:` y `lg:` solo donde algo mejore con más espacio. Si empiezas por el escritorio y luego "arreglas" el móvil, acabas con el doble de clases y la mitad de sentido.
+</Aside>
+
+## Ejemplo completo: una sección hero
+
+```html
+<section class="bg-gray-50">
+	<div class="mx-auto grid max-w-6xl grid-cols-1 items-center gap-8 px-4 py-12 md:grid-cols-2 md:py-20 lg:px-8">
+		<div class="text-center md:text-left">
+			<h1 class="text-3xl font-bold tracking-tight md:text-5xl">Aprende a maquetar</h1>
+			<p class="mt-4 text-gray-600 md:text-lg">Flexbox, grid y responsive con Tailwind.</p>
+			<div class="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center md:justify-start">
+				<a class="rounded bg-blue-600 px-5 py-3 text-white hover:bg-blue-700" href="#">Empezar</a>
+				<a class="rounded border border-gray-300 px-5 py-3 hover:bg-gray-100" href="#">Ver temario</a>
+			</div>
+		</div>
+		<img class="aspect-video w-full rounded-xl object-cover shadow-lg" src="https://picsum.photos/800/450" alt="" />
+	</div>
+</section>
+```
+
+En móvil: una columna, texto centrado, botones apilados, imagen debajo. Desde 640: botones en fila. Desde 768: dos columnas, texto a la izquierda, título más grande. Cada cambio es un prefijo.
+
+## Resumen rápido
+
+<Tabs>
+	<TabItem label="Breakpoints">
+		```txt
+		(sin prefijo)  0+      móvil: la base
+		sm:            640+
+		md:            768+    tableta
+		lg:            1024+   portátil
+		xl:            1280+   escritorio
+		2xl:           1536+
+		max-md:        < 768   solo hasta
+		```
+	</TabItem>
+	<TabItem label="Patrones">
+		```txt
+		flex-col md:flex-row                    apilar → fila
+		grid-cols-1 sm:grid-cols-2 lg:grid-cols-4
+		hidden md:flex   /   md:hidden          mostrar / ocultar
+		mx-auto max-w-6xl px-4 sm:px-6 lg:px-8  contenedor
+		text-2xl md:text-4xl                    tipografía
+		w-full h-auto   aspect-video object-cover
+		```
+	</TabItem>
+</Tabs>
+
+## Convención práctica
+
+<Steps>
+
+1. **Sin prefijo = móvil.** Escribe primero la versión estrecha y añade prefijos solo para lo que cambia al crecer.
+2. Usa **dos o tres breakpoints** (`md`, `lg`, a veces `sm`); cinco es señal de diseño confuso.
+3. Toda sección va dentro de un **contenedor** `mx-auto max-w-* px-*`.
+4. Imágenes siempre **`w-full h-auto`** o con `aspect-* object-cover`; nunca ancho fijo en píxeles.
+5. Comprueba cada página en **375, 768 y 1280 px** y busca scroll horizontal.
+
+</Steps>
+
+## Ejercicios
+
+Resuélvelos en `src/05-responsive/exercises.html`. Trabaja con el modo dispositivo de las DevTools abierto.
+
+### Básicos
+
+1. Dos cajas en `flex flex-col` que pasen a `md:flex-row`. Anota a qué ancho exacto cambian.
+2. Una rejilla de 6 tarjetas: 1 columna, `sm:` 2, `lg:` 3. Después hazla con `auto-fit` y compara: ¿en qué anchos difieren?
+3. Un título con `text-xl sm:text-2xl md:text-4xl lg:text-6xl`. Un párrafo con `p-2 md:p-8`.
+4. Un `nav` con enlaces `hidden md:flex` y un botón ☰ `md:hidden`. Comprueba que nunca se ven los dos a la vez.
+5. Envuelve tres secciones en el contenedor `mx-auto max-w-4xl px-4 sm:px-6 lg:px-8` y comprueba en 1920 px que no se estiran.
+6. Una imagen de `https://picsum.photos/1200/600` con `w-full h-auto` y otra con `width="1200"` sin clases. Estrecha a 375 px y describe qué pasa con cada una.
+
+### Para pensar
+
+7. Este bloque intenta ocultar el `aside` en móvil, pero hace lo contrario. Explica en el README por qué y corrígelo:
+
+	```html
+	<aside class="block sm:hidden">Barra lateral</aside>
+	```
+
+8. Sin ejecutarlo, escribe en el README cómo se ve este elemento en 500, 700, 900 y 1100 px. Después compruébalo:
+
+	```html
+	<div class="bg-red-300 p-4 sm:bg-yellow-300 lg:bg-green-300">…</div>
+	```
+
+9. Reescribe el pie de página del reto de flexbox para que en móvil las tres columnas se apilen y la fila inferior centre el copyright y los iconos. ¿Cuántas clases con prefijo has necesitado? ¿Podrías reducirlas con `auto-fit`?
+10. Escribe con `max-md:` una regla que aplique `text-center` **solo** por debajo de 768 px, y la misma regla sin `max-`, usando la base y un prefijo `md:`. Anota cuál te parece más clara y por qué.
+
+### Reto
+
+Convierte el **panel de estadísticas** del reto de grid en responsive: en móvil todo en una columna (KPIs, gráfico, actividad, tabla, en ese orden); desde `sm:` los KPIs en 2 columnas; desde `lg:` la rejilla completa de 4 columnas con los `span` originales. La tabla, si tiene una `<table>` ancha, debe poder desplazarse en horizontal **dentro de su tarjeta** (`overflow-x-auto`) sin provocar scroll en la página. Comprueba en 375, 768 y 1280 px y documenta en el README qué prefijo cambia cada cosa.
+
+### Entrega
+
+<Steps>
+
+1. Copia en `src/05-responsive/index.html` los ejemplos de este apartado que hayas probado y confírmalos:
+
+	```bash
+	git add src/05-responsive/index.html
+	git commit -m "Añade ejemplos de diseño responsive"
+	```
+
+2. Resuelve los ejercicios en `src/05-responsive/exercises.html`, documéntalos en `src/05-responsive/README.md` y confírmalos en un commit aparte:
+
+	```bash
+	git add src/05-responsive/exercises.html src/05-responsive/README.md
+	git commit -m "Resuelve ejercicios de diseño responsive"
+	```
+
+3. Sube ambos commits a GitHub con `git push`.
+
+</Steps>
+
+## Siguientes pasos
+
+<CardGrid stagger>
+	<LinkCard
+		href="/jjcm/di/units/introduction/tailwind/06-components/"
+		title="Componentes"
+		description="Botones, tarjetas, formularios y navegación reutilizables."
+	/>
+	<LinkCard
+		href="https://tailwindcss.com/docs/responsive-design"
+		title="Responsive design (docs)"
+		description="Breakpoints, mobile-first, rangos y breakpoints personalizados."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Learn_web_development/Core/CSS_layout/Responsive_Design"
+		title="Diseño responsive (MDN)"
+		description="Media queries, unidades relativas e imágenes flexibles, sin framework."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.chrome.com/docs/devtools/device-mode"
+		title="Device mode (Chrome DevTools)"
+		description="Cómo simular dispositivos y anchos en el navegador."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+{/* Oculto hasta que el repositorio esté publicado. Para mostrarlo, quita este comentario.
+<Aside type="tip" title="Ejemplos ejecutables">
+	En el repositorio [dam-di-tailwind](https://github.com/IESJJCM/dam-di-tailwind) tienes este apartado en [`src/05-responsive/`](https://github.com/IESJJCM/dam-di-tailwind/tree/main/src/05-responsive): `index.html` con los ejemplos de los apuntes y `exercises.html` con los ejercicios. Clona, ejecuta `npm install` y `npm run watch`, y ábrelo con Live Server.
+</Aside>
+*/}

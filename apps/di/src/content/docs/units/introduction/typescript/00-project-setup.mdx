@@ -1,0 +1,416 @@
+---
+title: Preparar el proyecto
+description: Estructura del repositorio de apuntes de TypeScript, instalación del compilador, tsconfig y creación del repositorio en Git y GitHub.
+evaluations:
+  - id: RA1
+    statement: Genera interfaces gráficos de usuario mediante editores visuales utilizando las funcionalidades del editor y adaptando el código generado
+    criteria:
+      - Se han analizado las herramientas y librerías disponibles para la generación de interfaces gráficos.
+      - Se ha creado un interfaz gráfico utilizando las herramientas de un editor visual.
+    contents:
+      - Generación de interfaces de usuario
+sources:
+  - author: Microsoft — TypeScript Handbook
+    url: https://www.typescriptlang.org/docs/handbook/intro.html
+  - author: Fernando Herrera
+    url: https://cursos.devtalles.com/courses/typescript
+sidebar:
+  order: 0
+date: 2026-09-16
+updated: 2026-09-16
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	FileTree,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+Igual que en JavaScript, los ejemplos de esta unidad viven en un **repositorio propio**. La diferencia es que TypeScript **no se ejecuta directamente**: hay que **compilarlo** a JavaScript antes. Por eso este proyecto necesita `npm`, el compilador `tsc` y un archivo de configuración `tsconfig.json`.
+
+<CardGrid stagger>
+	<Card title="Un repositorio por unidad" icon="open-book">
+		Este repositorio contiene **solo** TypeScript. Tiene sus propias dependencias (`node_modules/`) y su propia configuración de compilación.
+	</Card>
+	<Card title="Compilar" icon="seti:typescript">
+		`tsc` lee `src/`, comprueba los tipos y escribe JavaScript en `dist/`. Ese JavaScript es lo que ejecuta Node.
+	</Card>
+	<Card title="Git y GitHub" icon="github">
+		Mismo flujo que en JavaScript: historial local con commits pequeños y copia remota para entregar.
+	</Card>
+</CardGrid>
+
+<Aside type="note" title="Requisitos previos">
+	Necesitas **Node.js** (con `npm`) y **Git** instalados y configurados. VS Code incluye soporte de TypeScript de serie: no hace falta ninguna extensión. Si te falta algo, pasa por [Instalaciones](/jjcm/di/installations/). Si ya hiciste la unidad de JavaScript, la parte de Git te resultará idéntica.
+</Aside>
+
+## Estructura del repositorio
+
+Misma idea que en JavaScript, **una carpeta por apartado**, con dos añadidos: los archivos de configuración de npm y TypeScript en la raíz, y una carpeta `dist/` que genera el compilador y que **no se sube** al repositorio.
+
+<FileTree>
+
+- di-typescript/
+  - .gitignore
+  - README.md
+  - package.json          dependencias y scripts de npm
+  - tsconfig.json         configuración del compilador
+  - src/
+    - **01-introduction/**
+      - examples.ts       código explicado en los apuntes
+      - exercises.ts      espacio para practicar
+      - README.md         explicación de tus soluciones
+    - 02-basic-types/
+    - 03-interfaces-and-types/
+    - 04-functions/
+    - 05-unions-and-narrowing/
+    - 06-generics/
+    - **07-classes-and-modules/**
+      - examples.ts
+      - shapes.ts         módulo auxiliar que se importa
+      - exercises.ts
+      - README.md
+    - 08-tsconfig/
+  - dist/                 generado por tsc, ignorado por Git
+  - node_modules/         dependencias, ignorado por Git
+
+</FileTree>
+
+<Aside type="tip" title="El nombre del repositorio">
+	En los ejemplos se usa **`di-typescript`**, siguiendo el patrón del resto de unidades. Si tu profesor indica otro nombre, sustitúyelo en todos los comandos.
+</Aside>
+
+### Qué cambia respecto a JavaScript
+
+<Steps>
+
+1. **Extensión `.ts`** en lugar de `.js`. El navegador y Node no la entienden: por eso existe el paso de compilación.
+2. **`dist/` es un espejo de `src/`** generado por `tsc`: `src/02-basic-types/examples.ts` se convierte en `dist/02-basic-types/examples.js`. Nunca edites `dist/`; se regenera en cada compilación.
+3. **No hay `index.html` ni Live Server.** Los ejemplos se ejecutan con Node en la terminal, así ves la salida y los errores de tipos en el mismo sitio.
+4. **`package.json` y `node_modules/`** aparecen porque TypeScript es una dependencia del proyecto, igual que lo será React más adelante.
+
+</Steps>
+
+## Crear la estructura
+
+Abre una terminal en la carpeta donde guardes tus proyectos del módulo y ejecuta los comandos de tu sistema.
+
+<Tabs>
+	<TabItem label="Linux / macOS / Git Bash" icon="lucide:terminal">
+		```bash
+		mkdir -p di-typescript/src
+		cd di-typescript
+		touch .gitignore README.md
+
+		for apartado in 01-introduction 02-basic-types 03-interfaces-and-types 04-functions \
+		                05-unions-and-narrowing 06-generics 07-classes-and-modules 08-tsconfig; do
+		  mkdir -p "src/$apartado"
+		  touch "src/$apartado/examples.ts" "src/$apartado/exercises.ts" "src/$apartado/README.md"
+		done
+
+		touch src/07-classes-and-modules/shapes.ts
+		```
+	</TabItem>
+	<TabItem label="Windows (PowerShell)" icon="lucide:monitor">
+		```powershell
+		mkdir di-typescript\src
+		cd di-typescript
+		ni .gitignore, README.md
+
+		$apartados = "01-introduction","02-basic-types","03-interfaces-and-types","04-functions",
+		             "05-unions-and-narrowing","06-generics","07-classes-and-modules","08-tsconfig"
+
+		foreach ($a in $apartados) {
+		  ni -ItemType Directory -Force "src\$a"
+		  ni -ItemType File -Force "src\$a\examples.ts", "src\$a\exercises.ts", "src\$a\README.md"
+		}
+
+		ni src\07-classes-and-modules\shapes.ts
+		```
+	</TabItem>
+</Tabs>
+
+### Instalar TypeScript
+
+TypeScript se instala **en el proyecto**, no en el sistema, como dependencia de desarrollo. Así cada proyecto fija su versión y cualquiera que clone el repositorio obtiene la misma.
+
+<Steps>
+
+1. **Inicializa** `package.json` con los valores por defecto:
+
+	```bash
+	npm init -y
+	```
+
+2. **Instala** el compilador como dependencia de desarrollo (`-D`):
+
+	```bash
+	npm install -D typescript
+	```
+
+3. **Comprueba** la versión instalada. `npx` ejecuta el `tsc` del proyecto, no uno global:
+
+	```bash
+	npx tsc --version
+	```
+
+</Steps>
+
+Verás que aparecen `node_modules/` y `package-lock.json`. El primero **no se sube** al repositorio (lo excluye `.gitignore`); el segundo **sí**, porque fija las versiones exactas.
+
+### `package.json`
+
+Abre el archivo que ha creado `npm init` y déjalo así. Lo importante son `"type": "module"`, para que Node ejecute el resultado como módulos ES, y los dos **scripts**:
+
+```json title="package.json" {5,7-8}
+{
+	"name": "di-typescript",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"build": "tsc",
+		"watch": "tsc --watch"
+	},
+	"devDependencies": {
+		"typescript": "^7.0.0"
+	}
+}
+```
+
+<Aside type="note" title="La versión puede variar">
+	Deja en `devDependencies` la versión que te haya instalado `npm`; no la cambies a mano por la del ejemplo.
+</Aside>
+
+### `tsconfig.json`
+
+Le dice a `tsc` **qué compilar, cómo y dónde dejarlo**. Cada opción se explica en el apartado [tsconfig y buenas prácticas](/jjcm/di/units/introduction/typescript/08-tsconfig/); de momento cópialo tal cual en la raíz del proyecto.
+
+```json title="tsconfig.json"
+{
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "NodeNext",
+		"rootDir": "src",
+		"outDir": "dist",
+		"strict": true,
+		"skipLibCheck": true
+	},
+	"include": ["src"]
+}
+```
+
+<Aside type="note" title="Cada archivo es un módulo">
+	Con `"type": "module"` en `package.json` y `"module": "NodeNext"`, TypeScript trata **cada archivo** `.ts` como un módulo ES con su propio ámbito. Por eso puedes declarar `const nombre` en `01-introduction/examples.ts` y también en `02-basic-types/examples.ts` sin que choquen. Si alguna vez ves el error `Cannot redeclare block-scoped variable`, es que los archivos se están tratando como scripts globales: revisa que `package.json` tenga `"type": "module"`.
+</Aside>
+
+### `.gitignore`
+
+```bash title=".gitignore"
+# Dependencias: se reinstalan con npm install
+node_modules/
+
+# Salida del compilador: se regenera con npm run build
+dist/
+
+# Sistema operativo y editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+
+# Logs
+*.log
+```
+
+<Aside type="note" title="Por qué `dist/` no se sube">
+	Es código **generado**: cualquiera puede reproducirlo compilando. Subirlo duplica el contenido, provoca conflictos en cada commit y, peor, permite que alguien edite el `.js` y pierda los cambios en la siguiente compilación. Al repositorio va la **fuente** (`src/`) y la **receta** para generar el resto (`package.json`, `tsconfig.json`).
+</Aside>
+
+### Documentar las soluciones
+
+Cada apartado tiene un `README.md` donde **explicas** tus soluciones a los ejercicios: título del ejercicio, explicación con tus palabras y código final en un bloque `ts`. Es el mismo formato que en JavaScript; tienes la plantilla y las indicaciones en [Preparar el proyecto de JavaScript](/jjcm/di/units/introduction/javascript/00-project-setup/#documentar-las-soluciones).
+
+## Compilar y ejecutar
+
+El ciclo tiene **dos pasos** que en JavaScript no existían: compilar y ejecutar lo compilado.
+
+<Steps>
+
+1. Escribe algo en `src/01-introduction/examples.ts`:
+
+	```ts
+	const saludo: string = "Hola, TypeScript";
+	console.log(saludo);
+	```
+
+2. **Compila** todo el proyecto. Si no hay errores, el comando no muestra nada y aparece `dist/`:
+
+	```bash
+	npm run build
+	```
+
+3. **Ejecuta** el JavaScript generado con Node:
+
+	```bash
+	node dist/01-introduction/examples.js
+	```
+
+4. Abre `dist/01-introduction/examples.js` y compáralo con el `.ts`: verás que la anotación `: string` **ha desaparecido**. Los tipos solo existen mientras compilas.
+
+</Steps>
+
+<Aside type="tip" title="Compilar automáticamente al guardar">
+	Abre una **segunda terminal** y deja corriendo `npm run watch`. `tsc` se queda vigilando `src/` y recompila cada vez que guardas, mostrando los errores al instante. En la primera terminal solo tienes que ejecutar `node dist/...`.
+</Aside>
+
+<Aside type="caution" title="Un error de tipos no impide compilar">
+	Por defecto, `tsc` **emite el JavaScript aunque haya errores** de tipos: los muestra en la terminal y aun así genera `dist/`. Es intencionado (permite migrar código poco a poco), pero para aprender es mejor tratar cada error como bloqueante: no ejecutes hasta que `npm run build` termine sin mensajes.
+</Aside>
+
+<Aside type="note" title="Alternativa: ejecutar sin compilar">
+	Node 22.6 y posteriores pueden ejecutar `.ts` directamente con `node --experimental-strip-types archivo.ts` (en Node 24 ya no necesita la bandera). Simplemente **borra los tipos** sin comprobarlos, así que sirve para probar rápido pero **no sustituye** a `tsc`: sin compilar no verás los errores, que es justo lo que queremos aprender.
+</Aside>
+
+## Formatear el código
+
+Se aplica lo mismo que en JavaScript: el formateador integrado de VS Code entiende TypeScript sin instalar nada. Activa **Format On Save** y olvídate; las instrucciones están en [Formatear el código](/jjcm/di/units/introduction/javascript/00-project-setup/#formatear-el-código). Prettier y ESLint siguen quedando para más adelante.
+
+## Crear el repositorio Git
+
+<Steps>
+
+1. Sitúate en la raíz del proyecto e **inicializa** el repositorio:
+
+	```bash
+	git init
+	```
+
+2. **Comprueba** que `node_modules/` y `dist/` **no** aparecen en la lista. Si aparecen, revisa `.gitignore` antes de seguir:
+
+	```bash
+	git status
+	```
+
+3. **Prepara y confirma** el primer commit:
+
+	```bash
+	git add .
+	git commit -m "Estructura inicial de los apuntes de TypeScript"
+	```
+
+4. **Revisa** el historial:
+
+	```bash
+	git log --oneline
+	```
+
+</Steps>
+
+## Publicar en GitHub
+
+<Tabs>
+	<TabItem label="Desde la web" icon="lucide:globe">
+
+		<Steps>
+
+		1. Entra en [github.com/new](https://github.com/new), pon **`di-typescript`** como nombre y **no marques** ninguna opción de *Initialize this repository*.
+		2. Pulsa **Create repository** y **enlaza** el remoto desde tu terminal, sustituyendo `TU-USUARIO`:
+
+			```bash
+			git remote add origin https://github.com/TU-USUARIO/di-typescript.git
+			git branch -M main
+			git push -u origin main
+			```
+
+		3. **Recarga** la página de GitHub: debe aparecer `src/`, `package.json` y `tsconfig.json`, pero **no** `dist/` ni `node_modules/`.
+
+		</Steps>
+
+	</TabItem>
+	<TabItem label="Con GitHub CLI" icon="lucide:terminal">
+
+		```bash
+		gh auth login
+		gh repo create di-typescript --public --source=. --remote=origin --push
+		gh repo view --web
+		```
+
+	</TabItem>
+</Tabs>
+
+<Aside type="tip" title="Clonar en otro equipo">
+	Como `node_modules/` no está en el repositorio, después de `git clone` hay que ejecutar **`npm install`** para reinstalar TypeScript. Es el paso que olvida todo el mundo la primera vez.
+</Aside>
+
+## Flujo de trabajo diario
+
+<Steps>
+
+1. Arranca `npm run watch` en una terminal y déjalo ahí.
+2. **Escribe** en `examples.ts` o `exercises.ts`, guarda y mira si `tsc` se queja.
+3. **Ejecuta** el resultado: `node dist/<apartado>/exercises.js`.
+4. **Registra** el trabajo y **súbelo**:
+
+	```bash
+	git add .
+	git commit -m "Resuelve ejercicios de tipos básicos"
+	git push
+	```
+
+</Steps>
+
+## Comprobación final
+
+<Steps>
+
+1. `node --version` y `npx tsc --version` responden con un número de versión.
+2. `src/` contiene las ocho carpetas numeradas, cada una con `examples.ts`, `exercises.ts` y `README.md`.
+3. `npm run build` termina sin mensajes y crea `dist/` con la misma estructura que `src/`.
+4. `node dist/01-introduction/examples.js` imprime `Hola, TypeScript`.
+5. `git status` **no** muestra `dist/` ni `node_modules/`.
+6. `git remote -v` muestra `origin` apuntando a tu repositorio de GitHub.
+
+</Steps>
+
+## Siguientes pasos
+
+<CardGrid stagger>
+	<LinkCard
+		href="/jjcm/di/units/introduction/typescript/01-introduction/"
+		title="Introducción a TypeScript"
+		description="Qué aporta el tipado estático y cómo trabaja el compilador."
+	/>
+	<LinkCard
+		href="/jjcm/di/units/introduction/javascript/00-project-setup/"
+		title="Preparar el proyecto (JavaScript)"
+		description="Git, GitHub, formateo y documentación de soluciones, explicados con más detalle."
+	/>
+	<LinkCard
+		href="https://www.typescriptlang.org/download/"
+		title="Instalar TypeScript (docs oficiales)"
+		description="Opciones de instalación y uso con npm."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://www.typescriptlang.org/tsconfig/"
+		title="Referencia de tsconfig"
+		description="Todas las opciones del compilador, explicadas una a una."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
