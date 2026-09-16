@@ -17,7 +17,7 @@ sources:
 sidebar:
   order: 3
 date: 2026-03-21
-updated: 2026-03-21
+updated: 2026-09-16
 author:
   name: Germán Carreño
   email: germanach@educastur.com
@@ -503,6 +503,93 @@ const procesarTexto = pipe(trim, lower, guionizar);
 
 console.log(procesarTexto("  Hola Mundo Cruel  ")); // "hola-mundo-cruel"
 ```
+
+## Ejercicios
+
+Resuélvelos en `src/03-functions/exercises.js`. Para cada función, añade al menos dos llamadas con `console.log` que demuestren que funciona.
+
+### Básicos
+
+1. Crea una **declaración de función** `saludar(nombre)` que devuelva `"Hola, <nombre>"`.
+2. Crea una **expresión de función** `sumar(a, b)` que devuelva la suma de dos números.
+3. Crea una **arrow function** `multiplicar(a, b)` con retorno implícito (sin llaves ni `return`).
+4. Crea una arrow function `esMayorDeEdad(edad)` que devuelva `true` si la edad es mayor o igual a 18 y `false` en caso contrario.
+5. Modifica `saludar` para que, si no se pasa nombre, salude a `"invitado"` usando un **parámetro por defecto**.
+
+	Salida esperada:
+
+	```txt
+	Hola, Ana
+	Hola, invitado
+	```
+
+6. Crea `sumarTodos(...numeros)` con **rest parameters** que devuelva la suma de cualquier cantidad de argumentos.
+
+	```txt
+	sumarTodos(1, 2, 3)        → 6
+	sumarTodos(10, 20, 30, 40) → 100
+	sumarTodos()               → 0
+	```
+
+### Para pensar
+
+7. Predice qué ocurre en cada `console.log` **antes** de ejecutar. Uno de los dos falla: explica en un comentario cuál y por qué, usando el concepto de **hoisting**.
+
+	```js
+	console.log(cuadrado(3));
+	function cuadrado(n) {
+		return n * n;
+	}
+
+	console.log(cubo(3));
+	const cubo = n => n ** 3;
+	```
+
+8. Escribe `crearContador()` que devuelva un objeto con los métodos `incrementar`, `valor` y `reiniciar`. Crea **dos contadores** independientes y demuestra que incrementar uno no afecta al otro. Explica en un comentario qué es lo que "recuerda" cada contador.
+9. Escribe `repetir(fn, veces)` que reciba una función y la ejecute `veces` veces. Pruébala pasándole una arrow function que imprima un mensaje.
+10. Escribe `multiplicador(factor)` que devuelva una función. Úsala para crear `doble` y `triple` y aplícalas a varios números.
+
+### Reto
+
+Escribe `crearCalculadora()` que devuelva un objeto con los métodos `sumar(a, b)`, `restar(a, b)`, `multiplicar(a, b)` y `dividir(a, b)`. Cada operación debe **guardar un registro** en un historial interno al que **no se pueda acceder directamente**, solo a través de un método `historial()` que devuelva una copia.
+
+```js
+const calc = crearCalculadora();
+calc.sumar(3, 4);
+calc.multiplicar(2, 5);
+calc.dividir(10, 0);
+console.log(calc.historial());
+```
+
+Salida esperada:
+
+```txt
+["3 + 4 = 7", "2 × 5 = 10", "10 / 0 = Error: división por cero"]
+```
+
+Pista: es el mismo patrón que `crearContador`, pero el estado privado es un array.
+
+### Entrega
+
+<Steps>
+
+1. Copia en `src/03-functions/examples.js` los ejemplos de este apartado que hayas probado y confírmalos:
+
+	```bash
+	git add src/03-functions/examples.js
+	git commit -m "Añade ejemplos de funciones"
+	```
+
+2. Resuelve los ejercicios en `src/03-functions/exercises.js`, documéntalos en `src/03-functions/README.md` y confírmalos en un commit aparte:
+
+	```bash
+	git add src/03-functions/exercises.js src/03-functions/README.md
+	git commit -m "Resuelve ejercicios de funciones"
+	```
+
+3. Sube ambos commits a GitHub con `git push`.
+
+</Steps>
 
 ## Siguientes pasos
 

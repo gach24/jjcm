@@ -17,7 +17,7 @@ sources:
 sidebar:
   order: 6
 date: 2026-03-21
-updated: 2026-03-21
+updated: 2026-09-16
 author:
   name: Germán Carreño
   email: germanach@educastur.com
@@ -679,6 +679,80 @@ console.log(`Total: ${moneda(obtenerTotal())}`);
 4. Crea **archivos barril** (`index.js`) para agrupar exportaciones de una carpeta, pero no abuses de ellos en proyectos muy grandes.
 5. Aprovecha `import()` dinámico para **code splitting**: carga módulos pesados solo cuando se necesiten.
 6. Prefiere **módulos pequeños y enfocados** (una responsabilidad) frente a archivos monolíticos de cientos de líneas.
+
+</Steps>
+
+## Ejercicios
+
+Este apartado es distinto: cada ejercicio necesita **más de un archivo**. Crea los módulos que se piden dentro de `src/06-modules/` e impórtalos desde `exercises.js`. Para ejecutarlos, cambia el `src` del `<script>` de `index.html` a `./exercises.js`.
+
+<Aside type="caution" title="Recuerda la extensión">
+	En el navegador, sin bundler, los imports deben llevar la extensión: `from "./operations.js"`, no `from "./operaciones"`.
+</Aside>
+
+### Básicos
+
+1. Crea `constants.js` que exporte con nombre `APP_NAME`, `VERSION` y `AUTOR`. Impórtalas en `exercises.js` y muéstralas en consola.
+2. En `operations.js` crea y exporta las funciones `sumar`, `restar`, `multiplicar` y `dividir`. Impórtalas y prueba varias operaciones.
+3. Crea `greetings.js` con una **exportación por defecto**: la función `saludar(nombre)`. Impórtala con un nombre distinto al original y úsala con tu nombre.
+4. Crea `utils.js` que exporte con nombre la constante `SEPARADOR` y la función `mayusculas(texto)`, y por defecto una función `primero(array)` que devuelva el primer elemento. Importa **default y named en la misma línea** y pruébalo.
+
+### Para pensar
+
+5. En `math.js` exporta `areaCirculo(radio)` y `areaCuadrado(lado)`. Impórtalas con los **alias** `circulo` y `cuadrado` y calcula el área de un círculo de radio 5 y de un cuadrado de lado 4.
+
+	Salida esperada (redondeando a dos decimales):
+
+	```txt
+	78.54
+	16
+	```
+
+6. En `people.js` exporta varias constantes con nombres de personas. Impórtalas **todas como namespace** (`import * as personas`) y recórrelas con `Object.values(personas)`.
+7. Provoca a propósito estos dos errores, anota en un comentario el mensaje exacto de la consola y vuelve a dejarlo correcto:
+	- Quita `type="module"` del `<script>` en `index.html`.
+	- Importa `sumar` de `operations.js` **sin llaves**.
+8. Crea la carpeta `validators/` con `email.js` y `phone.js`, cada uno exportando su función de validación, y un `index.js` que las **re-exporte**. En `exercises.js` importa las dos desde `./validators/index.js`.
+
+### Reto
+
+Monta una mini aplicación de tareas con tres archivos:
+
+- `models/Task.js` exporta por defecto una clase `Task` con `titulo`, `completada` (por defecto `false`) y un método `completar()`.
+- `services/tasks.js` mantiene un array **privado** (no exportado) y exporta `agregar(titulo)`, `completar(titulo)`, `pendientes()` y `listar()`. `listar` debe devolver una **copia** del array, no el original.
+- `exercises.js` importa el servicio, añade tres tareas, completa una y muestra las pendientes.
+
+Salida esperada:
+
+```txt
+Pendientes: 2
+- Estudiar módulos
+- Hacer commit
+```
+
+Comprueba que desde `exercises.js` **no puedes** modificar el array interno: añade un elemento al resultado de `listar()` y verifica que `pendientes()` no cambia.
+
+### Entrega
+
+Este apartado genera varios archivos nuevos; confírmalos todos en los dos commits habituales. `git add src/06-modules` recoge la carpeta completa.
+
+<Steps>
+
+1. Copia en `src/06-modules/examples.js` y `src/06-modules/operations.js` los ejemplos de este apartado que hayas probado y confírmalos:
+
+	```bash
+	git add src/06-modules/examples.js src/06-modules/operations.js
+	git commit -m "Añade ejemplos de módulos"
+	```
+
+2. Resuelve los ejercicios, documéntalos en `README.md` y confirma **todos** los módulos que hayas creado en un commit aparte:
+
+	```bash
+	git add src/06-modules
+	git commit -m "Resuelve ejercicios de módulos"
+	```
+
+3. Sube ambos commits a GitHub con `git push` y comprueba en el navegador que las carpetas `validators/`, `models/` y `services/` aparecen en tu repositorio.
 
 </Steps>
 

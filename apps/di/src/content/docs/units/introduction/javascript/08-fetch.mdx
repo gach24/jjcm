@@ -17,7 +17,7 @@ sources:
 sidebar:
   order: 8
 date: 2026-03-22
-updated: 2026-03-22
+updated: 2026-09-16
 author:
   name: Germán Carreño
   email: germanach@educastur.com
@@ -154,6 +154,70 @@ fetch("https://jsonplaceholder.typicode.com/users", {
 3. **Maneja el JSON con cuidado**: `res.json()` también puede fallar si el servidor devuelve un cuerpo mal formado.
 4. **Encapsula en servicios**: Mantén la lógica de red fuera de tus componentes de interfaz.
 5. **Considera la seguridad**: No expongas tokens de API en el código cliente (usa variables de entorno `.env`).
+
+</Steps>
+
+## Ejercicios
+
+Resuélvelos en `src/08-fetch/exercises.js`. Usa las APIs públicas [JSONPlaceholder](https://jsonplaceholder.typicode.com/) y [Fake Store API](https://fakestoreapi.com/): no necesitan registro ni clave. Recuerda que `fetch` **solo funciona con Live Server**, no abriendo el HTML con doble clic.
+
+### Básicos
+
+1. Descarga `https://jsonplaceholder.typicode.com/users/1` con `then` e imprime el `name` y el `email` del usuario.
+2. Reescribe el ejercicio anterior con **`async/await`**, validando `response.ok` y capturando errores con `try/catch`. Pruébalo después con `users/999`: debe mostrar un mensaje de error HTTP, no romper la página.
+3. Escribe `obtenerJson(url)` que encapsule `fetch`, la comprobación de `ok` y el `.json()`. Reutilízala en el resto de ejercicios.
+4. Descarga `/posts`, quédate con los de `userId = 1` y devuelve un array con sus **títulos en mayúsculas**.
+5. Envía un **POST** a `/posts` con un objeto `{ title, body, userId }` y muestra el `id` que devuelve la respuesta.
+
+	Salida esperada:
+
+	```txt
+	101
+	```
+
+### Para pensar
+
+6. Descarga los productos de `https://fakestoreapi.com/products` y calcula con `reduce` el **precio total** de los que tienen `category` igual a `"electronics"`.
+7. Descarga **usuarios** y **posts** en paralelo con `Promise.all`. Devuelve un array de objetos `{ userName, postsCount }` ordenado de forma **descendente** por `postsCount`.
+8. Descarga `/comments`, filtra los que contengan `"qui"` en `body` (sin distinguir mayúsculas), pasa `email` a minúsculas y ordena por `postId` ascendente y, a igualdad, por `email` ascendente.
+9. Ejecuta estas dos peticiones y explica en un comentario por qué **una** entra en el `catch` directamente y la **otra** no, aunque ambas "fallan":
+
+	```js
+	fetch("https://jsonplaceholder.typicode.com/posts/999999");
+	fetch("https://este-dominio-no-existe.invalid/posts");
+	```
+
+### Reto
+
+Lleva los datos a la **página**, no solo a la consola. En `src/08-fetch/index.html` añade un botón `<button id="recargar">Recargar</button>` y una lista `<ul id="usuarios"></ul>`. En `exercises.js`:
+
+1. Escribe `renderizarUsuarios()` que muestre `"Cargando..."` en la lista, descargue `/users` y pinte un `<li>` por usuario con su nombre y su email.
+2. Si la petición falla, la lista debe mostrar el mensaje de error en lugar de quedarse vacía.
+3. Conecta el botón con `addEventListener("click", renderizarUsuarios)` y llama a la función una vez al cargar.
+
+Pista: en el apartado de promesas tienes un ejemplo muy parecido, `renderizarUsuarios`, en la sección de `async/await`.
+
+### Entrega
+
+Este apartado modifica también el `index.html`; inclúyelo en el commit de ejercicios.
+
+<Steps>
+
+1. Copia en `src/08-fetch/examples.js` los ejemplos de este apartado que hayas probado y confírmalos:
+
+	```bash
+	git add src/08-fetch/examples.js
+	git commit -m "Añade ejemplos de Fetch API"
+	```
+
+2. Resuelve los ejercicios, documéntalos en `README.md` y confirma el código, la página y la documentación en un commit aparte:
+
+	```bash
+	git add src/08-fetch/exercises.js src/08-fetch/index.html src/08-fetch/README.md
+	git commit -m "Resuelve ejercicios de Fetch API"
+	```
+
+3. Sube ambos commits a GitHub con `git push`. Con esto la unidad queda **completa** en tu repositorio: comprueba que las ocho carpetas de `src/` tienen sus dos archivos con contenido.
 
 </Steps>
 
