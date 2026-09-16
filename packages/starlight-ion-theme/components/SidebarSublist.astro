@@ -5,6 +5,7 @@ import {
   type SidebarEntry,
 } from "starlight-ion-theme/utils/navigation.js";
 import Badge from "./Badge.astro";
+import SidebarRestorePoint from "@astrojs/starlight/components/SidebarRestorePoint.astro";
 import { icons } from "ion:globals";
 
 interface Props {
@@ -113,6 +114,7 @@ const { sublist, nested, nestedCount } = Astro.props;
                   size="1.125rem"
                 />
               </summary>
+              <SidebarRestorePoint />
               <Astro.self
                 sublist={entry.entries}
                 nested
