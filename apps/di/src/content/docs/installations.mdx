@@ -94,7 +94,7 @@ Git es el sistema de control de versiones que usarás durante todo el módulo pa
     <li><strong>Descarga</strong> el instalador desde <a href="https://git-scm.com/downloads/win">git-scm.com/downloads/win</a> (elige la versión de 64 bits).</li>
     <li><strong>Ejecuta</strong> el instalador y sigue el asistente. Puedes dejar las opciones por defecto, pero asegúrate de que está marcada la opción <strong>Git from the command line and also from 3rd-party software</strong>.</li>
     <li><strong>Elige</strong> Visual Studio Code como editor por defecto cuando el asistente lo pregunte. Así los mensajes de commit se abrirán en el editor que ya conoces.</li>
-    <li><strong>Comprueba</strong> que funciona abriendo una terminal nueva y ejecutando <code>git --version</code>. Deberías ver el número de versión instalada.</li>
+    <li><strong>Comprueba</strong> que funciona abriendo una terminal nueva y ejecutando `git --version`. Deberías ver el número de versión instalada.</li>
   </ol>
 </Steps>
 
@@ -110,9 +110,9 @@ El instalador de Windows incluye **Git Bash**, una terminal con comandos de esti
 
 <Steps>
   <ol>
-    <li><strong>Abre</strong> la aplicación Terminal y ejecuta <code>git --version</code>. Si macOS te ofrece instalar las <em>Command Line Tools</em>, acepta: es la forma más sencilla de tener Git.</li>
-    <li><strong>Alternativa con Homebrew</strong>: si ya tienes <a href="https://brew.sh/">Homebrew</a>, ejecuta <code>brew install git</code> para obtener una versión más reciente que la del sistema.</li>
-    <li><strong>Comprueba</strong> de nuevo con <code>git --version</code> que el comando responde correctamente.</li>
+    <li><strong>Abre</strong> la aplicación Terminal y ejecuta `git --version`. Si macOS te ofrece instalar las <em>Command Line Tools</em>, acepta: es la forma más sencilla de tener Git.</li>
+    <li><strong>Alternativa con Homebrew</strong>: si ya tienes <a href="https://brew.sh/">Homebrew</a>, ejecuta `brew install git` para obtener una versión más reciente que la del sistema.</li>
+    <li><strong>Comprueba</strong> de nuevo con `git --version` que el comando responde correctamente.</li>
   </ol>
 </Steps>
 
@@ -124,8 +124,8 @@ El instalador de Windows incluye **Git Bash**, una terminal con comandos de esti
 
 <Steps>
   <ol>
-    <li><strong>Instala</strong> el paquete con el gestor de tu distribución: <code>sudo apt install git</code> en Debian o Ubuntu, <code>sudo dnf install git</code> en Fedora, <code>sudo pacman -S git</code> en Arch.</li>
-    <li><strong>Comprueba</strong> que funciona ejecutando <code>git --version</code> en la terminal.</li>
+    <li><strong>Instala</strong> el paquete con el gestor de tu distribución: `sudo apt install git` en Debian o Ubuntu, `sudo dnf install git` en Fedora, `sudo pacman -S git` en Arch.</li>
+    <li><strong>Comprueba</strong> que funciona ejecutando `git --version` en la terminal.</li>
   </ol>
 </Steps>
 
@@ -139,10 +139,10 @@ Después de instalar Git hay que indicarle **quién eres**. Estos datos se guard
 
 <Steps>
   <ol>
-    <li><strong>Configura</strong> tu nombre: <code>git config --global user.name "Tu Nombre"</code></li>
-    <li><strong>Configura</strong> tu correo: <code>git config --global user.email "tu@correo.com"</code></li>
-    <li><strong>Establece</strong> el nombre de la rama principal: <code>git config --global init.defaultBranch main</code></li>
-    <li><strong>Revisa</strong> el resultado con <code>git config --list</code>. Deberías ver las tres claves que acabas de definir.</li>
+    <li><strong>Configura</strong> tu nombre: `git config --global user.name "Tu Nombre"`</li>
+    <li><strong>Configura</strong> tu correo: `git config --global user.email "tu@correo.com"`</li>
+    <li><strong>Establece</strong> el nombre de la rama principal: `git config --global init.defaultBranch main`</li>
+    <li><strong>Revisa</strong> el resultado con `git config --list`. Deberías ver las tres claves que acabas de definir.</li>
   </ol>
 </Steps>
 
@@ -165,9 +165,9 @@ Node.js permite ejecutar JavaScript fuera del navegador. Es la base de las herra
 <Steps>
   <ol>
     <li><strong>Descarga</strong> la versión <strong>LTS</strong> desde <a href="https://nodejs.org/">nodejs.org</a>. LTS significa <em>Long Term Support</em>: es la versión estable y la que debes usar.</li>
-    <li><strong>Ejecuta</strong> el instalador y sigue el asistente con las opciones por defecto. Deja marcada la casilla para añadir Node al <code>PATH</code>.</li>
+    <li><strong>Ejecuta</strong> el instalador y sigue el asistente con las opciones por defecto. Deja marcada la casilla para añadir Node al `PATH`.</li>
     <li><strong>Cierra y vuelve a abrir</strong> la terminal para que reconozca los comandos nuevos.</li>
-    <li><strong>Comprueba</strong> la instalación con <code>node --version</code> y <code>npm --version</code>. Ambos deben devolver un número de versión.</li>
+    <li><strong>Comprueba</strong> la instalación con `node --version` y `npm --version`. Ambos deben devolver un número de versión.</li>
   </ol>
 </Steps>
 
@@ -183,8 +183,8 @@ En macOS y Linux lo recomendable es instalar Node con **nvm** (Node Version Mana
   <ol>
     <li><strong>Instala</strong> nvm siguiendo las instrucciones de <a href="https://github.com/nvm-sh/nvm#installing-and-updating">github.com/nvm-sh/nvm</a>.</li>
     <li><strong>Cierra y vuelve a abrir</strong> la terminal para que se cargue nvm.</li>
-    <li><strong>Instala</strong> la última versión LTS con <code>nvm install --lts</code> y actívala con <code>nvm use --lts</code>.</li>
-    <li><strong>Comprueba</strong> la instalación con <code>node --version</code> y <code>npm --version</code>.</li>
+    <li><strong>Instala</strong> la última versión LTS con `nvm install --lts` y actívala con `nvm use --lts`.</li>
+    <li><strong>Comprueba</strong> la instalación con `node --version` y `npm --version`.</li>
   </ol>
 </Steps>
 
@@ -202,9 +202,9 @@ Abre una terminal y ejecuta estos comandos. Si los tres devuelven una versión, 
 
 <Steps>
   <ol>
-    <li><code>node --version</code> — debe mostrar una versión <strong>LTS</strong> (par: 20.x, 22.x…).</li>
-    <li><code>npm --version</code> — se instala junto a Node, no hay que instalarlo aparte.</li>
-    <li><code>git --version</code> — confirma que Git también está disponible.</li>
+    <li>`node --version` — debe mostrar una versión <strong>LTS</strong> (par: 20.x, 22.x…).</li>
+    <li>`npm --version` — se instala junto a Node, no hay que instalarlo aparte.</li>
+    <li>`git --version` — confirma que Git también está disponible.</li>
   </ol>
 </Steps>
 
@@ -229,7 +229,7 @@ Docker Desktop incluye el motor Docker, Docker Compose y una interfaz gráfica. 
     <li><strong>Descarga</strong> Docker Desktop desde <a href="https://www.docker.com/products/docker-desktop/">docker.com/products/docker-desktop</a> (elige Windows, Mac o Linux según tu equipo).</li>
     <li><strong>Ejecuta</strong> el instalador y acepta los pasos del asistente. En Windows puede pedirte habilitar WSL 2 si aún no está activo.</li>
     <li><strong>Inicia</strong> Docker Desktop desde el menú de aplicaciones. Espera a que el indicador muestre que Docker está en ejecución (icono de ballena en la bandeja del sistema).</li>
-    <li><strong>Comprueba</strong> que funciona abriendo una terminal y ejecutando <code>docker --version</code>. Deberías ver el número de versión instalada.</li>
+    <li><strong>Comprueba</strong> que funciona abriendo una terminal y ejecutando `docker --version`. Deberías ver el número de versión instalada.</li>
   </ol>
 </Steps>
 
