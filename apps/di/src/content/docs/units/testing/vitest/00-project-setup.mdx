@@ -1,0 +1,286 @@
+---
+title: Preparar el proyecto
+description: "Crear desde cero un proyecto React con Vite y TypeScript: qué es Vite, el asistente de creación, la estructura que genera, cómo arranca una aplicación React, los scripts de npm y cómo dejar el proyecto limpio y bajo Git para las páginas de pruebas."
+sources:
+  - author: Vite
+    url: https://vite.dev/guide/
+  - author: React
+    url: https://react.dev/learn
+sidebar:
+  order: 0
+date: 2026-10-04
+updated: 2026-10-04
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import { Aside, Card, CardGrid, FileTree, LinkCard, Steps } from "@astrojs/starlight/components";
+
+Todas las páginas de esta unidad prueban una aplicación **React creada con Vite**. Antes de escribir un solo test necesitas tener ese proyecto en marcha y entender, al menos, qué archivos lo componen y cómo arranca. Esta página lo explica desde cero; no hace falta haber creado nunca un proyecto React.
+
+<CardGrid stagger>
+	<Card title="Vite" icon="rocket">
+		La herramienta que crea el proyecto, lo sirve mientras desarrollas y lo empaqueta para publicarlo. Vitest es su hermano para pruebas.
+	</Card>
+	<Card title="React" icon="seti:react">
+		La librería con la que se construye la interfaz: componentes que son funciones y devuelven marcado.
+	</Card>
+	<Card title="Lo que tendrás" icon="approve-check">
+		Una app React vacía que arranca en `http://localhost:5173`, limpia de ejemplos y bajo control de versiones.
+	</Card>
+</CardGrid>
+
+<Aside type="note" title="Requisitos previos">
+	Necesitas **Node.js** (con `npm`), **Git** y VS Code. Comprueba en una terminal que `node --version` y `npm --version` responden. Si falta algo, pasa por [Instalaciones](/jjcm/di/installations/).
+</Aside>
+
+## Qué es Vite
+
+Una aplicación React no se puede abrir como un HTML suelto: el código está en muchos archivos, usa TypeScript y JSX (que el navegador no entiende) e importa paquetes de `node_modules/`. Hace falta una herramienta que:
+
+- **Sirva** la aplicación mientras desarrollas, traduciendo TypeScript y JSX al vuelo y recargando el navegador al guardar.
+- **Empaquete** todo en unos pocos archivos optimizados cuando vas a publicarla.
+
+Eso es **Vite**. Además, trae un asistente (`create-vite`) que genera un proyecto de partida para React, Vue, Svelte o TypeScript puro. Es el estándar actual para proyectos React nuevos y la base de todas las aplicaciones del módulo.
+
+| Herramienta | Papel |
+| :--- | :--- |
+| **npm** | Instala paquetes y ejecuta scripts (`npm install`, `npm run dev`) |
+| **Vite** | Servidor de desarrollo y empaquetador |
+| **TypeScript** | El lenguaje; Vite lo traduce a JavaScript |
+| **React** | La librería de interfaz; el código que escribirás |
+
+## Crear el proyecto
+
+<Steps>
+	1. Abre una terminal en la carpeta donde guardes tus proyectos del módulo y ejecuta:
+
+		```bash
+		npm create vite@latest task-app -- --template react-ts
+		```
+
+		| Parte | Qué hace |
+		| :--- | :--- |
+		| `npm create vite@latest` | Descarga y ejecuta el asistente de Vite en su última versión |
+		| `task-app` | Nombre de la carpeta que se creará (y del proyecto) |
+		| `--` | Separa las opciones de `npm` de las del asistente |
+		| `--template react-ts` | Plantilla **React + TypeScript**; sin ella, el asistente pregunta framework y lenguaje |
+
+		Si el asistente hace alguna pregunta más (por ejemplo sobre opciones experimentales), acepta la respuesta por defecto.
+
+	2. Entra en la carpeta e **instala las dependencias**. `npm install` lee `package.json` y descarga React, Vite y TypeScript a `node_modules/`; tarda un minuto la primera vez:
+
+		```bash
+		cd task-app
+		npm install
+		```
+
+	3. **Arranca** el servidor de desarrollo:
+
+		```bash
+		npm run dev
+		```
+
+		La terminal muestra una dirección, normalmente `http://localhost:5173`. Ábrela en el navegador: verás la página de bienvenida de Vite con un contador que funciona.
+
+	4. Abre `src/App.tsx` en VS Code, cambia cualquier texto y guarda: el navegador se actualiza solo, sin recargar. Es el **hot reload** de Vite y es como trabajarás siempre.
+
+	5. Para parar el servidor, `Ctrl+C` en la terminal.
+</Steps>
+
+<Aside type="tip" title="Abre la carpeta del proyecto, no archivos sueltos">
+	Desde dentro de `task-app`, `code .` abre VS Code con el proyecto como raíz (o **Archivo → Abrir carpeta**). Es lo que permite que TypeScript, Vitest y Git encuentren su configuración. Trabaja siempre así.
+</Aside>
+
+## Qué ha generado Vite
+
+<FileTree>
+
+- task-app/
+  - index.html            la única página HTML; carga `src/main.tsx`
+  - package.json          nombre, dependencias y scripts del proyecto
+  - vite.config.ts        configuración de Vite (y, más adelante, de Vitest)
+  - tsconfig.json         configuración de TypeScript; referencia a los dos siguientes
+  - tsconfig.app.json     opciones de TypeScript para el código de `src/`
+  - tsconfig.node.json    opciones para los archivos de configuración
+  - .gitignore            ya excluye `node_modules/` y `dist/`
+  - public/               archivos estáticos que se copian tal cual (favicon…)
+  - src/
+    - main.tsx            punto de entrada: monta `<App />` en la página
+    - App.tsx             componente raíz: la página de bienvenida
+    - App.css             estilos de esa página
+    - index.css           estilos globales
+    - assets/             imágenes de la plantilla
+  - node_modules/         dependencias instaladas; no se edita ni se sube a Git
+
+</FileTree>
+
+De todo esto, lo que vas a tocar es **`src/`** y, en la siguiente página, `vite.config.ts`. El resto funciona sin cambios.
+
+### Cómo arranca la aplicación
+
+Tres archivos encadenados:
+
+<Steps>
+	1. **`index.html`** tiene un `<div id="root"></div>` vacío y un `<script type="module" src="/src/main.tsx">`. Es todo el HTML de la aplicación.
+	2. **`src/main.tsx`** le pide a React que pinte el componente `App` dentro de ese `div`:
+
+		```tsx title="src/main.tsx"
+		import { StrictMode } from "react";
+		import { createRoot } from "react-dom/client";
+		import "./index.css";
+		import App from "./App.tsx";
+
+		createRoot(document.getElementById("root")!).render(
+			<StrictMode>
+				<App />
+			</StrictMode>,
+		);
+		```
+
+	3. **`src/App.tsx`** es el primer componente: a partir de él cuelga todo lo demás.
+</Steps>
+
+### Un componente es una función
+
+Esto es un componente React completo:
+
+```tsx title="src/App.tsx"
+export default function App() {
+	return (
+		<main>
+			<h1>Hola, React</h1>
+			<p>Esto se ha renderizado desde App.tsx</p>
+		</main>
+	);
+}
+```
+
+Una **función** que devuelve algo parecido a HTML. Esa sintaxis se llama **JSX**: Vite la traduce a JavaScript. Los nombres de componente van en **mayúscula** (`App`, `TaskForm`), y un componente puede usar otros escribiéndolos como etiquetas: `<TaskForm />`. Con eso basta para seguir esta unidad; el resto de React (props, estado, eventos) aparece explicado en el momento en que los tests lo necesitan.
+
+<Aside type="note" title="¿Y `StrictMode`?">
+	Es un envoltorio de desarrollo que activa comprobaciones adicionales y avisa de prácticas problemáticas. No cambia nada en producción. Déjalo como está.
+</Aside>
+
+## Los scripts de npm
+
+En `package.json`, el bloque `scripts` define los comandos del proyecto. Se ejecutan con `npm run nombre`:
+
+| Script | Comando | Para qué |
+| :--- | :--- | :--- |
+| `dev` | `npm run dev` | Servidor de desarrollo con recarga automática |
+| `build` | `npm run build` | Comprueba tipos y genera la versión optimizada en `dist/` |
+| `preview` | `npm run preview` | Sirve `dist/` para ver la versión final en local |
+
+En la siguiente página añadirás `test`. Los scripts son la forma habitual de ejecutar herramientas del proyecto: siempre usan la versión instalada en `node_modules/`, no una global.
+
+## Limpiar la plantilla
+
+La página de bienvenida sobra. Déjala en blanco para construir encima:
+
+<Steps>
+	1. Sustituye el contenido de `src/App.tsx` por un componente vacío:
+
+		```tsx title="src/App.tsx"
+		export default function App() {
+			return <main />;
+		}
+		```
+
+	2. Borra `src/App.css` y la carpeta `src/assets/`.
+	3. Vacía `src/index.css` (o déjalo; no afecta a los tests).
+	4. Arranca `npm run dev` y comprueba que la página carga en blanco y que la consola del navegador (`F12`) no muestra errores.
+</Steps>
+
+## Ponlo bajo Git
+
+Vite ya ha creado el `.gitignore` con `node_modules/` y `dist/`, así que solo falta inicializar el repositorio:
+
+```bash
+git init
+git add .
+git commit -m "Proyecto React con Vite inicial"
+```
+
+Si quieres publicarlo en GitHub, el procedimiento es el mismo que en [Preparar el proyecto de JavaScript](/jjcm/di/units/introduction/javascript/00-project-setup/#publicar-en-github).
+
+## Comprobación final
+
+<Steps>
+	1. `npm run dev` arranca y `http://localhost:5173` muestra una página en blanco sin errores en consola.
+	2. Al editar `src/App.tsx` y guardar, el navegador se actualiza solo.
+	3. `src/App.css` y `src/assets/` no existen; `src/App.tsx` devuelve `<main />`.
+	4. `git log --oneline` muestra el commit inicial y `git status` no lista `node_modules/`.
+</Steps>
+
+## 🧩 Aplicación en el proyecto
+
+Este es el punto de partida de **cualquier** aplicación React del módulo, no solo de la de pruebas: la misma estructura, los mismos scripts y el mismo flujo de arranque. Las unidades de Informes, Documentación y Despliegues parten de un proyecto creado exactamente así, al que se añaden librerías (Tailwind, Axios, Storybook…) según haga falta.
+
+## Resumen rápido
+
+| Concepto | Detalle |
+| :--- | :--- |
+| **Crear** | `npm create vite@latest nombre -- --template react-ts` |
+| **Instalar y arrancar** | `npm install` → `npm run dev` → `http://localhost:5173` |
+| **Entrada** | `index.html` → `src/main.tsx` → `src/App.tsx` |
+| **Componente** | Función que devuelve JSX; nombre en mayúscula |
+| **Scripts** | `dev` (desarrollar), `build` (empaquetar), `preview` (ver el build) |
+| **Git** | `.gitignore` ya incluido; `git init` + primer commit |
+
+## Convención práctica
+
+<Steps>
+	1. **Un proyecto, una carpeta, abierta como raíz** en VS Code.
+	2. Todo lo tuyo va en **`src/`**; la configuración de la raíz se toca solo cuando una página lo indique.
+	3. `npm run dev` **siempre en marcha** mientras desarrollas; mira la consola del navegador ante cualquier duda.
+	4. Primer commit **antes de escribir código**: así el historial separa lo que generó Vite de lo que hiciste tú.
+	5. No edites ni subas `node_modules/`; si algo se rompe ahí, bórralo y vuelve a ejecutar `npm install`.
+</Steps>
+
+## Referencias
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://vite.dev/guide/"
+		title="Guía de Vite"
+		description="Qué es Vite, cómo crear un proyecto y cómo funciona el servidor de desarrollo."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://react.dev/learn"
+		title="Aprende React (docs oficiales)"
+		description="Tutorial oficial: componentes, JSX, props y estado."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://react.dev/learn/your-first-component"
+		title="Tu primer componente"
+		description="Qué es un componente y por qué es una función."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+## Siguientes pasos
+
+<CardGrid>
+	<LinkCard
+		href="/jjcm/di/units/testing/vitest/01-introduction/"
+		title="Introducción a Vitest"
+		description="Instalar Vitest sobre este proyecto y escribir el primer test."
+	/>
+	<LinkCard
+		href="/jjcm/di/units/testing/vitest/04-steps-example/"
+		title="Ejemplo paso a paso"
+		description="Construir y probar la aplicación de tareas sobre este proyecto."
+	/>
+</CardGrid>

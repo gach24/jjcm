@@ -1,0 +1,279 @@
+---
+title: Ejecutar y depurar
+description: Opciones de ejecución de Playwright, UI Mode, el visor de trazas, capturas y vídeo al fallar, arrancar el servidor de Vite automáticamente con webServer y ejecutar los tests en GitHub Actions.
+sources:
+  - author: Playwright
+    url: https://playwright.dev/docs/test-ui-mode
+  - author: Playwright
+    url: https://playwright.dev/docs/trace-viewer
+  - author: Playwright
+    url: https://playwright.dev/docs/ci-intro
+sidebar:
+  order: 3
+date: 2026-10-04
+updated: 2026-10-04
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import { Aside, Card, CardGrid, LinkCard, Steps, TabItem, Tabs } from "@astrojs/starlight/components";
+
+Escribir el test es la mitad; la otra mitad es **ejecutarlo cómodamente** mientras lo desarrollas y **entender por qué falla** cuando falla. Playwright es especialmente bueno en lo segundo: cada fallo puede venir con capturas, vídeo y una traza paso a paso. Esta página recorre las formas de ejecución, las herramientas de depuración, cómo evitar tener que arrancar el servidor a mano y cómo llevar todo a CI.
+
+<CardGrid stagger>
+	<Card title="Ejecutar" icon="rocket">
+		Headless por defecto; `--headed` para ver el navegador; `--ui` para el panel interactivo.
+	</Card>
+	<Card title="Depurar" icon="magnifier">
+		Trazas con capturas, DOM y red de cada paso; `--debug` para ir paso a paso.
+	</Card>
+	<Card title="Automatizar" icon="setting">
+		`webServer` arranca Vite por ti; el workflow de GitHub Actions ejecuta todo en cada push.
+	</Card>
+</CardGrid>
+
+## Formas de ejecutar
+
+| Comando | Qué hace |
+| :--- | :--- |
+| `npx playwright test` | Todo, en todos los proyectos (navegadores), headless |
+| `npx playwright test tasks` | Solo los archivos cuya ruta contenga `tasks` |
+| `npx playwright test -g "añadir"` | Solo los tests cuyo nombre contenga "añadir" |
+| `npx playwright test --project=chromium` | Solo un navegador |
+| `npx playwright test --headed` | Con la ventana del navegador visible |
+| `npx playwright test --ui` | **UI Mode**: panel interactivo (ver abajo) |
+| `npx playwright test --debug` | Paso a paso con el Inspector |
+| `npx playwright test --trace on` | Graba la traza de todos los tests, pasen o fallen |
+| `npx playwright show-report` | Abre el último informe HTML |
+
+Añade los habituales a `package.json` para no recordarlos:
+
+```json title="package.json"
+{
+	"scripts": {
+		"test": "vitest",
+		"test:e2e": "playwright test",
+		"test:e2e:ui": "playwright test --ui"
+	}
+}
+```
+
+## UI Mode
+
+```bash
+npx playwright test --ui
+```
+
+Abre una ventana con la lista de tests a la izquierda y, al ejecutar uno, una **línea de tiempo** con una captura por cada acción. Puedes:
+
+- Ejecutar un test, un archivo o todo con un clic, y activar **watch** para que se relance al guardar.
+- Pasar el ratón por la línea de tiempo y ver el estado de la página en cada instante.
+- Ver, para cada paso, el **locator** usado, los elementos que coincidieron, la consola y las peticiones de red.
+- Usar el **selector de locators** (*Pick locator*) sobre la página para obtener el locator recomendado de cualquier elemento.
+
+Es la herramienta con la que escribirás los tests en el día a día: se queda abierta junto al editor, igual que `npm test` de Vitest.
+
+## El visor de trazas
+
+Una **traza** es una grabación completa de un test: captura antes y después de cada acción, el DOM en cada punto (navegable e inspeccionable), la red, la consola y el código fuente. Con la configuración generada (`trace: "on-first-retry"`) solo se graba cuando un test falla y se reintenta, lo que en local (sin reintentos) significa nunca. Para depurar un fallo:
+
+```bash
+npx playwright test --trace on
+npx playwright show-report
+```
+
+En el informe, el test fallido tiene un enlace a su traza. Al abrirla ves exactamente en qué paso se detuvo, qué había en pantalla y qué locator no encontró nada. También puedes abrir una traza suelta con `npx playwright show-trace ruta/trace.zip`.
+
+<Aside type="tip" title="Trazas en CI">
+	En CI sí hay reintentos (`retries: 2`), así que un test que falle y se reintente deja su traza en el informe. Si el workflow guarda la carpeta `playwright-report/` como *artifact* (el generado lo hace), puedes descargarla y abrir la traza en tu equipo.
+</Aside>
+
+## Capturas y vídeo al fallar
+
+En `playwright.config.ts`, dentro de `use`:
+
+```ts
+use: {
+	trace: "on-first-retry",
+	screenshot: "only-on-failure",
+	video: "retain-on-failure",
+},
+```
+
+| Opción | Valores | Recomendación |
+| :--- | :--- | :--- |
+| `screenshot` | `off`, `on`, `only-on-failure` | `only-on-failure` |
+| `video` | `off`, `on`, `retain-on-failure`, `on-first-retry` | `retain-on-failure` en CI; en local la traza es más útil |
+| `trace` | `off`, `on`, `on-first-retry`, `retain-on-failure` | `on-first-retry` (generado) o `retain-on-failure` |
+
+Todo acaba en `test-results/` y enlazado desde el informe HTML. Añade `test-results/` y `playwright-report/` a `.gitignore` (el instalador lo hace).
+
+## Arrancar el servidor automáticamente
+
+Hasta ahora había que tener `npm run dev` en otra terminal. La opción `webServer` le dice a Playwright que lo arranque él, espere a que responda y lo pare al terminar:
+
+```ts title="playwright.config.ts" {7-14}
+import { defineConfig, devices } from "@playwright/test";
+
+export default defineConfig({
+	testDir: "./tests",
+	reporter: "html",
+	use: {
+		baseURL: "http://localhost:5173",
+		trace: "on-first-retry",
+	},
+	webServer: {
+		command: "npm run dev",
+		url: "http://localhost:5173",
+		reuseExistingServer: !process.env.CI,
+	},
+	projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+});
+```
+
+- **`baseURL`**: a partir de ahora `page.goto("/")` basta; los tests no llevan la URL completa.
+- **`command`**: lo que arranca el servidor. **`url`**: la dirección que Playwright consulta hasta que responde.
+- **`reuseExistingServer`**: en local, si ya tienes `npm run dev` corriendo, lo reutiliza en vez de arrancar otro; en CI arranca siempre uno limpio.
+
+Con esto, `npx playwright test` funciona desde cero, en tu equipo y en CI, con un solo comando.
+
+<Aside type="note" title="Servidor de desarrollo o build de producción">
+	`npm run dev` es cómodo. Para acercarse a lo que verá el usuario, en CI puedes usar `command: "npm run build && npm run preview"` con `url: "http://localhost:4173"` (el puerto de `vite preview`). Prueba el código empaquetado, no el de desarrollo.
+</Aside>
+
+## Tiempos de espera y reintentos
+
+| Qué | Por defecto | Dónde se cambia |
+| :--- | :--- | :--- |
+| Test completo | 30 s | `timeout` en la configuración o `test.setTimeout()` |
+| Cada aserción de locator | 5 s | `expect.timeout` en `use` o por aserción: `toBeVisible({ timeout: 10_000 })` |
+| Reintentos | 0 local, 2 en CI | `retries` |
+
+Un test que necesita subir los tiempos suele estar esperando algo que debería afirmarse de otra forma. Súbelos solo para operaciones realmente lentas (una subida de archivo, un informe que tarda).
+
+<Aside type="caution" title="Tests intermitentes (flaky)">
+	Un test que a veces pasa y a veces falla casi siempre tiene una de estas causas: usa `count()` o `textContent()` en vez de una aserción de locator; depende del orden de ejecución o de datos de otro test; o espera con `waitForTimeout`. La solución es arreglar el test, no subir `retries`.
+</Aside>
+
+## Ejecutar en GitHub Actions
+
+Si aceptaste el workflow durante la instalación, tienes `.github/workflows/playwright.yml`. Reducido a lo esencial:
+
+```yaml title=".github/workflows/playwright.yml"
+name: Playwright Tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test --project=chromium
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+```
+
+<Steps>
+	1. **`playwright install --with-deps`** descarga el navegador y las librerías del sistema en la máquina de CI (que empieza vacía). Limitarlo a `chromium` ahorra tiempo y minutos de Actions.
+	2. **`webServer`** de la configuración arranca Vite en CI; no hay que añadir nada al workflow.
+	3. **`upload-artifact`** guarda el informe HTML aunque los tests fallen (`!cancelled()`), para descargarlo desde la pestaña *Actions* del repositorio y abrir las trazas.
+</Steps>
+
+Si el proyecto también tiene Vitest, lo más limpio es un único workflow con dos jobs (`unit` y `e2e`) o dos pasos seguidos; ambos marcan el commit en rojo si fallan.
+
+## 🧩 Aplicación en el proyecto
+
+Para tu aplicación del módulo, la configuración de trabajo queda así:
+
+- `playwright.config.ts` con **`baseURL` + `webServer`**, de forma que `npm run test:e2e` funcione sin preparar nada.
+- **UI Mode** mientras escribes tests; **trazas** cuando algo falla.
+- **`screenshot: "only-on-failure"`** y el informe como artefacto en CI: la evidencia de que la entrega funciona.
+- Un solo navegador en el día a día y en CI; los tres solo si la aplicación tiene algo específico de navegador que verificar.
+
+## Resumen rápido
+
+| Tarea | Cómo |
+| :--- | :--- |
+| Desarrollar tests | `npx playwright test --ui` |
+| Ver el navegador | `--headed` · paso a paso: `--debug` |
+| Un subconjunto | `test archivo`, `-g "nombre"`, `--project=chromium` |
+| Entender un fallo | `--trace on` → `show-report` → abrir la traza |
+| Evidencia al fallar | `screenshot: "only-on-failure"`, `video: "retain-on-failure"` |
+| Sin arrancar el servidor a mano | `webServer: { command, url, reuseExistingServer }` + `baseURL` |
+| CI | `playwright install --with-deps` → `playwright test` → subir `playwright-report/` |
+
+## Convención práctica
+
+<Steps>
+	1. **`baseURL` y `webServer` desde el primer día**: un comando para ejecutar todo, en cualquier máquina.
+	2. UI Mode para escribir, **informe y traza** para depurar; no depures añadiendo `console.log` al test.
+	3. `screenshot: "only-on-failure"` siempre; vídeo solo en CI.
+	4. En CI, **un navegador** y el informe como artefacto; añade más navegadores solo con motivo.
+	5. Un test intermitente se **arregla**, no se reintenta.
+</Steps>
+
+## Referencias
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://playwright.dev/docs/test-ui-mode"
+		title="UI Mode"
+		description="Ejecutar, ver y depurar tests con la interfaz interactiva."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://playwright.dev/docs/trace-viewer"
+		title="Trace Viewer"
+		description="Grabar y examinar trazas de ejecución."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://playwright.dev/docs/test-webserver"
+		title="Web server"
+		description="Arrancar la aplicación automáticamente antes de los tests."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://playwright.dev/docs/ci-intro"
+		title="Integración continua"
+		description="Ejecutar Playwright en GitHub Actions y otros servicios."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+## Siguientes pasos
+
+<CardGrid>
+	<LinkCard
+		href="/jjcm/di/units/testing/playwright/04-steps-example/"
+		title="Ejemplo paso a paso"
+		description="Los tests E2E de la aplicación de tareas, con webServer, informe y CI."
+	/>
+	<LinkCard
+		href="/jjcm/di/units/testing/vitest/04-steps-example/"
+		title="La aplicación de tareas (Vitest)"
+		description="Si aún no la tienes, aquí se construye y se prueba por unidades."
+	/>
+</CardGrid>

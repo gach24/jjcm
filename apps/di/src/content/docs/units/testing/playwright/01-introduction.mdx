@@ -1,0 +1,270 @@
+---
+title: Introducción a Playwright
+description: Qué son las pruebas de extremo a extremo, qué aporta Playwright frente a probar a mano, cómo instalarlo en un proyecto Vite y ejecutar los tests de ejemplo y el generador de código.
+sources:
+  - author: Playwright
+    url: https://playwright.dev/docs/intro
+  - author: Playwright
+    url: https://playwright.dev/docs/writing-tests
+sidebar:
+  order: 1
+date: 2026-10-04
+updated: 2026-10-04
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import { Aside, Card, CardGrid, LinkCard, Steps } from "@astrojs/starlight/components";
+
+Las pruebas con Vitest ejecutan funciones y componentes en un DOM simulado. Falta comprobar lo que de verdad le importa al usuario: que la **aplicación completa**, servida y abierta en un **navegador real**, hace lo que debe. Eso son las pruebas **de extremo a extremo** (*end-to-end*, E2E), y **Playwright** es la herramienta para escribirlas: abre Chromium, Firefox o WebKit, navega, pulsa, escribe y comprueba, y cuando algo falla te deja una grabación de lo que pasó.
+
+<CardGrid stagger>
+	<Card title="¿Qué es?" icon="rocket">
+		Una librería y un runner que controlan navegadores reales desde Node para automatizar lo que haría una persona.
+	</Card>
+	<Card title="¿Para qué sirve?" icon="approve-check">
+		Verificar flujos completos (añadir una tarea, hacer login, pagar) tal como los vive el usuario, en varios navegadores.
+	</Card>
+	<Card title="¿Qué necesitas?" icon="open-book">
+		Una aplicación que se pueda servir en una URL (tu proyecto Vite con `npm run dev`) y Node.
+	</Card>
+</CardGrid>
+
+## Unitario, integración y extremo a extremo
+
+| Nivel | Qué ejecuta | Velocidad | Qué detecta | Herramienta |
+| :--- | :--- | :--- | :--- | :--- |
+| **Unitario** | Una función o componente aislado | ms | Errores de lógica | Vitest |
+| **Integración** | Varios componentes juntos en jsdom | ms–s | Errores al conectar piezas | Vitest + Testing Library |
+| **E2E** | La app servida, en un navegador real | s | Lo que ve el usuario: navegación, CSS que oculta un botón, peticiones reales | Playwright |
+
+Los tres se complementan. Los unitarios son muchos, rápidos y precisos ("falla `countActive`"); los E2E son pocos, lentos y globales ("no se puede añadir una tarea"). La regla práctica: **muchos unitarios, algunos de integración, pocos E2E** sobre los flujos que no pueden romperse.
+
+<Aside type="tip" title="Qué cubre un E2E que los demás no">
+	Un botón puede tener su callback bien probado y aun así ser inutilizable porque un `div` con `position: fixed` lo tapa, porque la ruta no carga, o porque el servidor devuelve otra cosa. Solo un navegador real lo ve.
+</Aside>
+
+## Qué aporta Playwright
+
+| Característica | Qué significa en la práctica |
+| :--- | :--- |
+| **Navegadores reales** | Chromium, Firefox y WebKit (Safari) con el mismo test |
+| **Espera automática** | `click()` espera a que el elemento exista, sea visible y esté habilitado. Sin `sleep` |
+| **Aserciones que reintentan** | `expect(locator).toBeVisible()` repite la comprobación hasta que se cumple o agota el tiempo |
+| **Aislamiento** | Cada test corre en un contexto de navegador limpio: sin cookies ni estado del test anterior |
+| **Trazas** | Al fallar, guarda capturas, DOM, red y consola de cada paso, y los ves en un visor |
+| **Generador de código** | Navegas tú por la app y Playwright escribe el test |
+| **UI Mode** | Panel para ejecutar, ver y depurar tests con línea de tiempo |
+
+## Instalación
+
+Sobre el proyecto Vite + React (puede ser el mismo que ya tiene Vitest):
+
+```bash
+npm init playwright@latest
+```
+
+El asistente pregunta cuatro cosas; respuestas recomendadas para el módulo:
+
+<Steps>
+	1. **TypeScript o JavaScript** → TypeScript.
+	2. **Carpeta de tests** → `tests` (la que propone).
+	3. **Añadir un workflow de GitHub Actions** → sí; lo verás en la página de ejecución.
+	4. **Instalar los navegadores** → sí. Descarga Chromium, Firefox y WebKit (unos cientos de MB; solo la primera vez).
+</Steps>
+
+<Aside type="note" title="Los navegadores van aparte">
+	Playwright descarga sus propios navegadores a una caché del sistema, independientes de los que tengas instalados, para que todos los tests usen versiones conocidas. Si en otro equipo faltan, `npx playwright install` los descarga; en Linux, `npx playwright install --with-deps` añade también las librerías del sistema que necesitan.
+</Aside>
+
+## Qué genera
+
+```text
+mi-proyecto/
+├── playwright.config.ts        ← configuración: navegadores, URL base, trazas
+├── tests/
+│   └── example.spec.ts         ← dos tests de ejemplo contra playwright.dev
+├── tests-examples/
+│   └── demo-todo-app.spec.ts   ← suite completa de ejemplo (para aprender; puedes borrarla)
+├── .github/workflows/
+│   └── playwright.yml          ← workflow de CI, si dijiste que sí
+└── package.json                ← @playwright/test en devDependencies
+```
+
+### `playwright.config.ts`
+
+Lo esencial del archivo generado, sin los comentarios:
+
+```ts title="playwright.config.ts"
+import { defineConfig, devices } from "@playwright/test";
+
+export default defineConfig({
+	testDir: "./tests",
+	fullyParallel: true,
+	forbidOnly: !!process.env.CI,
+	retries: process.env.CI ? 2 : 0,
+	workers: process.env.CI ? 1 : undefined,
+	reporter: "html",
+	use: {
+		trace: "on-first-retry",
+	},
+	projects: [
+		{ name: "chromium", use: { ...devices["Desktop Chrome"] } },
+		{ name: "firefox", use: { ...devices["Desktop Firefox"] } },
+		{ name: "webkit", use: { ...devices["Desktop Safari"] } },
+	],
+});
+```
+
+| Opción | Qué hace |
+| :--- | :--- |
+| `testDir` | Dónde buscar archivos `*.spec.ts` |
+| `fullyParallel` | Ejecuta los tests de un mismo archivo en paralelo |
+| `retries` | Reintentos en CI (0 en local, para ver los fallos reales) |
+| `reporter: "html"` | Genera un informe navegable al terminar |
+| `use.trace` | Cuándo grabar la traza; `on-first-retry` = solo si un test falla y se reintenta |
+| `projects` | Un proyecto por navegador: cada test se ejecuta tres veces |
+
+Dos opciones que añadirás en cuanto pruebes tu app, y que se explican en la página de ejecución: `use.baseURL` (para escribir `page.goto("/")` en vez de la URL completa) y `webServer` (para que Playwright arranque `npm run dev` solo).
+
+<Aside type="tip" title="Un solo navegador mientras aprendes">
+	Tres navegadores triplican el tiempo. Mientras desarrollas, ejecuta `npx playwright test --project=chromium` o comenta `firefox` y `webkit` en la configuración y vuelve a activarlos antes de entregar.
+</Aside>
+
+## Primer contacto: los tests de ejemplo
+
+```bash
+npx playwright test
+```
+
+Ejecuta `tests/example.spec.ts` en los tres navegadores (seis tests en total) **sin abrir ninguna ventana**: por defecto los navegadores corren en modo *headless*.
+
+```txt
+Running 6 tests using 4 workers
+  6 passed (8.2s)
+
+To open last HTML report run:
+  npx playwright show-report
+```
+
+Abre el informe:
+
+```bash
+npx playwright show-report
+```
+
+Verás cada test, en qué navegador, cuánto tardó y, si hubiera fallado, capturas y la traza. Es la salida que entregarás y la que mirarás en CI.
+
+Y el archivo que se ha ejecutado, para reconocer la forma de un test:
+
+```ts title="tests/example.spec.ts"
+import { test, expect } from "@playwright/test";
+
+test("has title", async ({ page }) => {
+	await page.goto("https://playwright.dev/");
+
+	await expect(page).toHaveTitle(/Playwright/);
+});
+
+test("get started link", async ({ page }) => {
+	await page.goto("https://playwright.dev/");
+
+	await page.getByRole("link", { name: "Get started" }).click();
+
+	await expect(page.getByRole("heading", { name: "Installation" })).toBeVisible();
+});
+```
+
+Es reconocible desde Vitest: `test` con un nombre, `expect` con matchers. Lo nuevo es `page`, el objeto que representa la pestaña del navegador, y que **todo lleva `await`**: cada acción viaja al navegador y vuelve.
+
+## El generador de código
+
+La forma más rápida de escribir un primer test propio es **no escribirlo**. Con tu app arrancada (`npm run dev` en otra terminal):
+
+```bash
+npx playwright codegen http://localhost:5173
+```
+
+Se abre un navegador junto a una ventana de Playwright Inspector. Navega, escribe y pulsa como un usuario: el inspector va generando el código del test con los *locators* adecuados. Copia el resultado a un archivo `tests/*.spec.ts` y ajústalo. Es ideal para aprender qué locator usa Playwright para cada elemento.
+
+<Aside type="caution" title="Codegen es un punto de partida, no el test final">
+	El código generado graba lo que hiciste, pero no sabe qué querías **comprobar**. Las aserciones (`expect`) las añades tú; y conviene revisar los nombres de los tests y agrupar pasos repetidos.
+</Aside>
+
+## 🧩 Aplicación en el proyecto
+
+En el contexto de este módulo, Playwright se usa para:
+
+- **Probar los flujos principales** de tu aplicación React de principio a fin: el que un usuario haría el primer día (crear, listar, editar, borrar).
+- **Verificar en navegador** lo que Vitest no puede: que el layout no oculta botones, que la navegación entre rutas funciona, que la app responde con el servidor real.
+- **Entregar evidencia**: el informe HTML y las trazas muestran que la app funciona, y en CI el resultado queda junto a cada commit.
+
+No se trata de reescribir en Playwright los tests de Vitest: cada flujo E2E cuesta más de escribir y de ejecutar, así que se reservan para lo que no puede fallar.
+
+## Resumen rápido
+
+| Concepto | Detalle |
+| :--- | :--- |
+| **E2E** | La app real en un navegador real; pocos tests, sobre flujos críticos |
+| **Instalar** | `npm init playwright@latest` (TypeScript, carpeta `tests`, workflow, navegadores) |
+| **Configuración** | `playwright.config.ts`: `testDir`, `projects` (navegadores), `use.trace`, `reporter` |
+| **Ejecutar** | `npx playwright test` · `--project=chromium` · `npx playwright show-report` |
+| **Generar** | `npx playwright codegen URL` con la app arrancada |
+| **Forma de un test** | `test("…", async ({ page }) => { await page.goto(); await …; await expect(…); })` |
+
+## Convención práctica
+
+<Steps>
+	1. Reserva los E2E para los **flujos que no pueden romperse**; lo demás, en Vitest.
+	2. Mientras aprendes, **un navegador** (`--project=chromium`); los tres antes de entregar.
+	3. Usa **codegen** para descubrir locators, y después limpia el test y añade los `expect`.
+	4. Mira el **informe HTML** después de cada ejecución que falle: la traza dice más que el mensaje de error.
+	5. Nunca un `waitForTimeout` para "dar tiempo": si necesitas esperar, es que falta una aserción que espera por ti.
+</Steps>
+
+## Referencias
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://playwright.dev/docs/intro"
+		title="Instalación (docs oficiales)"
+		description="Guía de inicio: instalación, primer test y ejecución."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://playwright.dev/docs/test-configuration"
+		title="Configuración de tests"
+		description="Todas las opciones de playwright.config.ts."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://playwright.dev/docs/codegen"
+		title="Generador de código"
+		description="Cómo grabar tests navegando por la aplicación."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+## Siguientes pasos
+
+<CardGrid>
+	<LinkCard
+		href="/jjcm/di/units/testing/playwright/02-writing-e2e-tests/"
+		title="Escribir tests E2E"
+		description="Locators, acciones, aserciones que esperan y cómo organizar los tests."
+	/>
+	<LinkCard
+		href="/jjcm/di/units/testing/playwright/03-running-and-debugging/"
+		title="Ejecutar y depurar"
+		description="UI Mode, trazas, arrancar el servidor automáticamente y CI."
+	/>
+</CardGrid>

@@ -1,0 +1,740 @@
+---
+title: "Ejemplo paso a paso"
+description: Crea una aplicación de tareas con React/Vite y pruébala de principio a fin con Vitest y Testing Library, desde las funciones de utilidad hasta la integración de los componentes.
+sources:
+  - author: Vitest
+    url: https://vitest.dev/guide/
+  - author: Testing Library
+    url: https://testing-library.com/docs/react-testing-library/example-intro/
+sidebar:
+  order: 4
+date: 2026-10-04
+updated: 2026-10-04
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import { Aside, Card, CardGrid, FileTree, LinkCard, Steps, TabItem, Tabs } from "@astrojs/starlight/components";
+
+En las páginas anteriores has visto la estructura de un test, los matchers y cómo probar componentes. Ahora toca **hacer el recorrido completo desde cero**: crear un proyecto, construir una pequeña aplicación de tareas y escribir sus pruebas por capas, de las funciones puras a la aplicación completa.
+
+Esta misma aplicación es la que recorrerá Playwright en el subapartado siguiente, así que al terminar tendrás los dos niveles de prueba sobre el mismo código.
+
+<CardGrid stagger>
+	<Card title="Punto de partida" icon="rocket">
+		Un proyecto React/Vite nuevo con TypeScript.
+	</Card>
+	<Card title="Lo que vas a crear" icon="document">
+		Una app de tareas: añadir, completar, filtrar y eliminar, con un contador de pendientes.
+	</Card>
+	<Card title="Resultado" icon="approve-check">
+		`npm test` en verde con tests de utilidades, de cada componente y de la app completa.
+	</Card>
+</CardGrid>
+
+## Visión general
+
+<Steps>
+	1. Partir del proyecto de la página anterior e instalar Vitest y Testing Library.
+	2. Escribir y probar la lógica pura (`utils/tasks.ts`).
+	3. Crear los componentes `TaskForm`, `TaskList` y `TaskFilter`, cada uno con su test.
+	4. Componer la aplicación en `App.tsx` y probarla como un todo.
+	5. Ejecutar todo, ver la cobertura y dejarlo listo para CI.
+</Steps>
+
+## Paso 1 — Crea el proyecto e instala las herramientas
+
+El proyecto base es el de [Preparar el proyecto](/jjcm/di/units/testing/vitest/00-project-setup/): una app React con Vite llamada `task-app`, limpia de ejemplos y con `src/App.tsx` devolviendo `<main />`. Si no lo tienes, créalo siguiendo esa página y vuelve aquí.
+
+Con el servidor de desarrollo parado (`Ctrl+C`), dentro de `task-app`, instala Vitest y Testing Library como dependencias de desarrollo:
+
+```bash
+npm install -D vitest jsdom @testing-library/react @testing-library/dom @testing-library/user-event @testing-library/jest-dom
+```
+
+Al terminar aparecen en el bloque `devDependencies` de `package.json`.
+
+Sustituye el contenido de `vite.config.ts` y crea el archivo de setup:
+
+```ts title="vite.config.ts"
+/// <reference types="vitest/config" />
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({
+	plugins: [react()],
+	test: {
+		environment: "jsdom",
+		setupFiles: "./src/setupTests.ts",
+	},
+});
+```
+
+```ts title="src/setupTests.ts"
+import "@testing-library/jest-dom/vitest";
+import { cleanup } from "@testing-library/react";
+import { afterEach } from "vitest";
+
+afterEach(() => {
+	cleanup();
+});
+```
+
+Y el script de test en `package.json`:
+
+```json title="package.json" {4}
+{
+	"scripts": {
+		"dev": "vite",
+		"test": "vitest",
+		"build": "tsc -b && vite build",
+		"preview": "vite preview"
+	}
+}
+```
+
+Para comprobar que todo está en su sitio, ejecuta `npm test`. Como aún no hay archivos de test, Vitest termina con `No test files found`; es lo esperado.
+
+### Estructura objetivo
+
+Al final del recorrido, `src/` tendrá esta forma. Crea ahora las carpetas `utils/` y `components/` vacías:
+
+<FileTree>
+
+- task-app/
+  - vite.config.ts
+  - src/
+    - setupTests.ts
+    - utils/
+      - tasks.ts
+      - tasks.test.ts
+    - components/
+      - TaskForm.tsx
+      - TaskForm.test.tsx
+      - TaskList.tsx
+      - TaskList.test.tsx
+      - TaskFilter.tsx
+      - TaskFilter.test.tsx
+    - App.tsx
+    - App.test.tsx
+    - main.tsx
+
+</FileTree>
+
+## Paso 2 — La lógica pura y sus tests
+
+Toda la lógica de la app está en funciones **puras**: reciben la lista de tareas y devuelven una nueva, sin modificar la original. Son las más fáciles de probar y las que más conviene tener cubiertas.
+
+```ts title="src/utils/tasks.ts"
+export interface Task {
+	id: number;
+	title: string;
+	done: boolean;
+}
+
+export type Filter = "all" | "active" | "done";
+
+export function addTask(tasks: Task[], title: string): Task[] {
+	const clean = title.trim();
+	if (clean === "") return tasks;
+	const id = tasks.length === 0 ? 1 : Math.max(...tasks.map(t => t.id)) + 1;
+	return [...tasks, { id, title: clean, done: false }];
+}
+
+export function toggleTask(tasks: Task[], id: number): Task[] {
+	return tasks.map(t => (t.id === id ? { ...t, done: !t.done } : t));
+}
+
+export function removeTask(tasks: Task[], id: number): Task[] {
+	return tasks.filter(t => t.id !== id);
+}
+
+export function filterTasks(tasks: Task[], filter: Filter): Task[] {
+	if (filter === "active") return tasks.filter(t => !t.done);
+	if (filter === "done") return tasks.filter(t => t.done);
+	return tasks;
+}
+
+export function countActive(tasks: Task[]): number {
+	return tasks.filter(t => !t.done).length;
+}
+```
+
+```ts title="src/utils/tasks.test.ts"
+import { describe, it, expect } from "vitest";
+import { addTask, toggleTask, removeTask, filterTasks, countActive, type Task } from "./tasks";
+
+const base: Task[] = [
+	{ id: 1, title: "Estudiar Vitest", done: false },
+	{ id: 2, title: "Hacer commit", done: true },
+];
+
+describe("addTask", () => {
+	it("añade una tarea al final con un id nuevo", () => {
+		const result = addTask(base, "Nueva");
+		expect(result).toHaveLength(3);
+		expect(result[2]).toEqual({ id: 3, title: "Nueva", done: false });
+	});
+
+	it("recorta los espacios del título", () => {
+		expect(addTask([], "  Hola  ")[0].title).toBe("Hola");
+	});
+
+	it("ignora los títulos vacíos", () => {
+		expect(addTask(base, "   ")).toBe(base);
+	});
+
+	it("no modifica la lista original", () => {
+		addTask(base, "Otra");
+		expect(base).toHaveLength(2);
+	});
+});
+
+describe("toggleTask", () => {
+	it("invierte el estado de la tarea indicada", () => {
+		const result = toggleTask(base, 1);
+		expect(result[0].done).toBe(true);
+		expect(result[1].done).toBe(true);
+	});
+
+	it("no toca las demás tareas", () => {
+		const result = toggleTask(base, 2);
+		expect(result[0]).toEqual(base[0]);
+	});
+});
+
+describe("removeTask", () => {
+	it("elimina la tarea por id", () => {
+		expect(removeTask(base, 1)).toEqual([base[1]]);
+	});
+
+	it("devuelve la misma lista si el id no existe", () => {
+		expect(removeTask(base, 99)).toEqual(base);
+	});
+});
+
+describe("filterTasks", () => {
+	it.each([
+		["all", 2],
+		["active", 1],
+		["done", 1],
+	] as const)("con el filtro %s devuelve %i tareas", (filter, esperado) => {
+		expect(filterTasks(base, filter)).toHaveLength(esperado);
+	});
+});
+
+describe("countActive", () => {
+	it("cuenta las tareas pendientes", () => {
+		expect(countActive(base)).toBe(1);
+	});
+
+	it("devuelve 0 con la lista vacía", () => {
+		expect(countActive([])).toBe(0);
+	});
+});
+```
+
+Ejecuta `npm test`: deben pasar 13 tests. Fíjate en los casos cubiertos de cada función: el normal, el límite (lista vacía, id inexistente) y la inmutabilidad.
+
+## Paso 3 — Los componentes y sus tests
+
+### 3.1 — `TaskForm`
+
+Un campo y un botón. El botón se deshabilita mientras el campo está vacío; al enviar, avisa por `onAdd` y se limpia.
+
+```tsx title="src/components/TaskForm.tsx"
+import { useState, type FormEvent } from "react";
+
+interface Props {
+	onAdd: (title: string) => void;
+}
+
+export function TaskForm({ onAdd }: Props) {
+	const [title, setTitle] = useState("");
+
+	function handleSubmit(e: FormEvent) {
+		e.preventDefault();
+		onAdd(title);
+		setTitle("");
+	}
+
+	return (
+		<form onSubmit={handleSubmit}>
+			<label htmlFor="new-task">Nueva tarea</label>
+			<input
+				id="new-task"
+				value={title}
+				onChange={e => setTitle(e.target.value)}
+				placeholder="¿Qué hay que hacer?"
+			/>
+			<button type="submit" disabled={title.trim() === ""}>
+				Añadir
+			</button>
+		</form>
+	);
+}
+```
+
+```tsx title="src/components/TaskForm.test.tsx"
+import { describe, it, expect, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { TaskForm } from "./TaskForm";
+
+describe("TaskForm", () => {
+	it("deshabilita el botón con el campo vacío", () => {
+		render(<TaskForm onAdd={() => {}} />);
+		expect(screen.getByRole("button", { name: "Añadir" })).toBeDisabled();
+	});
+
+	it("habilita el botón al escribir", async () => {
+		const user = userEvent.setup();
+		render(<TaskForm onAdd={() => {}} />);
+
+		await user.type(screen.getByLabelText("Nueva tarea"), "Algo");
+
+		expect(screen.getByRole("button", { name: "Añadir" })).toBeEnabled();
+	});
+
+	it("llama a onAdd con el título y vacía el campo", async () => {
+		const user = userEvent.setup();
+		const onAdd = vi.fn();
+		render(<TaskForm onAdd={onAdd} />);
+
+		const input = screen.getByLabelText("Nueva tarea");
+		await user.type(input, "Estudiar Vitest");
+		await user.click(screen.getByRole("button", { name: "Añadir" }));
+
+		expect(onAdd).toHaveBeenCalledWith("Estudiar Vitest");
+		expect(input).toHaveValue("");
+	});
+
+	it("también envía con Enter", async () => {
+		const user = userEvent.setup();
+		const onAdd = vi.fn();
+		render(<TaskForm onAdd={onAdd} />);
+
+		await user.type(screen.getByLabelText("Nueva tarea"), "Con Enter{Enter}");
+
+		expect(onAdd).toHaveBeenCalledWith("Con Enter");
+	});
+});
+```
+
+### 3.2 — `TaskList`
+
+Recibe las tareas y dos callbacks. Cada tarea es un checkbox con su título y un botón de eliminar. Sin tareas, muestra un mensaje.
+
+```tsx title="src/components/TaskList.tsx"
+import type { Task } from "../utils/tasks";
+
+interface Props {
+	tasks: Task[];
+	onToggle: (id: number) => void;
+	onRemove: (id: number) => void;
+}
+
+export function TaskList({ tasks, onToggle, onRemove }: Props) {
+	if (tasks.length === 0) {
+		return <p>No hay tareas</p>;
+	}
+
+	return (
+		<ul>
+			{tasks.map(task => (
+				<li key={task.id}>
+					<label>
+						<input type="checkbox" checked={task.done} onChange={() => onToggle(task.id)} />
+						<span style={{ textDecoration: task.done ? "line-through" : "none" }}>{task.title}</span>
+					</label>
+					<button onClick={() => onRemove(task.id)} aria-label={`Eliminar ${task.title}`}>
+						×
+					</button>
+				</li>
+			))}
+		</ul>
+	);
+}
+```
+
+```tsx title="src/components/TaskList.test.tsx"
+import { describe, it, expect, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { TaskList } from "./TaskList";
+import type { Task } from "../utils/tasks";
+
+const tasks: Task[] = [
+	{ id: 1, title: "Estudiar Vitest", done: false },
+	{ id: 2, title: "Hacer commit", done: true },
+];
+
+describe("TaskList", () => {
+	it("muestra un mensaje si no hay tareas", () => {
+		render(<TaskList tasks={[]} onToggle={() => {}} onRemove={() => {}} />);
+		expect(screen.getByText("No hay tareas")).toBeInTheDocument();
+		expect(screen.queryByRole("list")).not.toBeInTheDocument();
+	});
+
+	it("muestra una fila por tarea con su estado", () => {
+		render(<TaskList tasks={tasks} onToggle={() => {}} onRemove={() => {}} />);
+
+		expect(screen.getAllByRole("listitem")).toHaveLength(2);
+		expect(screen.getByRole("checkbox", { name: "Estudiar Vitest" })).not.toBeChecked();
+		expect(screen.getByRole("checkbox", { name: "Hacer commit" })).toBeChecked();
+	});
+
+	it("llama a onToggle con el id al marcar", async () => {
+		const user = userEvent.setup();
+		const onToggle = vi.fn();
+		render(<TaskList tasks={tasks} onToggle={onToggle} onRemove={() => {}} />);
+
+		await user.click(screen.getByRole("checkbox", { name: "Estudiar Vitest" }));
+
+		expect(onToggle).toHaveBeenCalledWith(1);
+	});
+
+	it("llama a onRemove con el id al eliminar", async () => {
+		const user = userEvent.setup();
+		const onRemove = vi.fn();
+		render(<TaskList tasks={tasks} onToggle={() => {}} onRemove={onRemove} />);
+
+		await user.click(screen.getByRole("button", { name: "Eliminar Hacer commit" }));
+
+		expect(onRemove).toHaveBeenCalledWith(2);
+	});
+});
+```
+
+<Aside type="note" title="Por qué `aria-label` en el botón ×">
+	Un botón cuyo texto es "×" no tiene un nombre accesible útil: ni un lector de pantalla ni el test sabrían qué elimina. `aria-label="Eliminar Hacer commit"` le da nombre, y ese nombre es lo que usa `getByRole`. Escribir tests con Testing Library mejora la accesibilidad casi sin querer.
+</Aside>
+
+### 3.3 — `TaskFilter`
+
+Tres botones; el activo lleva `aria-pressed="true"`.
+
+```tsx title="src/components/TaskFilter.tsx"
+import type { Filter } from "../utils/tasks";
+
+interface Props {
+	value: Filter;
+	onChange: (filter: Filter) => void;
+}
+
+const options: { value: Filter; label: string }[] = [
+	{ value: "all", label: "Todas" },
+	{ value: "active", label: "Pendientes" },
+	{ value: "done", label: "Completadas" },
+];
+
+export function TaskFilter({ value, onChange }: Props) {
+	return (
+		<div role="group" aria-label="Filtro">
+			{options.map(option => (
+				<button
+					key={option.value}
+					onClick={() => onChange(option.value)}
+					aria-pressed={value === option.value}
+				>
+					{option.label}
+				</button>
+			))}
+		</div>
+	);
+}
+```
+
+```tsx title="src/components/TaskFilter.test.tsx"
+import { describe, it, expect, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { TaskFilter } from "./TaskFilter";
+
+describe("TaskFilter", () => {
+	it("marca como pulsado el filtro activo", () => {
+		render(<TaskFilter value="active" onChange={() => {}} />);
+
+		expect(screen.getByRole("button", { name: "Pendientes" })).toHaveAttribute("aria-pressed", "true");
+		expect(screen.getByRole("button", { name: "Todas" })).toHaveAttribute("aria-pressed", "false");
+	});
+
+	it("llama a onChange con el filtro elegido", async () => {
+		const user = userEvent.setup();
+		const onChange = vi.fn();
+		render(<TaskFilter value="all" onChange={onChange} />);
+
+		await user.click(screen.getByRole("button", { name: "Completadas" }));
+
+		expect(onChange).toHaveBeenCalledWith("done");
+	});
+});
+```
+
+## Paso 4 — La aplicación completa
+
+`App` guarda el estado y conecta las piezas. No tiene lógica propia: delega en las funciones de `utils/tasks.ts`.
+
+```tsx title="src/App.tsx"
+import { useState } from "react";
+import { TaskForm } from "./components/TaskForm";
+import { TaskList } from "./components/TaskList";
+import { TaskFilter } from "./components/TaskFilter";
+import {
+	addTask,
+	toggleTask,
+	removeTask,
+	filterTasks,
+	countActive,
+	type Task,
+	type Filter,
+} from "./utils/tasks";
+
+export default function App() {
+	const [tasks, setTasks] = useState<Task[]>([]);
+	const [filter, setFilter] = useState<Filter>("all");
+
+	return (
+		<main>
+			<h1>Tareas</h1>
+			<TaskForm onAdd={title => setTasks(addTask(tasks, title))} />
+			<TaskFilter value={filter} onChange={setFilter} />
+			<TaskList
+				tasks={filterTasks(tasks, filter)}
+				onToggle={id => setTasks(toggleTask(tasks, id))}
+				onRemove={id => setTasks(removeTask(tasks, id))}
+			/>
+			<p>{countActive(tasks)} pendientes</p>
+		</main>
+	);
+}
+```
+
+Arranca `npm run dev` y comprueba a mano que funciona. Después, el test de **integración**: usa los componentes reales juntos, sin mocks, y recorre un flujo completo como lo haría el usuario.
+
+```tsx title="src/App.test.tsx"
+import { describe, it, expect } from "vitest";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import App from "./App";
+
+async function addTask(user: ReturnType<typeof userEvent.setup>, title: string) {
+	await user.type(screen.getByLabelText("Nueva tarea"), title);
+	await user.click(screen.getByRole("button", { name: "Añadir" }));
+}
+
+describe("App", () => {
+	it("empieza sin tareas", () => {
+		render(<App />);
+		expect(screen.getByText("No hay tareas")).toBeInTheDocument();
+		expect(screen.getByText("0 pendientes")).toBeInTheDocument();
+	});
+
+	it("añade tareas y actualiza el contador", async () => {
+		const user = userEvent.setup();
+		render(<App />);
+
+		await addTask(user, "Estudiar Vitest");
+		await addTask(user, "Hacer commit");
+
+		expect(screen.getAllByRole("listitem")).toHaveLength(2);
+		expect(screen.getByText("2 pendientes")).toBeInTheDocument();
+	});
+
+	it("completar una tarea descuenta del contador", async () => {
+		const user = userEvent.setup();
+		render(<App />);
+
+		await addTask(user, "Estudiar Vitest");
+		await user.click(screen.getByRole("checkbox", { name: "Estudiar Vitest" }));
+
+		expect(screen.getByText("0 pendientes")).toBeInTheDocument();
+	});
+
+	it("el filtro Completadas oculta las pendientes", async () => {
+		const user = userEvent.setup();
+		render(<App />);
+
+		await addTask(user, "Pendiente");
+		await addTask(user, "Hecha");
+		await user.click(screen.getByRole("checkbox", { name: "Hecha" }));
+		await user.click(screen.getByRole("button", { name: "Completadas" }));
+
+		expect(screen.getByRole("checkbox", { name: "Hecha" })).toBeInTheDocument();
+		expect(screen.queryByRole("checkbox", { name: "Pendiente" })).not.toBeInTheDocument();
+	});
+
+	it("eliminar una tarea la quita de la lista", async () => {
+		const user = userEvent.setup();
+		render(<App />);
+
+		await addTask(user, "Temporal");
+		await user.click(screen.getByRole("button", { name: "Eliminar Temporal" }));
+
+		expect(screen.getByText("No hay tareas")).toBeInTheDocument();
+	});
+});
+```
+
+La función auxiliar `addTask` del test evita repetir las dos líneas de añadir en cada caso. Es habitual tener pequeñas ayudas así dentro del archivo de test.
+
+## Paso 5 — Ejecuta todo
+
+```bash
+npx vitest run
+```
+
+```txt
+ ✓ src/utils/tasks.test.ts (13 tests)
+ ✓ src/components/TaskFilter.test.tsx (2 tests)
+ ✓ src/components/TaskForm.test.tsx (4 tests)
+ ✓ src/components/TaskList.test.tsx (4 tests)
+ ✓ src/App.test.tsx (5 tests)
+
+ Test Files  5 passed (5)
+      Tests  28 passed (28)
+```
+
+### Qué deberías observar
+
+- Los tests de **utilidades** son instantáneos; los de **componentes** tardan algo más (montan un DOM). Aun así, todo el conjunto corre en un par de segundos.
+- Si rompes `countActive` (por ejemplo, contando las hechas), fallan **dos niveles**: su test unitario y el de integración de `App`. El unitario te dice *dónde*; el de integración, *qué nota el usuario*.
+- Si cambias el texto del botón "Añadir" por "Agregar", fallan los tests que lo buscan por nombre. Es correcto: ese texto es parte del comportamiento visible.
+
+### Cobertura
+
+```bash
+npm install -D @vitest/coverage-v8
+npx vitest run --coverage
+```
+
+Muestra el porcentaje de líneas, ramas y funciones ejecutadas por los tests, archivo por archivo. En esta app debería acercarse al 100 % en `utils/` y `components/`. No persigas el 100 % en general; úsalo para **descubrir** ramas sin probar (un `if` cuyo `else` nunca se ejecuta).
+
+## Paso 6 — Ejecutar en GitHub Actions
+
+Para que los tests corran en cada `push` y el resultado se vea en el repositorio:
+
+```yaml title=".github/workflows/test.yml"
+name: Tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx vitest run
+```
+
+`npm ci` instala exactamente las versiones de `package-lock.json`; `vitest run` termina con código 1 si algún test falla, y GitHub marca el commit en rojo. Con esto, un `README` con el *badge* del workflow demuestra que la entrega pasa sus pruebas.
+
+## Estructura final del proyecto
+
+<FileTree>
+
+- task-app/
+  - .github/
+    - workflows/
+      - test.yml
+  - src/
+    - setupTests.ts
+    - utils/
+      - tasks.ts
+      - tasks.test.ts
+    - components/
+      - TaskForm.tsx
+      - TaskForm.test.tsx
+      - TaskList.tsx
+      - TaskList.test.tsx
+      - TaskFilter.tsx
+      - TaskFilter.test.tsx
+    - App.tsx
+    - App.test.tsx
+    - main.tsx
+  - vite.config.ts
+  - package.json
+
+</FileTree>
+
+## 🧩 Aplicación en el proyecto
+
+Este recorrido es el patrón que aplicarás a tu aplicación del módulo:
+
+- **Lógica en funciones puras** separadas de los componentes: más fácil de probar y de reutilizar.
+- **Un test por componente** que cubra sus props, su interacción y sus callbacks.
+- **Un test de integración** por flujo principal, con los componentes reales juntos.
+- **`vitest run` en CI**, para que el estado de los tests sea visible en cada commit.
+
+No hace falta cubrirlo todo desde el principio: empieza por las utilidades y el formulario principal, y añade tests cuando arregles un error (un test que reproduce el fallo y luego pasa es la mejor garantía de que no vuelve).
+
+## Resumen rápido
+
+| Capa | Qué se prueba | Herramienta |
+| :--- | :--- | :--- |
+| `utils/` | Entradas y salidas de funciones puras, casos límite, inmutabilidad | `describe` / `it` / `expect` |
+| `components/` | Render según props, interacción, callbacks, estados vacío/deshabilitado | Testing Library + `userEvent` + `vi.fn` |
+| `App` | Flujos completos del usuario con las piezas reales | Testing Library sin mocks |
+| CI | Que todo pasa en cada push | `vitest run` en GitHub Actions |
+
+## Convención práctica
+
+<Steps>
+	1. Escribe las **utilidades y sus tests primero**; los componentes se apoyan en ellas y quedan más simples.
+	2. Da a cada elemento interactivo un **nombre accesible** (`<label>`, `aria-label`): es lo que buscan los tests y lo que necesitan los usuarios.
+	3. Una **función auxiliar** en el test para las acciones repetidas (`addTask`), igual que harías en el código.
+	4. El test de integración **no usa mocks**: si necesita uno, probablemente es un test de componente.
+	5. Deja el **workflow de CI** desde el primer commit con tests; añadirlo después cuesta lo mismo y se olvida.
+</Steps>
+
+## Referencias
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://testing-library.com/docs/react-testing-library/example-intro/"
+		title="Ejemplo oficial de React Testing Library"
+		description="Un formulario con petición, probado paso a paso."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://vitest.dev/guide/coverage.html"
+		title="Cobertura en Vitest"
+		description="Configurar e interpretar el informe de cobertura."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://docs.github.com/es/actions/use-cases-and-examples/building-and-testing/building-and-testing-nodejs"
+		title="Node.js en GitHub Actions"
+		description="Guía oficial para ejecutar tests de Node en CI."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+## Siguientes pasos
+
+<CardGrid>
+	<LinkCard
+		href="/jjcm/di/units/testing/playwright/01-introduction/"
+		title="Introducción a Playwright"
+		description="Probar esta misma aplicación en un navegador real, de extremo a extremo."
+	/>
+	<LinkCard
+		href="/jjcm/di/units/testing/playwright/04-steps-example/"
+		title="Playwright paso a paso"
+		description="Los tests E2E de la app de tareas, con el servidor de Vite arrancado automáticamente."
+	/>
+</CardGrid>
