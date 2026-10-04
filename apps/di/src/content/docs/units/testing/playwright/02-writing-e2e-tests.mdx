@@ -1,0 +1,303 @@
+---
+title: Escribir tests E2E
+description: Anatomía de un test de Playwright, locators por rol y etiqueta, acciones, aserciones que esperan automáticamente, hooks y cómo estructurar los tests de un flujo de usuario.
+sources:
+  - author: Playwright
+    url: https://playwright.dev/docs/locators
+  - author: Playwright
+    url: https://playwright.dev/docs/test-assertions
+sidebar:
+  order: 2
+date: 2026-10-04
+updated: 2026-10-04
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import { Aside, Card, CardGrid, LinkCard, Steps, TabItem, Tabs } from "@astrojs/starlight/components";
+
+Un test de Playwright describe lo que hace una persona: va a una página, encuentra un elemento, actúa sobre él y comprueba qué pasa. Las tres habilidades son **localizar** elementos de forma robusta, **actuar** sobre ellos y **afirmar** el resultado con aserciones que esperan por sí solas. Si vienes de Testing Library, reconocerás casi todo: los nombres son distintos, la filosofía es la misma.
+
+<CardGrid stagger>
+	<Card title="Locators" icon="magnifier">
+		`page.getByRole`, `getByLabel`, `getByText`: describen el elemento como lo ve el usuario y se resuelven al usarlos.
+	</Card>
+	<Card title="Acciones" icon="approve-check">
+		`click`, `fill`, `check`, `press`: esperan a que el elemento esté listo antes de actuar.
+	</Card>
+	<Card title="Aserciones" icon="seti:clock">
+		`await expect(locator).toBeVisible()`: reintenta hasta cumplirse o agotar el tiempo. Sin esperas manuales.
+	</Card>
+</CardGrid>
+
+## Anatomía de un test
+
+```ts title="tests/tasks.spec.ts"
+import { test, expect } from "@playwright/test";
+
+test("añadir una tarea la muestra en la lista", async ({ page }) => {
+	await page.goto("http://localhost:5173/");
+
+	await page.getByLabel("Nueva tarea").fill("Estudiar Playwright");
+	await page.getByRole("button", { name: "Añadir" }).click();
+
+	await expect(page.getByRole("listitem")).toHaveCount(1);
+	await expect(page.getByText("Estudiar Playwright")).toBeVisible();
+});
+```
+
+<Steps>
+	1. **`test(nombre, fn)`** define un test. La función recibe **fixtures**; `page` es una pestaña nueva y limpia para este test.
+	2. **`page.goto(url)`** navega. Con `baseURL` configurada (siguiente página) basta `page.goto("/")`.
+	3. **Locator + acción**: `getByLabel("Nueva tarea")` describe el campo; `.fill()` escribe en él. El locator **no busca nada** hasta que se usa.
+	4. **`await expect(locator).matcher()`**: la aserción espera a que se cumpla. El `await` delante de `expect` es obligatorio.
+</Steps>
+
+Todo lleva `await` porque cada paso es una orden al navegador que tarda en completarse. Olvidar uno hace que el test continúe antes de tiempo y falle de forma confusa.
+
+## Locators: encontrar elementos
+
+Un *locator* es una **descripción** de cómo encontrar uno o varios elementos. Playwright lo resuelve en el momento de actuar, y vuelve a resolverlo en cada reintento; por eso los tests no se rompen porque la página tarde en pintar.
+
+| Locator | Encuentra por | Ejemplo |
+| :--- | :--- | :--- |
+| `getByRole` | rol accesible y nombre | `page.getByRole("button", { name: "Añadir" })` |
+| `getByLabel` | la etiqueta de un campo | `page.getByLabel("Nueva tarea")` |
+| `getByPlaceholder` | el placeholder | `page.getByPlaceholder("¿Qué hay que hacer?")` |
+| `getByText` | el texto visible | `page.getByText("No hay tareas")` |
+| `getByTitle` | el atributo `title` | `page.getByTitle("Cerrar")` |
+| `getByTestId` | `data-testid` | `page.getByTestId("total")` |
+| `locator(css)` | selector CSS o XPath | `page.locator("ul > li")` (último recurso) |
+
+El orden es el mismo que en Testing Library: primero rol, luego etiqueta y texto, y `locator("css")` solo cuando no hay alternativa, porque se rompe al cambiar el HTML.
+
+### Afinar un locator
+
+```ts
+// texto exacto (por defecto es "contiene", sin distinguir mayúsculas)
+page.getByText("Tareas", { exact: true });
+
+// encadenar: dentro de un elemento, otro
+page.getByRole("listitem").filter({ hasText: "Hacer commit" }).getByRole("checkbox");
+
+// por posición, cuando hay varios iguales
+page.getByRole("listitem").first();
+page.getByRole("listitem").nth(2);
+page.getByRole("listitem").last();
+```
+
+`filter({ hasText })` es la forma habitual de llegar a "el botón de eliminar **de esta** fila": localizas la fila por su texto y, dentro, el botón.
+
+<Aside type="caution" title="Un locator que coincide con varios elementos">
+	Si haces `click()` sobre un locator que resuelve a dos elementos, Playwright falla con *strict mode violation* en lugar de elegir uno al azar. Es deliberado: afina con `filter`, `first()` o un nombre más concreto.
+</Aside>
+
+## Acciones
+
+| Acción | Qué hace | Espera antes a que… |
+| :--- | :--- | :--- |
+| `click()` | clic | sea visible, estable y reciba eventos |
+| `fill(texto)` | borra y escribe | sea editable |
+| `press("Enter")` | pulsa una tecla | tenga foco |
+| `check()` / `uncheck()` | marca un checkbox | sea visible y habilitado |
+| `selectOption("valor")` | elige en un `<select>` | |
+| `hover()` | pasa el ratón | |
+| `setInputFiles(ruta)` | sube un archivo | |
+
+```ts
+await page.getByLabel("Nueva tarea").fill("Comprar pan");
+await page.getByLabel("Nueva tarea").press("Enter");
+await page.getByRole("checkbox", { name: "Comprar pan" }).check();
+await page.getByRole("button", { name: "Completadas" }).click();
+```
+
+La espera automática (*auto-wait*) es lo que hace a Playwright fiable: no necesitas comprobar que el botón existe antes de pulsarlo. Si no llega a estar listo en el tiempo límite (30 s por defecto), el test falla con un mensaje que explica qué condición no se cumplió.
+
+## Aserciones
+
+Hay dos familias. Las de **locator** reintentan hasta cumplirse; las genéricas (las de Vitest) comprueban un valor una sola vez.
+
+<Tabs>
+	<TabItem label="Sobre locators (reintentan)">
+		```ts
+		await expect(page.getByText("0 pendientes")).toBeVisible();
+		await expect(page.getByRole("listitem")).toHaveCount(2);
+		await expect(page.getByRole("checkbox", { name: "Hecha" })).toBeChecked();
+		await expect(page.getByRole("button", { name: "Añadir" })).toBeDisabled();
+		await expect(page.getByLabel("Nueva tarea")).toHaveValue("");
+		await expect(page.getByRole("heading")).toHaveText("Tareas");
+		await expect(page.getByText("Error")).not.toBeVisible();
+		await expect(page.getByText("Temporal")).toBeHidden();
+		```
+	</TabItem>
+	<TabItem label="Sobre la página">
+		```ts
+		await expect(page).toHaveTitle(/Tareas/);
+		await expect(page).toHaveURL(/\/tareas/);
+		```
+	</TabItem>
+	<TabItem label="Genéricas (sin reintento)">
+		```ts
+		const total = await page.getByRole("listitem").count();
+		expect(total).toBe(2);   // comprueba una vez; si la lista aún no se ha pintado, falla
+		```
+
+		Úsalas solo con valores que ya has extraído. Para el DOM, siempre las de locator.
+	</TabItem>
+</Tabs>
+
+<Aside type="tip" title="Por qué `toHaveCount` y no `count()`">
+	`await expect(locator).toHaveCount(2)` espera hasta que haya exactamente dos; `expect(await locator.count()).toBe(2)` cuenta **ahora** y, si la app todavía está renderizando, falla aunque un instante después hubiera dos. Casi todos los tests "intermitentes" vienen de usar la segunda forma.
+</Aside>
+
+## Organizar: `beforeEach` y `describe`
+
+```ts title="tests/tasks.spec.ts"
+import { test, expect } from "@playwright/test";
+
+test.beforeEach(async ({ page }) => {
+	await page.goto("/");
+});
+
+test.describe("gestión de tareas", () => {
+	test("empieza vacía", async ({ page }) => {
+		await expect(page.getByText("No hay tareas")).toBeVisible();
+		await expect(page.getByText("0 pendientes")).toBeVisible();
+	});
+
+	test("añadir una tarea la muestra en la lista", async ({ page }) => {
+		await page.getByLabel("Nueva tarea").fill("Estudiar Playwright");
+		await page.getByRole("button", { name: "Añadir" }).click();
+
+		await expect(page.getByRole("listitem")).toHaveCount(1);
+		await expect(page.getByText("1 pendientes")).toBeVisible();
+	});
+
+	test("completar una tarea actualiza el contador", async ({ page }) => {
+		await page.getByLabel("Nueva tarea").fill("Estudiar Playwright");
+		await page.getByRole("button", { name: "Añadir" }).click();
+		await page.getByRole("checkbox", { name: "Estudiar Playwright" }).check();
+
+		await expect(page.getByText("0 pendientes")).toBeVisible();
+	});
+});
+```
+
+`test.beforeEach` se ejecuta antes de cada test con su propia `page` nueva. Como cada test parte de un navegador limpio, no hay estado compartido: el tercero no ve la tarea que añadió el segundo. Eso es lo que permite ejecutarlos en paralelo y en cualquier orden.
+
+### Reducir repetición
+
+Igual que en Vitest, una función auxiliar evita copiar los pasos comunes:
+
+```ts
+async function addTask(page: Page, title: string) {
+	await page.getByLabel("Nueva tarea").fill(title);
+	await page.getByRole("button", { name: "Añadir" }).click();
+}
+```
+
+Importa el tipo con `import { test, expect, type Page } from "@playwright/test";`. Para flujos más largos (login, crear datos de partida) Playwright ofrece *fixtures* personalizadas; para este módulo, las funciones auxiliares bastan.
+
+## Qué probar en un E2E
+
+<Tabs>
+	<TabItem label="Sí">
+		- El **camino feliz** de cada flujo principal: crear, ver, modificar, borrar.
+		- Lo que **cruza** varias pantallas o componentes: añadir y luego filtrar; hacer login y llegar al panel.
+		- Lo que depende del **navegador**: navegación, URL, título, foco, que el botón no esté tapado.
+		- Un caso de **error visible** por flujo: enviar vacío, credenciales incorrectas.
+	</TabItem>
+	<TabItem label="No">
+		- Cada combinación de datos de una función: eso es un test unitario con `it.each`.
+		- Estados internos o props: no existen desde el navegador.
+		- Detalles de estilo (colores, márgenes): si importan, capturas visuales; si no, nada.
+		- Lo que ya cubre un test de integración más barato.
+	</TabItem>
+</Tabs>
+
+## 🧩 Aplicación en el proyecto
+
+En tu aplicación React, la lista de tests E2E suele caber en una mano:
+
+- **Carga inicial**: la página abre, el título es el correcto, el estado vacío se muestra.
+- **Flujo principal completo**: crear un elemento, verlo en la lista, editarlo o completarlo, eliminarlo.
+- **Filtros o navegación**: cambiar de vista y comprobar qué se muestra y qué no.
+- **Un error visible**: enviar un formulario inválido y ver el mensaje.
+
+Cuatro o cinco tests que, si pasan, garantizan que la app es usable. Todo lo demás, en Vitest.
+
+## Resumen rápido
+
+| Paso | API |
+| :--- | :--- |
+| Navegar | `await page.goto("/")` |
+| Localizar | `page.getByRole("button", { name })`, `getByLabel`, `getByText`, `getByPlaceholder` |
+| Afinar | `{ exact: true }`, `.filter({ hasText })`, `.first()`, `.nth(i)` |
+| Actuar | `.click()`, `.fill()`, `.press("Enter")`, `.check()`, `.selectOption()` |
+| Afirmar | `await expect(loc).toBeVisible() / toHaveCount(n) / toHaveText() / toBeChecked() / toBeDisabled()` |
+| Página | `await expect(page).toHaveTitle() / toHaveURL()` |
+| Organizar | `test.beforeEach`, `test.describe`, funciones auxiliares |
+
+## Convención práctica
+
+<Steps>
+	1. **`await` en todo**: acciones, navegaciones y aserciones sobre locators.
+	2. Localiza por **rol y nombre**; `locator("css")` solo si no hay otra opción, y documenta por qué.
+	3. Aserciones **sobre locators**, no sobre valores extraídos con `count()` o `textContent()`.
+	4. Un test, **un flujo**; `beforeEach` para la navegación inicial común.
+	5. Si el test necesita datos previos (una tarea ya creada), créalos **por la interfaz** o por la API, nunca manipulando el estado de la app.
+</Steps>
+
+## Referencias
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://playwright.dev/docs/locators"
+		title="Locators"
+		description="Todos los locators, prioridad recomendada y cómo encadenarlos."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://playwright.dev/docs/input"
+		title="Acciones"
+		description="fill, click, check, selectOption, teclado, ratón y archivos."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://playwright.dev/docs/test-assertions"
+		title="Aserciones"
+		description="Matchers de locator y de página, con su comportamiento de reintento."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://playwright.dev/docs/best-practices"
+		title="Buenas prácticas"
+		description="Recomendaciones oficiales: locators resilientes, aislamiento, aserciones web-first."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+## Siguientes pasos
+
+<CardGrid>
+	<LinkCard
+		href="/jjcm/di/units/testing/playwright/03-running-and-debugging/"
+		title="Ejecutar y depurar"
+		description="UI Mode, trazas, arrancar el servidor automáticamente y CI."
+	/>
+	<LinkCard
+		href="/jjcm/di/units/testing/playwright/04-steps-example/"
+		title="Ejemplo paso a paso"
+		description="Los tests E2E de la aplicación de tareas, de principio a fin."
+	/>
+</CardGrid>

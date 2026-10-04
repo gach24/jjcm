@@ -1,0 +1,416 @@
+---
+title: Probar componentes React
+description: Testing Library sobre Vitest, configurar el entorno jsdom, render y screen, consultas por rol y etiqueta, simular al usuario con userEvent y qué merece la pena comprobar en un componente.
+sources:
+  - author: Testing Library
+    url: https://testing-library.com/docs/react-testing-library/intro/
+  - author: Vitest
+    url: https://vitest.dev/guide/environment.html
+sidebar:
+  order: 3
+date: 2026-10-04
+updated: 2026-10-04
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import { Aside, Card, CardGrid, LinkCard, Steps, TabItem, Tabs } from "@astrojs/starlight/components";
+
+Un componente React se prueba **como lo usaría una persona**: se renderiza, se busca en pantalla un botón o un campo por su texto, se interactúa y se comprueba qué aparece. **Testing Library** es la librería que da ese enfoque sobre Vitest; su principio es que los tests no deben conocer la implementación (nombres de clases, estado interno), solo lo que el usuario ve y hace.
+
+<CardGrid stagger>
+	<Card title="Renderizar" icon="seti:react">
+		`render(<Componente />)` monta el componente en un DOM simulado (jsdom) dentro de Node.
+	</Card>
+	<Card title="Consultar" icon="magnifier">
+		`screen.getByRole`, `getByLabelText`, `getByText`: encontrar elementos como los encuentra el usuario.
+	</Card>
+	<Card title="Interactuar" icon="approve-check">
+		`userEvent.type`, `userEvent.click`: teclear y pulsar como una persona, con sus eventos reales.
+	</Card>
+</CardGrid>
+
+## Instalación y configuración
+
+Sobre el proyecto con Vitest ya instalado:
+
+```bash
+npm install -D jsdom @testing-library/react @testing-library/dom @testing-library/user-event @testing-library/jest-dom
+```
+
+| Paquete | Para qué |
+| :--- | :--- |
+| `jsdom` | Un DOM en Node: `document`, `window`, eventos. Sin él, `render` no tiene dónde montar |
+| `@testing-library/react` | `render`, `screen`, `cleanup` para React |
+| `@testing-library/dom` | Dependencia de la anterior (las consultas `getBy*`) |
+| `@testing-library/user-event` | Simula al usuario: teclear, pulsar, seleccionar |
+| `@testing-library/jest-dom` | Matchers para el DOM: `toBeInTheDocument`, `toBeDisabled`, `toHaveValue`… |
+
+Vitest necesita saber que debe usar jsdom y cargar los matchers. Se configura en `vite.config.ts`, el mismo archivo de Vite:
+
+```ts title="vite.config.ts" {1,7-10}
+/// <reference types="vitest/config" />
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({
+	plugins: [react()],
+	test: {
+		environment: "jsdom",
+		setupFiles: "./src/setupTests.ts",
+	},
+});
+```
+
+```ts title="src/setupTests.ts"
+import "@testing-library/jest-dom/vitest";
+import { cleanup } from "@testing-library/react";
+import { afterEach } from "vitest";
+
+afterEach(() => {
+	cleanup();
+});
+```
+
+La primera línea del `vite.config.ts` (`/// <reference …>`) le dice a TypeScript que la propiedad `test` existe. El `setupFiles` se ejecuta antes de cada archivo de test y registra los matchers de jest-dom en `expect`.
+
+El `afterEach(cleanup)` **desmonta** los componentes renderizados al terminar cada test. Testing Library lo haría sola si `afterEach` fuera una función global, pero en Vitest no lo es (salvo que actives `globals: true`), así que hay que registrarlo. Sin esta línea, los componentes de un test siguen en el DOM durante el siguiente y las consultas fallan con *Found multiple elements*.
+
+<Aside type="note" title="Por qué jsdom">
+	Vitest corre en Node, donde no hay navegador. jsdom implementa el DOM en JavaScript con fidelidad suficiente para renderizar componentes y disparar eventos. No pinta nada ni calcula estilos: para comprobar cómo se **ve** algo está Playwright.
+</Aside>
+
+## Un componente para probar
+
+Los componentes de esta página van en `src/components/` (crea la carpeta si no existe), cada uno con su test al lado.
+
+```tsx title="src/components/Contador.tsx"
+import { useState } from "react";
+
+interface Props {
+	inicial?: number;
+	onCambio?: (valor: number) => void;
+}
+
+export function Contador({ inicial = 0, onCambio }: Props) {
+	const [valor, setValor] = useState(inicial);
+
+	function actualizar(nuevo: number) {
+		setValor(nuevo);
+		onCambio?.(nuevo);
+	}
+
+	return (
+		<div>
+			<p>Valor: {valor}</p>
+			<button onClick={() => actualizar(valor - 1)} disabled={valor <= 0}>
+				Restar
+			</button>
+			<button onClick={() => actualizar(valor + 1)}>Sumar</button>
+		</div>
+	);
+}
+```
+
+## El primer test de componente
+
+```tsx title="src/components/Contador.test.tsx"
+import { describe, it, expect, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { Contador } from "./Contador";
+
+describe("Contador", () => {
+	it("muestra el valor inicial", () => {
+		render(<Contador inicial={5} />);
+		expect(screen.getByText("Valor: 5")).toBeInTheDocument();
+	});
+
+	it("suma al pulsar Sumar", async () => {
+		const user = userEvent.setup();
+		render(<Contador />);
+
+		await user.click(screen.getByRole("button", { name: "Sumar" }));
+
+		expect(screen.getByText("Valor: 1")).toBeInTheDocument();
+	});
+
+	it("deshabilita Restar en cero", () => {
+		render(<Contador inicial={0} />);
+		expect(screen.getByRole("button", { name: "Restar" })).toBeDisabled();
+	});
+
+	it("avisa del cambio por onCambio", async () => {
+		const user = userEvent.setup();
+		const onCambio = vi.fn();
+		render(<Contador inicial={2} onCambio={onCambio} />);
+
+		await user.click(screen.getByRole("button", { name: "Sumar" }));
+
+		expect(onCambio).toHaveBeenCalledWith(3);
+	});
+});
+```
+
+El archivo es `.tsx` porque contiene JSX. El patrón de cada test es siempre el mismo:
+
+<Steps>
+	1. **Renderizar** el componente con las props del caso: `render(<Contador inicial={5} />)`.
+	2. **Encontrar** el elemento con `screen`: el botón "Sumar", el texto "Valor: 5".
+	3. **Interactuar**, si procede, con `user.click`, `user.type`… siempre con `await`.
+	4. **Comprobar** el resultado con un matcher de jest-dom o con `vi.fn` si lo que importa es un callback.
+</Steps>
+
+## Consultas: encontrar elementos como el usuario
+
+`screen` ofrece consultas por distintos criterios. El orden de preferencia importa, porque un test que busca por rol sigue funcionando aunque cambies el HTML, y uno que busca por clase CSS no:
+
+| Consulta | Encuentra por | Ejemplo |
+| :--- | :--- | :--- |
+| `getByRole` | rol accesible y nombre | `getByRole("button", { name: "Guardar" })` |
+| `getByLabelText` | la `<label>` de un campo | `getByLabelText("Correo")` |
+| `getByPlaceholderText` | el placeholder | `getByPlaceholderText("Buscar…")` |
+| `getByText` | el texto visible | `getByText("No hay resultados")` |
+| `getByDisplayValue` | el valor actual de un input | `getByDisplayValue("Ana")` |
+| `getByTestId` | `data-testid="…"` | último recurso |
+
+Roles habituales: `button`, `textbox` (input de texto y textarea), `checkbox`, `link`, `heading`, `list` y `listitem`, `option`. El `name` de un `button` es su texto; el de un `textbox`, su `<label>`.
+
+<Aside type="tip" title="Si no encuentras el rol">
+	`screen.logTestingPlaygroundURL()` dentro de un test imprime un enlace que abre el HTML renderizado en *Testing Playground*, donde pulsas un elemento y te dice qué consulta usar. Y `screen.debug()` imprime el HTML actual en la terminal.
+</Aside>
+
+### `getBy`, `queryBy` y `findBy`
+
+Cada consulta tiene tres variantes según qué esperas:
+
+| Prefijo | Si no existe | Úsalo para |
+| :--- | :--- | :--- |
+| `getBy` | **lanza error** | elementos que deben estar |
+| `queryBy` | devuelve `null` | comprobar que algo **no** está |
+| `findBy` | espera hasta 1 s, luego lanza | elementos que aparecen **después** (async) |
+
+```tsx
+expect(screen.getByText("Guardado")).toBeInTheDocument();      // debe estar
+expect(screen.queryByText("Error")).not.toBeInTheDocument();   // no debe estar
+expect(await screen.findByText("Cargado")).toBeInTheDocument(); // aparecerá
+```
+
+Las versiones en plural (`getAllByRole`, `queryAllByText`…) devuelven arrays, para listas.
+
+## Interactuar: `userEvent`
+
+`userEvent.setup()` crea un "usuario" que dispara la secuencia real de eventos (`pointerdown`, `focus`, `keydown`, `input`…). Sus métodos son asíncronos: **siempre `await`**.
+
+```tsx
+const user = userEvent.setup();
+
+await user.click(screen.getByRole("button", { name: "Añadir" }));
+await user.type(screen.getByLabelText("Nombre"), "Ana");
+await user.clear(screen.getByLabelText("Nombre"));
+await user.selectOptions(screen.getByRole("combobox"), "editor");
+await user.keyboard("{Enter}");
+```
+
+<Aside type="caution" title="`fireEvent` existe, pero prefiere `userEvent`">
+	Verás `fireEvent.click(boton)` en tutoriales antiguos. Dispara un único evento sintético y no reproduce el comportamiento real (no mueve el foco, no respeta `disabled`). `userEvent` es la recomendación actual de Testing Library.
+</Aside>
+
+## Un formulario completo
+
+```tsx title="src/components/FormularioLogin.tsx"
+import { useState, type FormEvent } from "react";
+
+interface Props {
+	onLogin: (datos: { email: string; password: string }) => void;
+}
+
+export function FormularioLogin({ onLogin }: Props) {
+	const [email, setEmail] = useState("");
+	const [password, setPassword] = useState("");
+	const [error, setError] = useState("");
+
+	function handleSubmit(e: FormEvent) {
+		e.preventDefault();
+		if (!email.includes("@")) {
+			setError("Introduce un correo válido");
+			return;
+		}
+		setError("");
+		onLogin({ email, password });
+	}
+
+	return (
+		<form onSubmit={handleSubmit} noValidate>
+			<label htmlFor="email">Correo</label>
+			<input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} />
+
+			<label htmlFor="password">Contraseña</label>
+			<input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} />
+
+			{error && <p role="alert">{error}</p>}
+
+			<button type="submit">Entrar</button>
+		</form>
+	);
+}
+```
+
+```tsx title="src/components/FormularioLogin.test.tsx"
+import { describe, it, expect, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { FormularioLogin } from "./FormularioLogin";
+
+describe("FormularioLogin", () => {
+	it("envía los datos cuando el correo es válido", async () => {
+		const user = userEvent.setup();
+		const onLogin = vi.fn();
+		render(<FormularioLogin onLogin={onLogin} />);
+
+		await user.type(screen.getByLabelText("Correo"), "ana@correo.com");
+		await user.type(screen.getByLabelText("Contraseña"), "secreto");
+		await user.click(screen.getByRole("button", { name: "Entrar" }));
+
+		expect(onLogin).toHaveBeenCalledWith({ email: "ana@correo.com", password: "secreto" });
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+	});
+
+	it("muestra un error y no envía si el correo no es válido", async () => {
+		const user = userEvent.setup();
+		const onLogin = vi.fn();
+		render(<FormularioLogin onLogin={onLogin} />);
+
+		await user.type(screen.getByLabelText("Correo"), "ana");
+		await user.click(screen.getByRole("button", { name: "Entrar" }));
+
+		expect(screen.getByRole("alert")).toHaveTextContent("Introduce un correo válido");
+		expect(onLogin).not.toHaveBeenCalled();
+	});
+});
+```
+
+Fíjate en que el test no sabe nada de `useState`, ni de cómo se llama la variable `error`: solo que al escribir y pulsar, aparece un mensaje de alerta o se llama al callback. Puedes reescribir el componente por dentro y el test sigue valiendo.
+
+<Aside type="note" title="Por qué `noValidate` en el formulario">
+	Un `<input type="email">` con un valor no válido hace que el navegador **bloquee el envío** y muestre su propio aviso, sin que llegue a ejecutarse `onSubmit`. jsdom imita ese comportamiento, así que el segundo test nunca vería el mensaje de error del componente. `noValidate` desactiva la validación nativa y deja el control (y el mensaje) en manos del componente, que es lo que queremos probar.
+</Aside>
+
+## Matchers de jest-dom
+
+Los que más usarás:
+
+| Matcher | Comprueba |
+| :--- | :--- |
+| `toBeInTheDocument()` | que el elemento existe |
+| `toBeVisible()` | que además no está oculto |
+| `toBeDisabled()` / `toBeEnabled()` | estado de botones y campos |
+| `toHaveValue(x)` | valor de un input |
+| `toHaveTextContent(texto)` | texto de un elemento |
+| `toBeChecked()` | checkbox o radio marcado |
+| `toHaveAttribute(nombre, valor)` | cualquier atributo |
+| `toHaveClass(clase)` | clase CSS (evítalo salvo que la clase sea el comportamiento) |
+
+## Qué probar en un componente (y qué no)
+
+<Tabs>
+	<TabItem label="Sí">
+		- Que **renderiza lo que recibe** por props (nombre, lista, estado vacío).
+		- Que **reacciona** a la interacción: pulsar, escribir, marcar.
+		- Que **llama a sus callbacks** con los datos correctos.
+		- Los **estados condicionales**: error, deshabilitado, cargando, vacío.
+	</TabItem>
+	<TabItem label="No">
+		- El estado interno (`useState`): no es visible para el usuario.
+		- Clases CSS o estilos: eso lo verifica Storybook o Playwright.
+		- Que React funciona (que `onClick` dispara al hacer clic).
+		- Componentes sin lógica que solo pintan texto estático.
+	</TabItem>
+</Tabs>
+
+## 🧩 Aplicación en el proyecto
+
+En tu aplicación React, esta página se traduce en:
+
+- Un test por **formulario**: datos válidos → callback llamado; datos inválidos → mensaje y callback no llamado.
+- Un test por **lista**: con elementos, muestra cada uno; vacía, muestra el mensaje de "sin datos".
+- Un test por **componente interactivo** (contador, filtro, selector): la interacción produce el cambio visible esperado.
+- Si el componente carga datos con `fetch`, sustituye `fetch` con `vi.spyOn` (página anterior) y usa `findBy*` para esperar a que aparezcan.
+
+Con eso, los componentes que concentran la lógica de la interfaz quedan cubiertos sin probar la implementación.
+
+## Resumen rápido
+
+| Paso | API |
+| :--- | :--- |
+| Configurar | `test: { environment: "jsdom", setupFiles }` + `import "@testing-library/jest-dom/vitest"` |
+| Renderizar | `render(<C prop={x} />)` |
+| Encontrar | `screen.getByRole("button", { name })`, `getByLabelText`, `getByText` |
+| Variantes | `getBy` (debe estar) · `queryBy` (no debe) · `findBy` (aparecerá, con `await`) |
+| Interactuar | `const user = userEvent.setup()` → `await user.click/type/clear` |
+| Comprobar | `toBeInTheDocument`, `toBeDisabled`, `toHaveValue`, `toHaveTextContent`, `toBeChecked` |
+| Callbacks | `vi.fn()` + `toHaveBeenCalledWith` |
+
+## Convención práctica
+
+<Steps>
+	1. Busca por **rol y nombre accesible** antes que por texto, y por texto antes que por `data-testid`. Si no puedes encontrar algo por rol, suele ser señal de que al componente le falta una `<label>` o un rol.
+	2. Un `userEvent.setup()` **por test**, y `await` en cada interacción.
+	3. `queryBy` solo para afirmar ausencia; `getBy` para todo lo demás.
+	4. Comprueba **comportamiento visible y callbacks**, nunca estado interno ni clases CSS.
+	5. Si un test de componente necesita `fetch`, **móckealo**; un test de componente nunca espera a la red.
+</Steps>
+
+## Referencias
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://testing-library.com/docs/react-testing-library/intro/"
+		title="React Testing Library"
+		description="Introducción y principios: probar como el usuario."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://testing-library.com/docs/queries/about/"
+		title="Consultas (About Queries)"
+		description="Prioridad de consultas, getBy/queryBy/findBy y roles."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://testing-library.com/docs/user-event/intro/"
+		title="user-event"
+		description="API completa de interacción: click, type, keyboard, selectOptions…"
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://github.com/testing-library/jest-dom#custom-matchers"
+		title="Matchers de jest-dom"
+		description="Lista completa de matchers para el DOM."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+## Siguientes pasos
+
+<CardGrid>
+	<LinkCard
+		href="/jjcm/di/units/testing/vitest/04-steps-example/"
+		title="Ejemplo paso a paso"
+		description="Una aplicación de tareas con tests de utilidades y de componentes de principio a fin."
+	/>
+	<LinkCard
+		href="/jjcm/di/units/testing/playwright/01-introduction/"
+		title="Introducción a Playwright"
+		description="Probar la aplicación completa en un navegador real."
+	/>
+</CardGrid>

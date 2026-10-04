@@ -98,6 +98,24 @@ export default defineConfig({
               ],
             },
             {
+              label: "[lucide:book-open] Pruebas",
+              collapsed: true,
+              items: [
+                {
+                  label: "[lucide:braces] Vitest",
+                  autogenerate: {
+                    directory: "units/testing/vitest/",
+                  },
+                },
+                {
+                  label: "[lucide:braces] Playwright",
+                  autogenerate: {
+                    directory: "units/testing/playwright/",
+                  },
+                },
+              ],
+            },
+            {
               label: "[lucide:book-open] Despliegues",
               collapsed: true,
               items: [

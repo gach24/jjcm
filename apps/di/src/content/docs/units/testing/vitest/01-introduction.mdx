@@ -1,0 +1,265 @@
+---
+title: Introducción a Vitest
+description: Qué son las pruebas automatizadas, por qué Vitest es el test runner natural de un proyecto Vite y cómo escribir y ejecutar tu primer test.
+sources:
+  - author: Vitest
+    url: https://vitest.dev/guide/
+  - author: Vitest
+    url: https://vitest.dev/api/
+sidebar:
+  order: 1
+date: 2026-10-04
+updated: 2026-10-04
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import { Aside, Card, CardGrid, LinkCard, Steps } from "@astrojs/starlight/components";
+
+Una **prueba automatizada** es código que ejecuta tu código y comprueba que el resultado es el esperado. Todos los ejemplos de esta unidad viven dentro de la aplicación React `task-app` de la página anterior: utilidades que usa la interfaz, servicios que piden datos y componentes. En lugar de abrir la app, pulsar botones y mirar si "parece que funciona", escribes una vez la comprobación y la ejecutas cuantas veces quieras, en segundos. **Vitest** es el *test runner* pensado para proyectos Vite: usa la misma configuración y la misma forma de importar que tu app, por lo que no hay que configurar casi nada.
+
+<CardGrid stagger>
+	<Card title="¿Qué es?" icon="rocket">
+		Un programa que busca archivos `*.test.ts`, ejecuta las funciones que contienen y te dice cuáles pasan y cuáles fallan.
+	</Card>
+	<Card title="¿Para qué sirve?" icon="approve-check">
+		Detectar que algo se ha roto **antes** de que lo vea el usuario, y poder cambiar código con confianza.
+	</Card>
+	<Card title="¿Qué necesitas?" icon="open-book">
+		Un proyecto Vite (React o no). Vitest se instala encima y reutiliza `vite.config.ts`.
+	</Card>
+</CardGrid>
+
+## Por qué probar
+
+Sin pruebas, cada cambio obliga a comprobar a mano todo lo que podría haberse visto afectado, y nadie lo hace de forma completa. Las consecuencias habituales:
+
+- Arreglas un fallo y rompes otra cosa sin darte cuenta ("regresión").
+- Te da miedo tocar código que funciona, aunque esté mal escrito.
+- Los errores llegan al usuario, que es la forma más cara de encontrarlos.
+
+Con pruebas, `npm test` responde en segundos a la pregunta "¿sigue funcionando todo lo que funcionaba?". No sustituyen a probar la app a mano, pero cubren la parte repetitiva y aburrida, que es precisamente la que se deja de hacer.
+
+<Aside type="tip" title="Tres niveles de prueba">
+	**Unitarias**: una función o un componente aislado (Vitest). **De integración**: varias piezas juntas, por ejemplo un formulario con su lista (Vitest + Testing Library). **De extremo a extremo (E2E)**: la aplicación real en un navegador real (Playwright, el siguiente subapartado). En este módulo tocarás las tres.
+</Aside>
+
+## Por qué Vitest
+
+Hay otros runners (Jest es el más conocido), pero en un proyecto Vite, Vitest tiene ventajas claras:
+
+| Ventaja | Qué significa |
+| :--- | :--- |
+| **Misma configuración** | Lee `vite.config.ts`: alias, plugins y TypeScript funcionan igual que en la app |
+| **Sin transpilar aparte** | TypeScript y JSX se procesan con el mismo motor que Vite; no hay `babel.config` ni `ts-jest` |
+| **Rápido** | Ejecuta solo los tests afectados por cada cambio y los corre en paralelo |
+| **API compatible con Jest** | `describe`, `it`, `expect`… son iguales; lo que aprendas sirve en ambos |
+| **Modo watch e interfaz web** | Relanza al guardar y tiene un panel en el navegador (`--ui`) |
+
+## Instalación
+
+Sobre el proyecto `task-app` de la página anterior (o cualquier proyecto Vite + React):
+
+```bash
+npm install -D vitest
+```
+
+<Aside type="tip" title="¿Todavía no tienes un proyecto?">
+	La página anterior, [Preparar el proyecto](/jjcm/di/units/testing/vitest/00-project-setup/), explica desde cero cómo crear un proyecto React con Vite, qué archivos genera y cómo arranca. Hazla primero y vuelve aquí.
+</Aside>
+
+Añade el script a `package.json`:
+
+```json title="package.json" {4}
+{
+	"scripts": {
+		"dev": "vite",
+		"test": "vitest",
+		"build": "tsc -b && vite build"
+	}
+}
+```
+
+No hace falta ningún archivo de configuración para empezar: Vitest encuentra solo los archivos cuyo nombre termina en `.test.ts`, `.test.tsx`, `.spec.ts` o `.spec.tsx`.
+
+<Aside type="note" title="Qué es `-D`">
+	`-D` (o `--save-dev`) instala el paquete como **dependencia de desarrollo**: se usa para programar y probar, pero no forma parte de la aplicación que se despliega. Todas las herramientas de prueba van ahí.
+</Aside>
+
+## Tu primer test
+
+En una aplicación React, lo primero que se prueba son las **utilidades** que usa la interfaz: pequeñas funciones puras que formatean o calculan algo que luego pinta un componente. Crea `src/utils/format.ts` con dos que necesitará la app de tareas: el precio de un producto en una tarjeta y el texto del contador de pendientes.
+
+```ts title="src/utils/format.ts"
+export function formatearPrecio(precio: number): string {
+	return `${precio.toFixed(2).replace(".", ",")} €`;
+}
+
+export function pluralizar(cantidad: number, singular: string, plural: string): string {
+	return `${cantidad} ${cantidad === 1 ? singular : plural}`;
+}
+```
+
+Y su archivo de pruebas, **al lado**, con el mismo nombre más `.test`:
+
+```ts title="src/utils/format.test.ts"
+import { describe, it, expect } from "vitest";
+import { formatearPrecio, pluralizar } from "./format";
+
+describe("formatearPrecio", () => {
+	it("formatea con dos decimales, coma y símbolo de euro", () => {
+		expect(formatearPrecio(19.99)).toBe("19,99 €");
+	});
+
+	it("añade los decimales a los enteros", () => {
+		expect(formatearPrecio(5)).toBe("5,00 €");
+	});
+});
+
+describe("pluralizar", () => {
+	it("usa el singular con 1", () => {
+		expect(pluralizar(1, "tarea pendiente", "tareas pendientes")).toBe("1 tarea pendiente");
+	});
+
+	it("usa el plural con 0 y con varios", () => {
+		expect(pluralizar(0, "tarea pendiente", "tareas pendientes")).toBe("0 tareas pendientes");
+		expect(pluralizar(3, "tarea pendiente", "tareas pendientes")).toBe("3 tareas pendientes");
+	});
+});
+```
+
+Las tres piezas que se repiten en todo test:
+
+<Steps>
+	1. **`describe`** agrupa pruebas relacionadas (normalmente, una función o un componente). Es solo organización: aparece como título en la salida.
+	2. **`it`** (o `test`, son sinónimos) define **una** prueba, con una frase que describe el comportamiento esperado. Si falla, esa frase es lo primero que lees.
+	3. **`expect(valor).matcher(esperado)`** es la **aserción**: la comprobación concreta. `toBe` compara con `===`; en la siguiente página verás el resto de *matchers*.
+</Steps>
+
+## Ejecutar los tests
+
+```bash
+npm test
+```
+
+Vitest arranca en **modo watch**: ejecuta todo, muestra el resultado y se queda esperando. Cada vez que guardas un archivo, relanza solo los tests afectados.
+
+```txt
+ ✓ src/utils/format.test.ts (4 tests) 3ms
+   ✓ formatearPrecio > formatea con dos decimales, coma y símbolo de euro
+   ✓ formatearPrecio > añade los decimales a los enteros
+   ✓ pluralizar > usa el singular con 1
+   ✓ pluralizar > usa el plural con 0 y con varios
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+```
+
+Prueba a romper algo: cambia `toFixed(2)` por `toFixed(1)`, guarda y mira la salida. Vitest señala el test que falla, la línea exacta y la diferencia entre lo esperado y lo obtenido:
+
+```txt
+ FAIL  src/utils/format.test.ts > formatearPrecio > formatea con dos decimales, coma y símbolo de euro
+AssertionError: expected '19,9 €' to be '19,99 €' // Object.is equality
+
+- Expected   "19,99 €"
++ Received   "19,9 €"
+```
+
+Otros modos de ejecución que usarás:
+
+| Comando | Qué hace |
+| :--- | :--- |
+| `npx vitest run` | Ejecuta una vez y termina (para CI y para scripts) |
+| `npx vitest --ui` | Abre un panel en el navegador con los tests, su estado y su salida (instala `@vitest/ui`) |
+| `npx vitest run format` | Solo los archivos cuya ruta contenga `format` |
+| `npx vitest run --coverage` | Informe de qué líneas se han ejecutado durante los tests (instala `@vitest/coverage-v8`) |
+
+<Aside type="caution" title="Watch en la terminal, run en CI">
+	`vitest` a secas no termina nunca: es para desarrollar. En un script de build o en GitHub Actions usa siempre `vitest run`, que ejecuta una vez y devuelve un código de salida (0 si todo pasa, 1 si algo falla).
+</Aside>
+
+## Dónde colocar los tests
+
+Dos convenciones válidas; en este módulo usaremos la primera:
+
+- **Junto al archivo probado**: `format.ts` y `format.test.ts` en la misma carpeta. Es fácil ver qué tiene pruebas y qué no, y al mover el archivo se mueve su test.
+- **Carpeta `tests/` o `__tests__/`** aparte, con la misma estructura que `src/`. Separa el código de producción, a cambio de tener que buscar.
+
+Vitest excluye por defecto `node_modules/` y `dist/`, así que no hay que configurar rutas.
+
+## 🧩 Aplicación en el proyecto
+
+En el contexto de este módulo, Vitest se usa para:
+
+- **Probar la lógica pura** de tu aplicación React: funciones de utilidad, cálculos, transformaciones de datos, validaciones. Es lo más barato de probar y donde más errores se esconden.
+- **Probar componentes** con Testing Library (tercera página): que un formulario llame a su callback, que una lista muestre sus elementos.
+- **Demostrar que la entrega funciona**: un `npm test` en verde, visible en el repositorio, vale más que una captura de pantalla.
+
+El objetivo no es cubrir el 100 % del código, sino que las partes con lógica tengan pruebas y que ejecutarlas sea un hábito antes de cada commit.
+
+## Resumen rápido
+
+| Concepto | Detalle |
+| :--- | :--- |
+| **Vitest** | Test runner para proyectos Vite; API compatible con Jest |
+| **Instalar** | `npm install -D vitest` + script `"test": "vitest"` |
+| **Archivo de test** | `nombre.test.ts` junto al archivo probado |
+| **Estructura** | `describe` (grupo) → `it` (prueba) → `expect` (aserción) |
+| **Ejecutar** | `npm test` (watch) · `npx vitest run` (una vez) · `--ui` · `--coverage` |
+
+## Convención práctica
+
+<Steps>
+	1. Nombra cada `it` como una **frase que describe el comportamiento** ("devuelve 0 con lista vacía"), no la implementación ("llama a reduce").
+	2. Un `it` comprueba **una cosa**. Si tiene cinco `expect` sobre asuntos distintos, son cinco tests.
+	3. Coloca el test **junto al archivo** que prueba y con el mismo nombre más `.test`.
+	4. Ejecuta `npm test` **antes de cada commit**; un test que falla no se commitea.
+	5. Prueba primero lo que tiene **lógica** (cálculos, condiciones); dejar sin test un componente que solo pinta texto es aceptable.
+</Steps>
+
+## Referencias
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://vitest.dev/guide/"
+		title="Guía oficial de Vitest"
+		description="Instalación, configuración y conceptos, en inglés."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://vitest.dev/guide/features.html"
+		title="Características de Vitest"
+		description="Watch, UI, coverage, snapshots y compatibilidad con Jest."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://vitest.dev/guide/cli.html"
+		title="Interfaz de línea de comandos"
+		description="Todas las opciones de `vitest` y `vitest run`."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+## Siguientes pasos
+
+<CardGrid>
+	<LinkCard
+		href="/jjcm/di/units/testing/vitest/02-writing-tests/"
+		title="Escribir tests"
+		description="Matchers, código asíncrono, preparación con beforeEach y dobles con vi.fn."
+	/>
+	<LinkCard
+		href="/jjcm/di/units/testing/vitest/03-testing-react/"
+		title="Probar componentes React"
+		description="Testing Library: render, screen, userEvent y qué comprobar en un componente."
+	/>
+</CardGrid>

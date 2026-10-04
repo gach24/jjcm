@@ -1,0 +1,394 @@
+---
+title: "Ejemplo paso a paso"
+description: Añade Playwright a la aplicación de tareas, configura baseURL y webServer, escribe los tests de extremo a extremo de sus flujos principales, ejecútalos con UI Mode e intégralos en GitHub Actions junto a Vitest.
+sources:
+  - author: Playwright
+    url: https://playwright.dev/docs/intro
+  - author: Playwright
+    url: https://playwright.dev/docs/test-webserver
+sidebar:
+  order: 4
+date: 2026-10-04
+updated: 2026-10-04
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import { Aside, Card, CardGrid, FileTree, LinkCard, Steps, TabItem, Tabs } from "@astrojs/starlight/components";
+
+En el paso a paso de Vitest construiste una aplicación de tareas y la probaste por unidades. Ahora la vas a probar **como la usa una persona**: en un navegador real, de extremo a extremo. Al terminar tendrás los dos niveles de prueba sobre el mismo proyecto y un único `push` que ejecuta ambos.
+
+<CardGrid stagger>
+	<Card title="Punto de partida" icon="rocket">
+		La aplicación de tareas del paso a paso de Vitest, con sus 28 tests en verde.
+	</Card>
+	<Card title="Lo que vas a crear" icon="document">
+		Cinco tests E2E que cubren añadir, completar, filtrar y eliminar tareas, con el servidor arrancado automáticamente.
+	</Card>
+	<Card title="Resultado" icon="approve-check">
+		`npm run test:e2e` en verde, informe HTML con trazas y un workflow de CI con Vitest y Playwright.
+	</Card>
+</CardGrid>
+
+## Visión general
+
+<Steps>
+	1. Instalar Playwright en el proyecto.
+	2. Configurar `baseURL`, `webServer` y un solo navegador.
+	3. Escribir los tests del flujo de tareas.
+	4. Ejecutarlos con UI Mode y ver el informe.
+	5. Añadir el job de E2E al workflow de CI.
+</Steps>
+
+<Aside type="tip" title="¿No tienes la aplicación?">
+	Sigue primero [Preparar el proyecto](/jjcm/di/units/testing/vitest/00-project-setup/) y el [paso a paso de Vitest](/jjcm/di/units/testing/vitest/04-steps-example/) hasta el paso 4. Solo necesitas que `npm run dev` muestre la app de tareas en `http://localhost:5173`.
+</Aside>
+
+## Paso 1 — Instala Playwright
+
+En la raíz de `task-app`:
+
+```bash
+npm init playwright@latest
+```
+
+Respuestas: **TypeScript**, carpeta **`tests`**, workflow de GitHub Actions **sí**, instalar navegadores **sí**. Al terminar, comprueba que los ejemplos funcionan:
+
+```bash
+npx playwright test --project=chromium
+npx playwright show-report
+```
+
+Borra `tests/example.spec.ts` y la carpeta `tests-examples/`: ya has visto el formato y no prueban tu app.
+
+<Aside type="caution" title="Conflicto de nombres con Vitest">
+	Vitest busca por defecto archivos `*.spec.ts` **también**, así que intentaría ejecutar los tests de Playwright y fallaría. Evítalo excluyendo la carpeta en `vite.config.ts`:
+
+	```ts
+	test: {
+		environment: "jsdom",
+		setupFiles: "./src/setupTests.ts",
+		exclude: ["tests/**", "node_modules/**"],
+	},
+	```
+</Aside>
+
+## Paso 2 — Configura Playwright
+
+Sustituye el `playwright.config.ts` generado por esta versión reducida:
+
+```ts title="playwright.config.ts"
+import { defineConfig, devices } from "@playwright/test";
+
+export default defineConfig({
+	testDir: "./tests",
+	fullyParallel: true,
+	forbidOnly: !!process.env.CI,
+	retries: process.env.CI ? 2 : 0,
+	reporter: "html",
+	use: {
+		baseURL: "http://localhost:5173",
+		trace: "on-first-retry",
+		screenshot: "only-on-failure",
+	},
+	webServer: {
+		command: "npm run dev",
+		url: "http://localhost:5173",
+		reuseExistingServer: !process.env.CI,
+	},
+	projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+});
+```
+
+Y los scripts en `package.json`:
+
+```json title="package.json" {5-6}
+{
+	"scripts": {
+		"dev": "vite",
+		"test": "vitest",
+		"test:e2e": "playwright test",
+		"test:e2e:ui": "playwright test --ui",
+		"build": "tsc -b && vite build",
+		"preview": "vite preview"
+	}
+}
+```
+
+Con `webServer`, no necesitas arrancar `npm run dev`: Playwright lo hace, espera a que `http://localhost:5173` responda y lo cierra al acabar.
+
+## Paso 3 — Escribe los tests
+
+Un único archivo con los cinco flujos. Fíjate en que los locators son los mismos nombres accesibles que usaron los tests de Testing Library: la etiqueta "Nueva tarea", el botón "Añadir", el checkbox con el título de la tarea, el botón "Eliminar …".
+
+```ts title="tests/tasks.spec.ts"
+import { test, expect, type Page } from "@playwright/test";
+
+async function addTask(page: Page, title: string) {
+	await page.getByLabel("Nueva tarea").fill(title);
+	await page.getByRole("button", { name: "Añadir" }).click();
+}
+
+test.beforeEach(async ({ page }) => {
+	await page.goto("/");
+});
+
+test("la aplicación carga vacía", async ({ page }) => {
+	await expect(page.getByRole("heading", { name: "Tareas" })).toBeVisible();
+	await expect(page.getByText("No hay tareas")).toBeVisible();
+	await expect(page.getByText("0 pendientes")).toBeVisible();
+	await expect(page.getByRole("button", { name: "Añadir" })).toBeDisabled();
+});
+
+test("añadir tareas las muestra en la lista y actualiza el contador", async ({ page }) => {
+	await addTask(page, "Estudiar Playwright");
+	await addTask(page, "Hacer commit");
+
+	await expect(page.getByRole("listitem")).toHaveCount(2);
+	await expect(page.getByText("2 pendientes")).toBeVisible();
+	await expect(page.getByLabel("Nueva tarea")).toHaveValue("");
+});
+
+test("completar una tarea la tacha y descuenta del contador", async ({ page }) => {
+	await addTask(page, "Estudiar Playwright");
+
+	const checkbox = page.getByRole("checkbox", { name: "Estudiar Playwright" });
+	await checkbox.check();
+
+	await expect(checkbox).toBeChecked();
+	await expect(page.getByText("0 pendientes")).toBeVisible();
+});
+
+test("el filtro Completadas oculta las pendientes", async ({ page }) => {
+	await addTask(page, "Pendiente");
+	await addTask(page, "Hecha");
+	await page.getByRole("checkbox", { name: "Hecha" }).check();
+
+	await page.getByRole("button", { name: "Completadas" }).click();
+
+	await expect(page.getByRole("listitem")).toHaveCount(1);
+	await expect(page.getByRole("checkbox", { name: "Hecha" })).toBeVisible();
+	await expect(page.getByRole("checkbox", { name: "Pendiente" })).toBeHidden();
+
+	await page.getByRole("button", { name: "Pendientes" }).click();
+
+	await expect(page.getByRole("checkbox", { name: "Pendiente" })).toBeVisible();
+	await expect(page.getByRole("checkbox", { name: "Hecha" })).toBeHidden();
+});
+
+test("eliminar una tarea la quita de la lista", async ({ page }) => {
+	await addTask(page, "Temporal");
+
+	await page.getByRole("button", { name: "Eliminar Temporal" }).click();
+
+	await expect(page.getByText("No hay tareas")).toBeVisible();
+	await expect(page.getByRole("listitem")).toHaveCount(0);
+});
+```
+
+Compáralo con `src/App.test.tsx` del paso a paso de Vitest: prueban **los mismos flujos**. La diferencia es dónde: allí, componentes en jsdom en milisegundos; aquí, la aplicación servida por Vite en Chromium. Si un día un CSS tapa el botón "Añadir" o `main.tsx` deja de montar `App`, solo este archivo lo detecta.
+
+<Aside type="note" title="`toBeHidden` frente a `not.toBeVisible`">
+	Son equivalentes para elementos que no existen o están ocultos. `toBeHidden` se lee mejor cuando lo que afirmas es "esto ya no debe verse".
+</Aside>
+
+## Paso 4 — Ejecuta y mira el informe
+
+```bash
+npm run test:e2e
+```
+
+```txt
+Running 5 tests using 4 workers
+  5 passed (6.1s)
+```
+
+Después, en UI Mode, para verlo pasar:
+
+```bash
+npm run test:e2e:ui
+```
+
+Ejecuta "el filtro Completadas oculta las pendientes" y recorre la línea de tiempo: verás la página en cada paso, el locator de cada acción y los elementos que encontró.
+
+### Prueba a romperlo
+
+Tres experimentos rápidos para entender qué detecta cada nivel:
+
+| Cambio en la app | Vitest | Playwright |
+| :--- | :--- | :--- |
+| `countActive` cuenta las hechas | Fallan `tasks.test.ts` y `App.test.tsx` | Fallan los tests del contador |
+| Botón "Añadir" renombrado a "Agregar" | Fallan los que lo buscan por nombre | Igual |
+| En `index.css`, `button { display: none }` | **Todo pasa** (jsdom no aplica CSS) | Falla: el botón no es visible ni se puede pulsar |
+| `main.tsx` monta otro componente | **Todo pasa** (los tests renderizan `App` directamente) | Fallan los cinco |
+
+Las dos últimas filas son la razón de tener E2E.
+
+Al fallar, ejecuta con traza y abre el informe:
+
+```bash
+npx playwright test --trace on
+npx playwright show-report
+```
+
+En la traza del test fallido verás la captura en el momento del fallo y el locator que no encontró el elemento (o lo encontró oculto).
+
+## Paso 5 — CI con Vitest y Playwright
+
+Sustituye el `.github/workflows/playwright.yml` generado y el `test.yml` del paso a paso de Vitest por un único workflow con dos jobs:
+
+```yaml title=".github/workflows/tests.yml"
+name: Tests
+
+on: [push, pull_request]
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx vitest run
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+```
+
+Los dos jobs corren **en paralelo**: el de Vitest termina en menos de un minuto; el de Playwright tarda algo más por la descarga de Chromium. Si cualquiera falla, el commit queda en rojo, y el informe de Playwright se puede descargar desde la pestaña *Actions*.
+
+## Estructura final del proyecto
+
+<FileTree>
+
+- task-app/
+  - .github/
+    - workflows/
+      - tests.yml
+  - src/
+    - setupTests.ts
+    - utils/
+      - tasks.ts
+      - tasks.test.ts
+    - components/
+      - TaskForm.tsx
+      - TaskForm.test.tsx
+      - TaskList.tsx
+      - TaskList.test.tsx
+      - TaskFilter.tsx
+      - TaskFilter.test.tsx
+    - App.tsx
+    - App.test.tsx
+    - main.tsx
+  - tests/
+    - tasks.spec.ts
+  - playwright.config.ts
+  - vite.config.ts
+  - package.json
+
+</FileTree>
+
+Añade a `.gitignore`, si el instalador no lo hizo: `test-results/`, `playwright-report/` y `blob-report/`.
+
+## 🧩 Aplicación en el proyecto
+
+El reparto que has aplicado aquí es el que debe tener tu aplicación del módulo:
+
+- **Vitest**: toda la lógica (utilidades, servicios) y cada componente con comportamiento; muchos tests, rápidos.
+- **Playwright**: los **flujos principales** de principio a fin en un navegador; pocos tests, sobre lo que no puede fallar.
+- **Un workflow** con ambos, para que el estado de la aplicación sea visible en cada commit del repositorio de entrega.
+
+Si solo tienes tiempo para una cosa, escribe primero el test E2E del flujo principal: es el que más confianza da por test escrito. Después, baja a Vitest para la lógica.
+
+## Resumen rápido
+
+| Paso | Qué queda hecho |
+| :--- | :--- |
+| Instalación | `npm init playwright@latest` + `exclude: ["tests/**"]` en Vitest |
+| Configuración | `baseURL`, `webServer`, `screenshot: "only-on-failure"`, un proyecto `chromium` |
+| Tests | `tests/tasks.spec.ts`: carga, añadir, completar, filtrar, eliminar |
+| Ejecución | `npm run test:e2e` · `npm run test:e2e:ui` · `--trace on` + `show-report` |
+| CI | `tests.yml` con jobs `unit` y `e2e` y el informe como artefacto |
+
+## Convención práctica
+
+<Steps>
+	1. **Mismos nombres accesibles** en la app para Testing Library y Playwright: etiquetas, roles y `aria-label` son la API de tus tests.
+	2. **Excluye `tests/`** de Vitest en cuanto instales Playwright; evita fallos desconcertantes.
+	3. Función auxiliar para la acción repetida (`addTask`), `beforeEach` para la navegación.
+	4. Un test E2E por **flujo**, con aserciones al final de cada paso significativo, no una sola al terminar.
+	5. Los dos runners en **un workflow**: el repositorio muestra un único estado de "tests".
+</Steps>
+
+## Referencias
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://playwright.dev/docs/writing-tests"
+		title="Escribir tests (docs oficiales)"
+		description="Acciones, aserciones y aislamiento, con ejemplos."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://playwright.dev/docs/test-webserver"
+		title="Web server"
+		description="Opciones de webServer: comando, URL, tiempo de espera y reutilización."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://playwright.dev/docs/ci-intro"
+		title="Playwright en GitHub Actions"
+		description="El workflow oficial y cómo publicar el informe."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://vitest.dev/config/#exclude"
+		title="Vitest: exclude"
+		description="Cómo evitar que Vitest ejecute los archivos de Playwright."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+## Siguientes pasos
+
+<CardGrid>
+	<LinkCard
+		href="/jjcm/di/units/testing/vitest/01-introduction/"
+		title="Volver al inicio de la unidad"
+		description="Introducción a Vitest y a las pruebas automatizadas."
+	/>
+	<LinkCard
+		href="/jjcm/di/units/documentation/storybook/01-introduction/"
+		title="Storybook"
+		description="La otra cara de la calidad de los componentes: verlos y documentarlos aislados."
+	/>
+</CardGrid>
