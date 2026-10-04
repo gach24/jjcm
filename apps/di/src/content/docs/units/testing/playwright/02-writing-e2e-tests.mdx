@@ -41,21 +41,21 @@ Un test de Playwright describe lo que hace una persona: va a una página, encuen
 ```ts title="tests/tasks.spec.ts"
 import { test, expect } from "@playwright/test";
 
-test("añadir una tarea la muestra en la lista", async ({ page }) => {
+test("adding a task shows it in the list", async ({ page }) => {
 	await page.goto("http://localhost:5173/");
 
-	await page.getByLabel("Nueva tarea").fill("Estudiar Playwright");
-	await page.getByRole("button", { name: "Añadir" }).click();
+	await page.getByLabel("New task").fill("Learn Playwright");
+	await page.getByRole("button", { name: "Add" }).click();
 
 	await expect(page.getByRole("listitem")).toHaveCount(1);
-	await expect(page.getByText("Estudiar Playwright")).toBeVisible();
+	await expect(page.getByText("Learn Playwright")).toBeVisible();
 });
 ```
 
 <Steps>
 	1. **`test(nombre, fn)`** define un test. La función recibe **fixtures**; `page` es una pestaña nueva y limpia para este test.
 	2. **`page.goto(url)`** navega. Con `baseURL` configurada (siguiente página) basta `page.goto("/")`.
-	3. **Locator + acción**: `getByLabel("Nueva tarea")` describe el campo; `.fill()` escribe en él. El locator **no busca nada** hasta que se usa.
+	3. **Locator + acción**: `getByLabel("New task")` describe el campo; `.fill()` escribe en él. El locator **no busca nada** hasta que se usa.
 	4. **`await expect(locator).matcher()`**: la aserción espera a que se cumpla. El `await` delante de `expect` es obligatorio.
 </Steps>
 
@@ -67,11 +67,11 @@ Un *locator* es una **descripción** de cómo encontrar uno o varios elementos. 
 
 | Locator | Encuentra por | Ejemplo |
 | :--- | :--- | :--- |
-| `getByRole` | rol accesible y nombre | `page.getByRole("button", { name: "Añadir" })` |
-| `getByLabel` | la etiqueta de un campo | `page.getByLabel("Nueva tarea")` |
-| `getByPlaceholder` | el placeholder | `page.getByPlaceholder("¿Qué hay que hacer?")` |
-| `getByText` | el texto visible | `page.getByText("No hay tareas")` |
-| `getByTitle` | el atributo `title` | `page.getByTitle("Cerrar")` |
+| `getByRole` | rol accesible y nombre | `page.getByRole("button", { name: "Add" })` |
+| `getByLabel` | la etiqueta de un campo | `page.getByLabel("New task")` |
+| `getByPlaceholder` | el placeholder | `page.getByPlaceholder("What needs to be done?")` |
+| `getByText` | el texto visible | `page.getByText("No tasks")` |
+| `getByTitle` | el atributo `title` | `page.getByTitle("Close")` |
 | `getByTestId` | `data-testid` | `page.getByTestId("total")` |
 | `locator(css)` | selector CSS o XPath | `page.locator("ul > li")` (último recurso) |
 
@@ -80,13 +80,13 @@ El orden es el mismo que en Testing Library: primero rol, luego etiqueta y texto
 ### Afinar un locator
 
 ```ts
-// texto exacto (por defecto es "contiene", sin distinguir mayúsculas)
-page.getByText("Tareas", { exact: true });
+// exact text (default is "contains", case-insensitive)
+page.getByText("Tasks", { exact: true });
 
-// encadenar: dentro de un elemento, otro
-page.getByRole("listitem").filter({ hasText: "Hacer commit" }).getByRole("checkbox");
+// chaining: an element inside another
+page.getByRole("listitem").filter({ hasText: "Commit changes" }).getByRole("checkbox");
 
-// por posición, cuando hay varios iguales
+// by position, when several match
 page.getByRole("listitem").first();
 page.getByRole("listitem").nth(2);
 page.getByRole("listitem").last();
@@ -111,10 +111,10 @@ page.getByRole("listitem").last();
 | `setInputFiles(ruta)` | sube un archivo | |
 
 ```ts
-await page.getByLabel("Nueva tarea").fill("Comprar pan");
-await page.getByLabel("Nueva tarea").press("Enter");
-await page.getByRole("checkbox", { name: "Comprar pan" }).check();
-await page.getByRole("button", { name: "Completadas" }).click();
+await page.getByLabel("New task").fill("Buy bread");
+await page.getByLabel("New task").press("Enter");
+await page.getByRole("checkbox", { name: "Buy bread" }).check();
+await page.getByRole("button", { name: "Completed" }).click();
 ```
 
 La espera automática (*auto-wait*) es lo que hace a Playwright fiable: no necesitas comprobar que el botón existe antes de pulsarlo. Si no llega a estar listo en el tiempo límite (30 s por defecto), el test falla con un mensaje que explica qué condición no se cumplió.
@@ -126,26 +126,26 @@ Hay dos familias. Las de **locator** reintentan hasta cumplirse; las genéricas 
 <Tabs>
 	<TabItem label="Sobre locators (reintentan)">
 		```ts
-		await expect(page.getByText("0 pendientes")).toBeVisible();
+		await expect(page.getByText("0 pending")).toBeVisible();
 		await expect(page.getByRole("listitem")).toHaveCount(2);
-		await expect(page.getByRole("checkbox", { name: "Hecha" })).toBeChecked();
-		await expect(page.getByRole("button", { name: "Añadir" })).toBeDisabled();
-		await expect(page.getByLabel("Nueva tarea")).toHaveValue("");
-		await expect(page.getByRole("heading")).toHaveText("Tareas");
+		await expect(page.getByRole("checkbox", { name: "Done" })).toBeChecked();
+		await expect(page.getByRole("button", { name: "Add" })).toBeDisabled();
+		await expect(page.getByLabel("New task")).toHaveValue("");
+		await expect(page.getByRole("heading")).toHaveText("Tasks");
 		await expect(page.getByText("Error")).not.toBeVisible();
-		await expect(page.getByText("Temporal")).toBeHidden();
+		await expect(page.getByText("Temporary")).toBeHidden();
 		```
 	</TabItem>
 	<TabItem label="Sobre la página">
 		```ts
-		await expect(page).toHaveTitle(/Tareas/);
-		await expect(page).toHaveURL(/\/tareas/);
+		await expect(page).toHaveTitle(/Tasks/);
+		await expect(page).toHaveURL(/\/tasks/);
 		```
 	</TabItem>
 	<TabItem label="Genéricas (sin reintento)">
 		```ts
 		const total = await page.getByRole("listitem").count();
-		expect(total).toBe(2);   // comprueba una vez; si la lista aún no se ha pintado, falla
+		expect(total).toBe(2);   // checks once; fails if the list has not rendered yet
 		```
 
 		Úsalas solo con valores que ya has extraído. Para el DOM, siempre las de locator.
@@ -165,26 +165,26 @@ test.beforeEach(async ({ page }) => {
 	await page.goto("/");
 });
 
-test.describe("gestión de tareas", () => {
-	test("empieza vacía", async ({ page }) => {
-		await expect(page.getByText("No hay tareas")).toBeVisible();
-		await expect(page.getByText("0 pendientes")).toBeVisible();
+test.describe("task management", () => {
+	test("starts empty", async ({ page }) => {
+		await expect(page.getByText("No tasks")).toBeVisible();
+		await expect(page.getByText("0 pending")).toBeVisible();
 	});
 
-	test("añadir una tarea la muestra en la lista", async ({ page }) => {
-		await page.getByLabel("Nueva tarea").fill("Estudiar Playwright");
-		await page.getByRole("button", { name: "Añadir" }).click();
+	test("adding a task shows it in the list", async ({ page }) => {
+		await page.getByLabel("New task").fill("Learn Playwright");
+		await page.getByRole("button", { name: "Add" }).click();
 
 		await expect(page.getByRole("listitem")).toHaveCount(1);
-		await expect(page.getByText("1 pendientes")).toBeVisible();
+		await expect(page.getByText("1 pending")).toBeVisible();
 	});
 
-	test("completar una tarea actualiza el contador", async ({ page }) => {
-		await page.getByLabel("Nueva tarea").fill("Estudiar Playwright");
-		await page.getByRole("button", { name: "Añadir" }).click();
-		await page.getByRole("checkbox", { name: "Estudiar Playwright" }).check();
+	test("completing a task updates the counter", async ({ page }) => {
+		await page.getByLabel("New task").fill("Learn Playwright");
+		await page.getByRole("button", { name: "Add" }).click();
+		await page.getByRole("checkbox", { name: "Learn Playwright" }).check();
 
-		await expect(page.getByText("0 pendientes")).toBeVisible();
+		await expect(page.getByText("0 pending")).toBeVisible();
 	});
 });
 ```
@@ -197,8 +197,8 @@ Igual que en Vitest, una función auxiliar evita copiar los pasos comunes:
 
 ```ts
 async function addTask(page: Page, title: string) {
-	await page.getByLabel("Nueva tarea").fill(title);
-	await page.getByRole("button", { name: "Añadir" }).click();
+	await page.getByLabel("New task").fill(title);
+	await page.getByRole("button", { name: "Add" }).click();
 }
 ```
 

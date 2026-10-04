@@ -125,74 +125,74 @@ Con `webServer`, no necesitas arrancar `npm run dev`: Playwright lo hace, espera
 
 ## Paso 3 — Escribe los tests
 
-Un único archivo con los cinco flujos. Fíjate en que los locators son los mismos nombres accesibles que usaron los tests de Testing Library: la etiqueta "Nueva tarea", el botón "Añadir", el checkbox con el título de la tarea, el botón "Eliminar …".
+Un único archivo con los cinco flujos. Fíjate en que los locators son los mismos nombres accesibles que usaron los tests de Testing Library: la etiqueta "New task", el botón "Add", el checkbox con el título de la tarea, el botón "Delete …".
 
 ```ts title="tests/tasks.spec.ts"
 import { test, expect, type Page } from "@playwright/test";
 
 async function addTask(page: Page, title: string) {
-	await page.getByLabel("Nueva tarea").fill(title);
-	await page.getByRole("button", { name: "Añadir" }).click();
+	await page.getByLabel("New task").fill(title);
+	await page.getByRole("button", { name: "Add" }).click();
 }
 
 test.beforeEach(async ({ page }) => {
 	await page.goto("/");
 });
 
-test("la aplicación carga vacía", async ({ page }) => {
-	await expect(page.getByRole("heading", { name: "Tareas" })).toBeVisible();
-	await expect(page.getByText("No hay tareas")).toBeVisible();
-	await expect(page.getByText("0 pendientes")).toBeVisible();
-	await expect(page.getByRole("button", { name: "Añadir" })).toBeDisabled();
+test("the application loads empty", async ({ page }) => {
+	await expect(page.getByRole("heading", { name: "Tasks" })).toBeVisible();
+	await expect(page.getByText("No tasks")).toBeVisible();
+	await expect(page.getByText("0 pending")).toBeVisible();
+	await expect(page.getByRole("button", { name: "Add" })).toBeDisabled();
 });
 
-test("añadir tareas las muestra en la lista y actualiza el contador", async ({ page }) => {
-	await addTask(page, "Estudiar Playwright");
-	await addTask(page, "Hacer commit");
+test("adding tasks shows them in the list and updates the counter", async ({ page }) => {
+	await addTask(page, "Learn Playwright");
+	await addTask(page, "Commit changes");
 
 	await expect(page.getByRole("listitem")).toHaveCount(2);
-	await expect(page.getByText("2 pendientes")).toBeVisible();
-	await expect(page.getByLabel("Nueva tarea")).toHaveValue("");
+	await expect(page.getByText("2 pending")).toBeVisible();
+	await expect(page.getByLabel("New task")).toHaveValue("");
 });
 
-test("completar una tarea la tacha y descuenta del contador", async ({ page }) => {
-	await addTask(page, "Estudiar Playwright");
+test("completing a task strikes it through and decrements the counter", async ({ page }) => {
+	await addTask(page, "Learn Playwright");
 
-	const checkbox = page.getByRole("checkbox", { name: "Estudiar Playwright" });
+	const checkbox = page.getByRole("checkbox", { name: "Learn Playwright" });
 	await checkbox.check();
 
 	await expect(checkbox).toBeChecked();
-	await expect(page.getByText("0 pendientes")).toBeVisible();
+	await expect(page.getByText("0 pending")).toBeVisible();
 });
 
-test("el filtro Completadas oculta las pendientes", async ({ page }) => {
-	await addTask(page, "Pendiente");
-	await addTask(page, "Hecha");
-	await page.getByRole("checkbox", { name: "Hecha" }).check();
+test("the Completed filter hides pending tasks", async ({ page }) => {
+	await addTask(page, "Pending");
+	await addTask(page, "Done");
+	await page.getByRole("checkbox", { name: "Done" }).check();
 
-	await page.getByRole("button", { name: "Completadas" }).click();
+	await page.getByRole("button", { name: "Completed" }).click();
 
 	await expect(page.getByRole("listitem")).toHaveCount(1);
-	await expect(page.getByRole("checkbox", { name: "Hecha" })).toBeVisible();
-	await expect(page.getByRole("checkbox", { name: "Pendiente" })).toBeHidden();
+	await expect(page.getByRole("checkbox", { name: "Done" })).toBeVisible();
+	await expect(page.getByRole("checkbox", { name: "Pending" })).toBeHidden();
 
-	await page.getByRole("button", { name: "Pendientes" }).click();
+	await page.getByRole("button", { name: "Active" }).click();
 
-	await expect(page.getByRole("checkbox", { name: "Pendiente" })).toBeVisible();
-	await expect(page.getByRole("checkbox", { name: "Hecha" })).toBeHidden();
+	await expect(page.getByRole("checkbox", { name: "Pending" })).toBeVisible();
+	await expect(page.getByRole("checkbox", { name: "Done" })).toBeHidden();
 });
 
-test("eliminar una tarea la quita de la lista", async ({ page }) => {
-	await addTask(page, "Temporal");
+test("deleting a task removes it from the list", async ({ page }) => {
+	await addTask(page, "Temporary");
 
-	await page.getByRole("button", { name: "Eliminar Temporal" }).click();
+	await page.getByRole("button", { name: "Delete Temporary" }).click();
 
-	await expect(page.getByText("No hay tareas")).toBeVisible();
+	await expect(page.getByText("No tasks")).toBeVisible();
 	await expect(page.getByRole("listitem")).toHaveCount(0);
 });
 ```
 
-Compáralo con `src/App.test.tsx` del paso a paso de Vitest: prueban **los mismos flujos**. La diferencia es dónde: allí, componentes en jsdom en milisegundos; aquí, la aplicación servida por Vite en Chromium. Si un día un CSS tapa el botón "Añadir" o `main.tsx` deja de montar `App`, solo este archivo lo detecta.
+Compáralo con `src/App.test.tsx` del paso a paso de Vitest: prueban **los mismos flujos**. La diferencia es dónde: allí, componentes en jsdom en milisegundos; aquí, la aplicación servida por Vite en Chromium. Si un día un CSS tapa el botón "Add" o `main.tsx` deja de montar `App`, solo este archivo lo detecta.
 
 <Aside type="note" title="`toBeHidden` frente a `not.toBeVisible`">
 	Son equivalentes para elementos que no existen o están ocultos. `toBeHidden` se lee mejor cuando lo que afirmas es "esto ya no debe verse".
@@ -215,7 +215,7 @@ Después, en UI Mode, para verlo pasar:
 npm run test:e2e:ui
 ```
 
-Ejecuta "el filtro Completadas oculta las pendientes" y recorre la línea de tiempo: verás la página en cada paso, el locator de cada acción y los elementos que encontró.
+Ejecuta "the Completed filter hides pending tasks" y recorre la línea de tiempo: verás la página en cada paso, el locator de cada acción y los elementos que encontró.
 
 ### Prueba a romperlo
 
@@ -224,7 +224,7 @@ Tres experimentos rápidos para entender qué detecta cada nivel:
 | Cambio en la app | Vitest | Playwright |
 | :--- | :--- | :--- |
 | `countActive` cuenta las hechas | Fallan `tasks.test.ts` y `App.test.tsx` | Fallan los tests del contador |
-| Botón "Añadir" renombrado a "Agregar" | Fallan los que lo buscan por nombre | Igual |
+| Botón "Add" renombrado a "Agregar" | Fallan los que lo buscan por nombre | Igual |
 | En `index.css`, `button { display: none }` | **Todo pasa** (jsdom no aplica CSS) | Falla: el botón no es visible ni se puede pulsar |
 | `main.tsx` monta otro componente | **Todo pasa** (los tests renderizan `App` directamente) | Fallan los cinco |
 

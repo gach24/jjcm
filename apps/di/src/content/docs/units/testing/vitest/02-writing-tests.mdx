@@ -50,12 +50,12 @@ Ya sabes la estructura de un test. Esta página cubre lo que necesitas para escr
 
 ```ts
 expect(2 + 2).toBe(4);
-expect("hola".toUpperCase()).toBe("HOLA");
+expect("hello".toUpperCase()).toBe("HELLO");
 
-expect({ id: 1, nombre: "Ana" }).toEqual({ id: 1, nombre: "Ana" });
+expect({ id: 1, name: "Ana" }).toEqual({ id: 1, name: "Ana" });
 expect([1, 2, 3]).toEqual([1, 2, 3]);
 
-expect({ id: 1 }).toBe({ id: 1 }); // ❌ falla: son dos objetos distintos
+expect({ id: 1 }).toBe({ id: 1 }); // ❌ fails: two different objects
 ```
 
 <Aside type="caution" title="El error más frecuente">
@@ -65,30 +65,30 @@ expect({ id: 1 }).toBe({ id: 1 }); // ❌ falla: son dos objetos distintos
 ### Verdad, nulos y números
 
 ```ts
-expect(usuario.activo).toBe(true);
-expect(lista.length > 0).toBeTruthy();   // cualquier valor "verdadero"
-expect(resultado).toBeNull();
-expect(opcional).toBeUndefined();
-expect(opcional).toBeDefined();
+expect(user.active).toBe(true);
+expect(list.length > 0).toBeTruthy();   // any truthy value
+expect(result).toBeNull();
+expect(optional).toBeUndefined();
+expect(optional).toBeDefined();
 
-expect(precio).toBeGreaterThan(0);
-expect(nota).toBeGreaterThanOrEqual(5);
-expect(0.1 + 0.2).toBeCloseTo(0.3);      // decimales: nunca toBe
+expect(price).toBeGreaterThan(0);
+expect(grade).toBeGreaterThanOrEqual(5);
+expect(0.1 + 0.2).toBeCloseTo(0.3);      // decimals: never toBe
 ```
 
 ### Strings, arrays y objetos
 
 ```ts
-expect("Hola, Ana").toContain("Ana");
-expect("ana@correo.com").toMatch(/@/);
+expect("Hello, Ana").toContain("Ana");
+expect("ana@example.com").toMatch(/@/);
 
 expect([1, 2, 3]).toContain(2);
 expect([1, 2, 3]).toHaveLength(3);
-expect(usuarios).toContainEqual({ id: 2, nombre: "Luis" }); // objeto dentro de array
+expect(users).toContainEqual({ id: 2, name: "Luis" }); // object inside an array
 
-expect(usuario).toHaveProperty("email");
-expect(usuario).toHaveProperty("direccion.ciudad", "Oviedo");
-expect(usuario).toMatchObject({ nombre: "Ana" });          // subconjunto de propiedades
+expect(user).toHaveProperty("email");
+expect(user).toHaveProperty("address.city", "Oviedo");
+expect(user).toMatchObject({ name: "Ana" });          // subset of properties
 ```
 
 ### Negar: `.not`
@@ -96,8 +96,8 @@ expect(usuario).toMatchObject({ nombre: "Ana" });          // subconjunto de pro
 Cualquier matcher se invierte con `.not`:
 
 ```ts
-expect(lista).not.toContain(99);
-expect(resultado).not.toBeNull();
+expect(list).not.toContain(99);
+expect(result).not.toBeNull();
 ```
 
 ## Probar que una función lanza un error
@@ -106,36 +106,36 @@ La función que lanza **no se llama directamente**: se envuelve en una arrow fun
 
 La validación del título de una tarea, que usará el formulario de la app:
 
-```ts title="src/utils/validar.ts"
-export const TITULO_MAX = 100;
+```ts title="src/utils/validate.ts"
+export const MAX_TITLE_LENGTH = 100;
 
-export function validarTitulo(titulo: string): string {
-	const limpio = titulo.trim();
-	if (limpio === "") throw new Error("El título no puede estar vacío");
-	if (limpio.length > TITULO_MAX) throw new RangeError(`El título no puede superar ${TITULO_MAX} caracteres`);
-	return limpio;
+export function validateTitle(title: string): string {
+	const clean = title.trim();
+	if (clean === "") throw new Error("Title cannot be empty");
+	if (clean.length > MAX_TITLE_LENGTH) throw new RangeError(`Title cannot exceed ${MAX_TITLE_LENGTH} characters`);
+	return clean;
 }
 ```
 
-```ts title="src/utils/validar.test.ts"
+```ts title="src/utils/validate.test.ts"
 import { describe, it, expect } from "vitest";
-import { validarTitulo, TITULO_MAX } from "./validar";
+import { validateTitle, MAX_TITLE_LENGTH } from "./validate";
 
-describe("validarTitulo", () => {
-	it("devuelve el título sin espacios sobrantes", () => {
-		expect(validarTitulo("  Estudiar Vitest  ")).toBe("Estudiar Vitest");
+describe("validateTitle", () => {
+	it("returns the title without surrounding spaces", () => {
+		expect(validateTitle("  Learn Vitest  ")).toBe("Learn Vitest");
 	});
 
-	it("lanza un error si está vacío", () => {
-		expect(() => validarTitulo("   ")).toThrow("El título no puede estar vacío");
+	it("throws an error when empty", () => {
+		expect(() => validateTitle("   ")).toThrow("Title cannot be empty");
 	});
 
-	it("lanza RangeError si es demasiado largo", () => {
-		expect(() => validarTitulo("a".repeat(TITULO_MAX + 1))).toThrow(RangeError);
+	it("throws RangeError when too long", () => {
+		expect(() => validateTitle("a".repeat(MAX_TITLE_LENGTH + 1))).toThrow(RangeError);
 	});
 
-	it("no lanza con la longitud máxima exacta", () => {
-		expect(() => validarTitulo("a".repeat(TITULO_MAX))).not.toThrow();
+	it("does not throw at the exact maximum length", () => {
+		expect(() => validateTitle("a".repeat(MAX_TITLE_LENGTH))).not.toThrow();
 	});
 });
 ```
@@ -146,32 +146,32 @@ describe("validarTitulo", () => {
 
 En una app React, las llamadas a la API se agrupan en **servicios**: funciones que hacen el `fetch` y devuelven datos con el tipo de la aplicación, para que los componentes no sepan nada de URLs. Se prueban marcando el test como `async` y usando `await`, exactamente como en la aplicación:
 
-```ts title="src/services/usuarios.ts"
-export interface Usuario {
+```ts title="src/services/users.ts"
+export interface User {
 	id: number;
-	nombre: string;
+	name: string;
 }
 
-export async function obtenerUsuario(id: number): Promise<Usuario> {
+export async function getUser(id: number): Promise<User> {
 	const res = await fetch(`https://jsonplaceholder.typicode.com/users/${id}`);
 	if (!res.ok) throw new Error(`HTTP ${res.status}`);
 	const data = await res.json();
-	return { id: data.id, nombre: data.name };
+	return { id: data.id, name: data.name };
 }
 ```
 
-```ts title="src/services/usuarios.test.ts"
+```ts title="src/services/users.test.ts"
 import { describe, it, expect } from "vitest";
-import { obtenerUsuario } from "./usuarios";
+import { getUser } from "./users";
 
-describe("obtenerUsuario", () => {
-	it("devuelve el usuario con id y nombre", async () => {
-		const usuario = await obtenerUsuario(1);
-		expect(usuario).toEqual({ id: 1, nombre: "Leanne Graham" });
+describe("getUser", () => {
+	it("returns the user with id and name", async () => {
+		const user = await getUser(1);
+		expect(user).toEqual({ id: 1, name: "Leanne Graham" });
 	});
 
-	it("rechaza si el usuario no existe", async () => {
-		await expect(obtenerUsuario(999)).rejects.toThrow("HTTP 404");
+	it("rejects when the user does not exist", async () => {
+		await expect(getUser(999)).rejects.toThrow("HTTP 404");
 	});
 });
 ```
@@ -188,56 +188,56 @@ Cuando varios tests necesitan los mismos datos iniciales, se crean en un `before
 
 Un carrito de compra que mantiene sus líneas en una variable privada, como el que alimentaría un componente de resumen de pedido:
 
-```ts title="src/utils/carrito.ts"
-export interface LineaCarrito {
-	producto: string;
-	precio: number;
-	cantidad: number;
+```ts title="src/utils/cart.ts"
+export interface CartLine {
+	product: string;
+	price: number;
+	quantity: number;
 }
 
-export function crearCarrito() {
-	const lineas: LineaCarrito[] = [];
+export function createCart() {
+	const lines: CartLine[] = [];
 
 	return {
-		agregar(producto: string, precio: number, cantidad: number): void {
-			lineas.push({ producto, precio, cantidad });
+		add(product: string, price: number, quantity: number): void {
+			lines.push({ product, price, quantity });
 		},
 		total(): number {
-			return lineas.reduce((acc, linea) => acc + linea.precio * linea.cantidad, 0);
+			return lines.reduce((acc, line) => acc + line.price * line.quantity, 0);
 		},
-		vaciar(): void {
-			lineas.length = 0;
+		clear(): void {
+			lines.length = 0;
 		},
 	};
 }
 
-export type Carrito = ReturnType<typeof crearCarrito>;
+export type Cart = ReturnType<typeof createCart>;
 ```
 
-```ts title="src/utils/carrito.test.ts"
+```ts title="src/utils/cart.test.ts"
 import { describe, it, expect, beforeEach } from "vitest";
-import { crearCarrito, type Carrito } from "./carrito";
+import { createCart, type Cart } from "./cart";
 
-describe("Carrito", () => {
-	let carrito: Carrito;
+describe("Cart", () => {
+	let cart: Cart;
 
 	beforeEach(() => {
-		carrito = crearCarrito();
-		carrito.agregar("Teclado", 49.99, 1);
+		cart = createCart();
+		cart.add("Keyboard", 49.99, 1);
 	});
 
-	it("calcula el total", () => {
-		expect(carrito.total()).toBeCloseTo(49.99);
+	it("calculates the total", () => {
+		expect(cart.total()).toBeCloseTo(49.99);
 	});
 
-	it("suma al agregar otro producto", () => {
-		carrito.agregar("Ratón", 19.99, 2);
-		expect(carrito.total()).toBeCloseTo(89.97);
+	it("adds up when another product is added", () => {
+		cart.add("Mouse", 19.99, 2);
+		expect(cart.total()).toBeCloseTo(89.97);
 	});
 
-	it("queda vacío al vaciar", () => {
-		carrito.vaciar();
-		expect(carrito.total()).toBe(0);
+	it("is empty after clearing", () => {
+		cart.clear();
+		expect(cart.total()).toBe(0);
 	});
 });
 ```
@@ -252,32 +252,32 @@ Cada test recibe un carrito **nuevo**: lo que haga el segundo no afecta al terce
 
 `vi.fn()` crea una **función falsa** (*mock*) que no hace nada pero recuerda cada llamada que recibe. En React, los componentes avisan a sus padres mediante **callbacks** pasados por props (`onAdd`, `onSubmit`…); `vi.fn` sirve para comprobar que se llaman cuando toca y con qué. Esta es la lógica que hay detrás del envío del formulario de tareas, separada del componente:
 
-```ts title="src/utils/formulario.ts"
-export function enviarTarea(titulo: string, onGuardar: (titulo: string) => void): void {
-	const limpio = titulo.trim();
-	if (limpio === "") return;
-	onGuardar(limpio);
+```ts title="src/utils/form.ts"
+export function submitTask(title: string, onSave: (title: string) => void): void {
+	const clean = title.trim();
+	if (clean === "") return;
+	onSave(clean);
 }
 ```
 
-```ts title="src/utils/formulario.test.ts"
+```ts title="src/utils/form.test.ts"
 import { describe, it, expect, vi } from "vitest";
-import { enviarTarea } from "./formulario";
+import { submitTask } from "./form";
 
-describe("enviarTarea", () => {
-	it("llama a onGuardar con el título limpio", () => {
-		const onGuardar = vi.fn();
-		enviarTarea("  Estudiar Vitest  ", onGuardar);
+describe("submitTask", () => {
+	it("calls onSave with the trimmed title", () => {
+		const onSave = vi.fn();
+		submitTask("  Learn Vitest  ", onSave);
 
-		expect(onGuardar).toHaveBeenCalledTimes(1);
-		expect(onGuardar).toHaveBeenCalledWith("Estudiar Vitest");
+		expect(onSave).toHaveBeenCalledTimes(1);
+		expect(onSave).toHaveBeenCalledWith("Learn Vitest");
 	});
 
-	it("no llama a onGuardar si el título está vacío", () => {
-		const onGuardar = vi.fn();
-		enviarTarea("   ", onGuardar);
+	it("does not call onSave when the title is empty", () => {
+		const onSave = vi.fn();
+		submitTask("   ", onSave);
 
-		expect(onGuardar).not.toHaveBeenCalled();
+		expect(onSave).not.toHaveBeenCalled();
 	});
 });
 ```
@@ -286,31 +286,31 @@ Matchers para mocks: `toHaveBeenCalled()`, `toHaveBeenCalledTimes(n)`, `toHaveBe
 
 ### Sustituir `fetch`
 
-Con `vi.spyOn` reemplazas temporalmente una función global por un mock que devuelve lo que tú decidas. Así el test de `obtenerUsuario` deja de depender de la red:
+Con `vi.spyOn` reemplazas temporalmente una función global por un mock que devuelve lo que tú decidas. Así el test de `getUser` deja de depender de la red:
 
-```ts title="src/services/usuarios.test.ts"
+```ts title="src/services/users.test.ts"
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { obtenerUsuario } from "./usuarios";
+import { getUser } from "./users";
 
 afterEach(() => {
-	vi.restoreAllMocks(); // devuelve fetch a su estado original
+	vi.restoreAllMocks(); // restores the original fetch
 });
 
-describe("obtenerUsuario (sin red)", () => {
-	it("devuelve el usuario con id y nombre", async () => {
+describe("getUser (no network)", () => {
+	it("returns the user with id and name", async () => {
 		vi.spyOn(globalThis, "fetch").mockResolvedValue(
 			new Response(JSON.stringify({ id: 1, name: "Ana" }), { status: 200 }),
 		);
 
-		const usuario = await obtenerUsuario(1);
-		expect(usuario).toEqual({ id: 1, nombre: "Ana" });
+		const user = await getUser(1);
+		expect(user).toEqual({ id: 1, name: "Ana" });
 		expect(fetch).toHaveBeenCalledWith("https://jsonplaceholder.typicode.com/users/1");
 	});
 
-	it("rechaza si la respuesta no es ok", async () => {
+	it("rejects when the response is not ok", async () => {
 		vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("", { status: 404 }));
 
-		await expect(obtenerUsuario(999)).rejects.toThrow("HTTP 404");
+		await expect(getUser(999)).rejects.toThrow("HTTP 404");
 	});
 });
 ```
@@ -327,16 +327,16 @@ Cuando el mismo test se repite con distintos datos, `it.each` evita copiar y peg
 
 ```ts title="src/utils/format.test.ts"
 import { describe, it, expect } from "vitest";
-import { pluralizar } from "./format";
+import { pluralize } from "./format";
 
-describe("pluralizar", () => {
+describe("pluralize", () => {
 	it.each([
-		[0, "0 tareas"],
-		[1, "1 tarea"],
-		[2, "2 tareas"],
-		[15, "15 tareas"],
-	])("con %i devuelve %s", (cantidad, esperado) => {
-		expect(pluralizar(cantidad, "tarea", "tareas")).toBe(esperado);
+		[0, "0 tasks"],
+		[1, "1 task"],
+		[2, "2 tasks"],
+		[15, "15 tasks"],
+	])("with %i returns %s", (count, expected) => {
+		expect(pluralize(count, "task", "tasks")).toBe(expected);
 	});
 });
 ```
@@ -347,8 +347,8 @@ Y para trabajar: `it.skip` salta un test (aparece como omitido), `it.only` ejecu
 
 En tu aplicación React, estos son los tests que escribirás con lo visto aquí:
 
-- **Utilidades de la interfaz** (`toBe`, `toEqual`, `toBeCloseTo`): `formatearPrecio`, `pluralizar`, filtrados y ordenaciones de listas que luego pinta un componente.
-- **Validaciones de formularios** (`toThrow`): `validarTitulo` y cualquier regla sobre lo que escribe el usuario.
+- **Utilidades de la interfaz** (`toBe`, `toEqual`, `toBeCloseTo`): `formatPrice`, `pluralize`, filtrados y ordenaciones de listas que luego pinta un componente.
+- **Validaciones de formularios** (`toThrow`): `validateTitle` y cualquier regla sobre lo que escribe el usuario.
 - **Servicios que llaman a la API** (`async` + `vi.spyOn(fetch)`): que construyen la URL correcta, que convierten la respuesta al tipo de tu app, que tratan los errores HTTP.
 - **Callbacks** (`vi.fn`): la lógica que decide cuándo avisar al padre. Es el puente hacia probar componentes, donde esos callbacks son las props `onAdd`, `onSubmit`, `onChange`…
 

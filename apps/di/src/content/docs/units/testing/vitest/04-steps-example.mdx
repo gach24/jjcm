@@ -171,50 +171,50 @@ import { describe, it, expect } from "vitest";
 import { addTask, toggleTask, removeTask, filterTasks, countActive, type Task } from "./tasks";
 
 const base: Task[] = [
-	{ id: 1, title: "Estudiar Vitest", done: false },
-	{ id: 2, title: "Hacer commit", done: true },
+	{ id: 1, title: "Learn Vitest", done: false },
+	{ id: 2, title: "Commit changes", done: true },
 ];
 
 describe("addTask", () => {
-	it("añade una tarea al final con un id nuevo", () => {
-		const result = addTask(base, "Nueva");
+	it("appends a task with a new id", () => {
+		const result = addTask(base, "New");
 		expect(result).toHaveLength(3);
-		expect(result[2]).toEqual({ id: 3, title: "Nueva", done: false });
+		expect(result[2]).toEqual({ id: 3, title: "New", done: false });
 	});
 
-	it("recorta los espacios del título", () => {
-		expect(addTask([], "  Hola  ")[0].title).toBe("Hola");
+	it("trims the title", () => {
+		expect(addTask([], "  Hello  ")[0].title).toBe("Hello");
 	});
 
-	it("ignora los títulos vacíos", () => {
+	it("ignores empty titles", () => {
 		expect(addTask(base, "   ")).toBe(base);
 	});
 
-	it("no modifica la lista original", () => {
-		addTask(base, "Otra");
+	it("does not mutate the original list", () => {
+		addTask(base, "Another");
 		expect(base).toHaveLength(2);
 	});
 });
 
 describe("toggleTask", () => {
-	it("invierte el estado de la tarea indicada", () => {
+	it("toggles the given task", () => {
 		const result = toggleTask(base, 1);
 		expect(result[0].done).toBe(true);
 		expect(result[1].done).toBe(true);
 	});
 
-	it("no toca las demás tareas", () => {
+	it("leaves the other tasks untouched", () => {
 		const result = toggleTask(base, 2);
 		expect(result[0]).toEqual(base[0]);
 	});
 });
 
 describe("removeTask", () => {
-	it("elimina la tarea por id", () => {
+	it("removes the task by id", () => {
 		expect(removeTask(base, 1)).toEqual([base[1]]);
 	});
 
-	it("devuelve la misma lista si el id no existe", () => {
+	it("returns the same list when the id does not exist", () => {
 		expect(removeTask(base, 99)).toEqual(base);
 	});
 });
@@ -224,17 +224,17 @@ describe("filterTasks", () => {
 		["all", 2],
 		["active", 1],
 		["done", 1],
-	] as const)("con el filtro %s devuelve %i tareas", (filter, esperado) => {
-		expect(filterTasks(base, filter)).toHaveLength(esperado);
+	] as const)("with filter %s returns %i tasks", (filter, expected) => {
+		expect(filterTasks(base, filter)).toHaveLength(expected);
 	});
 });
 
 describe("countActive", () => {
-	it("cuenta las tareas pendientes", () => {
+	it("counts the pending tasks", () => {
 		expect(countActive(base)).toBe(1);
 	});
 
-	it("devuelve 0 con la lista vacía", () => {
+	it("returns 0 for an empty list", () => {
 		expect(countActive([])).toBe(0);
 	});
 });
@@ -266,15 +266,15 @@ export function TaskForm({ onAdd }: Props) {
 
 	return (
 		<form onSubmit={handleSubmit}>
-			<label htmlFor="new-task">Nueva tarea</label>
+			<label htmlFor="new-task">New task</label>
 			<input
 				id="new-task"
 				value={title}
 				onChange={e => setTitle(e.target.value)}
-				placeholder="¿Qué hay que hacer?"
+				placeholder="What needs to be done?"
 			/>
 			<button type="submit" disabled={title.trim() === ""}>
-				Añadir
+				Add
 			</button>
 		</form>
 	);
@@ -288,41 +288,41 @@ import userEvent from "@testing-library/user-event";
 import { TaskForm } from "./TaskForm";
 
 describe("TaskForm", () => {
-	it("deshabilita el botón con el campo vacío", () => {
+	it("disables the button when the field is empty", () => {
 		render(<TaskForm onAdd={() => {}} />);
-		expect(screen.getByRole("button", { name: "Añadir" })).toBeDisabled();
+		expect(screen.getByRole("button", { name: "Add" })).toBeDisabled();
 	});
 
-	it("habilita el botón al escribir", async () => {
+	it("enables the button when typing", async () => {
 		const user = userEvent.setup();
 		render(<TaskForm onAdd={() => {}} />);
 
-		await user.type(screen.getByLabelText("Nueva tarea"), "Algo");
+		await user.type(screen.getByLabelText("New task"), "Something");
 
-		expect(screen.getByRole("button", { name: "Añadir" })).toBeEnabled();
+		expect(screen.getByRole("button", { name: "Add" })).toBeEnabled();
 	});
 
-	it("llama a onAdd con el título y vacía el campo", async () => {
+	it("calls onAdd with the title and clears the field", async () => {
 		const user = userEvent.setup();
 		const onAdd = vi.fn();
 		render(<TaskForm onAdd={onAdd} />);
 
-		const input = screen.getByLabelText("Nueva tarea");
-		await user.type(input, "Estudiar Vitest");
-		await user.click(screen.getByRole("button", { name: "Añadir" }));
+		const input = screen.getByLabelText("New task");
+		await user.type(input, "Learn Vitest");
+		await user.click(screen.getByRole("button", { name: "Add" }));
 
-		expect(onAdd).toHaveBeenCalledWith("Estudiar Vitest");
+		expect(onAdd).toHaveBeenCalledWith("Learn Vitest");
 		expect(input).toHaveValue("");
 	});
 
-	it("también envía con Enter", async () => {
+	it("also submits with Enter", async () => {
 		const user = userEvent.setup();
 		const onAdd = vi.fn();
 		render(<TaskForm onAdd={onAdd} />);
 
-		await user.type(screen.getByLabelText("Nueva tarea"), "Con Enter{Enter}");
+		await user.type(screen.getByLabelText("New task"), "With Enter{Enter}");
 
-		expect(onAdd).toHaveBeenCalledWith("Con Enter");
+		expect(onAdd).toHaveBeenCalledWith("With Enter");
 	});
 });
 ```
@@ -342,7 +342,7 @@ interface Props {
 
 export function TaskList({ tasks, onToggle, onRemove }: Props) {
 	if (tasks.length === 0) {
-		return <p>No hay tareas</p>;
+		return <p>No tasks</p>;
 	}
 
 	return (
@@ -353,7 +353,7 @@ export function TaskList({ tasks, onToggle, onRemove }: Props) {
 						<input type="checkbox" checked={task.done} onChange={() => onToggle(task.id)} />
 						<span style={{ textDecoration: task.done ? "line-through" : "none" }}>{task.title}</span>
 					</label>
-					<button onClick={() => onRemove(task.id)} aria-label={`Eliminar ${task.title}`}>
+					<button onClick={() => onRemove(task.id)} aria-label={`Delete ${task.title}`}>
 						×
 					</button>
 				</li>
@@ -371,41 +371,41 @@ import { TaskList } from "./TaskList";
 import type { Task } from "../utils/tasks";
 
 const tasks: Task[] = [
-	{ id: 1, title: "Estudiar Vitest", done: false },
-	{ id: 2, title: "Hacer commit", done: true },
+	{ id: 1, title: "Learn Vitest", done: false },
+	{ id: 2, title: "Commit changes", done: true },
 ];
 
 describe("TaskList", () => {
-	it("muestra un mensaje si no hay tareas", () => {
+	it("shows a message when there are no tasks", () => {
 		render(<TaskList tasks={[]} onToggle={() => {}} onRemove={() => {}} />);
-		expect(screen.getByText("No hay tareas")).toBeInTheDocument();
+		expect(screen.getByText("No tasks")).toBeInTheDocument();
 		expect(screen.queryByRole("list")).not.toBeInTheDocument();
 	});
 
-	it("muestra una fila por tarea con su estado", () => {
+	it("renders one row per task with its state", () => {
 		render(<TaskList tasks={tasks} onToggle={() => {}} onRemove={() => {}} />);
 
 		expect(screen.getAllByRole("listitem")).toHaveLength(2);
-		expect(screen.getByRole("checkbox", { name: "Estudiar Vitest" })).not.toBeChecked();
-		expect(screen.getByRole("checkbox", { name: "Hacer commit" })).toBeChecked();
+		expect(screen.getByRole("checkbox", { name: "Learn Vitest" })).not.toBeChecked();
+		expect(screen.getByRole("checkbox", { name: "Commit changes" })).toBeChecked();
 	});
 
-	it("llama a onToggle con el id al marcar", async () => {
+	it("calls onToggle with the id when checking", async () => {
 		const user = userEvent.setup();
 		const onToggle = vi.fn();
 		render(<TaskList tasks={tasks} onToggle={onToggle} onRemove={() => {}} />);
 
-		await user.click(screen.getByRole("checkbox", { name: "Estudiar Vitest" }));
+		await user.click(screen.getByRole("checkbox", { name: "Learn Vitest" }));
 
 		expect(onToggle).toHaveBeenCalledWith(1);
 	});
 
-	it("llama a onRemove con el id al eliminar", async () => {
+	it("calls onRemove with the id when deleting", async () => {
 		const user = userEvent.setup();
 		const onRemove = vi.fn();
 		render(<TaskList tasks={tasks} onToggle={() => {}} onRemove={onRemove} />);
 
-		await user.click(screen.getByRole("button", { name: "Eliminar Hacer commit" }));
+		await user.click(screen.getByRole("button", { name: "Delete Commit changes" }));
 
 		expect(onRemove).toHaveBeenCalledWith(2);
 	});
@@ -413,7 +413,7 @@ describe("TaskList", () => {
 ```
 
 <Aside type="note" title="Por qué `aria-label` en el botón ×">
-	Un botón cuyo texto es "×" no tiene un nombre accesible útil: ni un lector de pantalla ni el test sabrían qué elimina. `aria-label="Eliminar Hacer commit"` le da nombre, y ese nombre es lo que usa `getByRole`. Escribir tests con Testing Library mejora la accesibilidad casi sin querer.
+	Un botón cuyo texto es "×" no tiene un nombre accesible útil: ni un lector de pantalla ni el test sabrían qué elimina. `aria-label="Delete Commit changes"` le da nombre, y ese nombre es lo que usa `getByRole`. Escribir tests con Testing Library mejora la accesibilidad casi sin querer.
 </Aside>
 
 ### 3.3 — `TaskFilter`
@@ -429,14 +429,14 @@ interface Props {
 }
 
 const options: { value: Filter; label: string }[] = [
-	{ value: "all", label: "Todas" },
-	{ value: "active", label: "Pendientes" },
-	{ value: "done", label: "Completadas" },
+	{ value: "all", label: "All" },
+	{ value: "active", label: "Active" },
+	{ value: "done", label: "Completed" },
 ];
 
 export function TaskFilter({ value, onChange }: Props) {
 	return (
-		<div role="group" aria-label="Filtro">
+		<div role="group" aria-label="Filter">
 			{options.map(option => (
 				<button
 					key={option.value}
@@ -458,19 +458,19 @@ import userEvent from "@testing-library/user-event";
 import { TaskFilter } from "./TaskFilter";
 
 describe("TaskFilter", () => {
-	it("marca como pulsado el filtro activo", () => {
+	it("marks the active filter as pressed", () => {
 		render(<TaskFilter value="active" onChange={() => {}} />);
 
-		expect(screen.getByRole("button", { name: "Pendientes" })).toHaveAttribute("aria-pressed", "true");
-		expect(screen.getByRole("button", { name: "Todas" })).toHaveAttribute("aria-pressed", "false");
+		expect(screen.getByRole("button", { name: "Active" })).toHaveAttribute("aria-pressed", "true");
+		expect(screen.getByRole("button", { name: "All" })).toHaveAttribute("aria-pressed", "false");
 	});
 
-	it("llama a onChange con el filtro elegido", async () => {
+	it("calls onChange with the chosen filter", async () => {
 		const user = userEvent.setup();
 		const onChange = vi.fn();
 		render(<TaskFilter value="all" onChange={onChange} />);
 
-		await user.click(screen.getByRole("button", { name: "Completadas" }));
+		await user.click(screen.getByRole("button", { name: "Completed" }));
 
 		expect(onChange).toHaveBeenCalledWith("done");
 	});
@@ -502,7 +502,7 @@ export default function App() {
 
 	return (
 		<main>
-			<h1>Tareas</h1>
+			<h1>Tasks</h1>
 			<TaskForm onAdd={title => setTasks(addTask(tasks, title))} />
 			<TaskFilter value={filter} onChange={setFilter} />
 			<TaskList
@@ -510,7 +510,7 @@ export default function App() {
 				onToggle={id => setTasks(toggleTask(tasks, id))}
 				onRemove={id => setTasks(removeTask(tasks, id))}
 			/>
-			<p>{countActive(tasks)} pendientes</p>
+			<p>{countActive(tasks)} pending</p>
 		</main>
 	);
 }
@@ -525,59 +525,59 @@ import userEvent from "@testing-library/user-event";
 import App from "./App";
 
 async function addTask(user: ReturnType<typeof userEvent.setup>, title: string) {
-	await user.type(screen.getByLabelText("Nueva tarea"), title);
-	await user.click(screen.getByRole("button", { name: "Añadir" }));
+	await user.type(screen.getByLabelText("New task"), title);
+	await user.click(screen.getByRole("button", { name: "Add" }));
 }
 
 describe("App", () => {
-	it("empieza sin tareas", () => {
+	it("starts without tasks", () => {
 		render(<App />);
-		expect(screen.getByText("No hay tareas")).toBeInTheDocument();
-		expect(screen.getByText("0 pendientes")).toBeInTheDocument();
+		expect(screen.getByText("No tasks")).toBeInTheDocument();
+		expect(screen.getByText("0 pending")).toBeInTheDocument();
 	});
 
-	it("añade tareas y actualiza el contador", async () => {
+	it("adds tasks and updates the counter", async () => {
 		const user = userEvent.setup();
 		render(<App />);
 
-		await addTask(user, "Estudiar Vitest");
-		await addTask(user, "Hacer commit");
+		await addTask(user, "Learn Vitest");
+		await addTask(user, "Commit changes");
 
 		expect(screen.getAllByRole("listitem")).toHaveLength(2);
-		expect(screen.getByText("2 pendientes")).toBeInTheDocument();
+		expect(screen.getByText("2 pending")).toBeInTheDocument();
 	});
 
-	it("completar una tarea descuenta del contador", async () => {
+	it("completing a task decrements the counter", async () => {
 		const user = userEvent.setup();
 		render(<App />);
 
-		await addTask(user, "Estudiar Vitest");
-		await user.click(screen.getByRole("checkbox", { name: "Estudiar Vitest" }));
+		await addTask(user, "Learn Vitest");
+		await user.click(screen.getByRole("checkbox", { name: "Learn Vitest" }));
 
-		expect(screen.getByText("0 pendientes")).toBeInTheDocument();
+		expect(screen.getByText("0 pending")).toBeInTheDocument();
 	});
 
-	it("el filtro Completadas oculta las pendientes", async () => {
+	it("the Completed filter hides pending tasks", async () => {
 		const user = userEvent.setup();
 		render(<App />);
 
-		await addTask(user, "Pendiente");
-		await addTask(user, "Hecha");
-		await user.click(screen.getByRole("checkbox", { name: "Hecha" }));
-		await user.click(screen.getByRole("button", { name: "Completadas" }));
+		await addTask(user, "Pending");
+		await addTask(user, "Done");
+		await user.click(screen.getByRole("checkbox", { name: "Done" }));
+		await user.click(screen.getByRole("button", { name: "Completed" }));
 
-		expect(screen.getByRole("checkbox", { name: "Hecha" })).toBeInTheDocument();
-		expect(screen.queryByRole("checkbox", { name: "Pendiente" })).not.toBeInTheDocument();
+		expect(screen.getByRole("checkbox", { name: "Done" })).toBeInTheDocument();
+		expect(screen.queryByRole("checkbox", { name: "Pending" })).not.toBeInTheDocument();
 	});
 
-	it("eliminar una tarea la quita de la lista", async () => {
+	it("deleting a task removes it from the list", async () => {
 		const user = userEvent.setup();
 		render(<App />);
 
-		await addTask(user, "Temporal");
-		await user.click(screen.getByRole("button", { name: "Eliminar Temporal" }));
+		await addTask(user, "Temporary");
+		await user.click(screen.getByRole("button", { name: "Delete Temporary" }));
 
-		expect(screen.getByText("No hay tareas")).toBeInTheDocument();
+		expect(screen.getByText("No tasks")).toBeInTheDocument();
 	});
 });
 ```
@@ -605,7 +605,7 @@ npx vitest run
 
 - Los tests de **utilidades** son instantáneos; los de **componentes** tardan algo más (montan un DOM). Aun así, todo el conjunto corre en un par de segundos.
 - Si rompes `countActive` (por ejemplo, contando las hechas), fallan **dos niveles**: su test unitario y el de integración de `App`. El unitario te dice *dónde*; el de integración, *qué nota el usuario*.
-- Si cambias el texto del botón "Añadir" por "Agregar", fallan los tests que lo buscan por nombre. Es correcto: ese texto es parte del comportamiento visible.
+- Si cambias el texto del botón "Add" por "Agregar", fallan los tests que lo buscan por nombre. Es correcto: ese texto es parte del comportamiento visible.
 
 ### Cobertura
 

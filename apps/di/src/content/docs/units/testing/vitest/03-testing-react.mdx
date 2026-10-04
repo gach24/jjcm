@@ -90,29 +90,29 @@ El `afterEach(cleanup)` **desmonta** los componentes renderizados al terminar ca
 
 Los componentes de esta página van en `src/components/` (crea la carpeta si no existe), cada uno con su test al lado.
 
-```tsx title="src/components/Contador.tsx"
+```tsx title="src/components/Counter.tsx"
 import { useState } from "react";
 
 interface Props {
-	inicial?: number;
-	onCambio?: (valor: number) => void;
+	initial?: number;
+	onChange?: (value: number) => void;
 }
 
-export function Contador({ inicial = 0, onCambio }: Props) {
-	const [valor, setValor] = useState(inicial);
+export function Counter({ initial = 0, onChange }: Props) {
+	const [value, setValue] = useState(initial);
 
-	function actualizar(nuevo: number) {
-		setValor(nuevo);
-		onCambio?.(nuevo);
+	function update(next: number) {
+		setValue(next);
+		onChange?.(next);
 	}
 
 	return (
 		<div>
-			<p>Valor: {valor}</p>
-			<button onClick={() => actualizar(valor - 1)} disabled={valor <= 0}>
-				Restar
+			<p>Value: {value}</p>
+			<button onClick={() => update(value - 1)} disabled={value <= 0}>
+				Decrement
 			</button>
-			<button onClick={() => actualizar(valor + 1)}>Sumar</button>
+			<button onClick={() => update(value + 1)}>Increment</button>
 		</div>
 	);
 }
@@ -120,40 +120,40 @@ export function Contador({ inicial = 0, onCambio }: Props) {
 
 ## El primer test de componente
 
-```tsx title="src/components/Contador.test.tsx"
+```tsx title="src/components/Counter.test.tsx"
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Contador } from "./Contador";
+import { Counter } from "./Counter";
 
-describe("Contador", () => {
-	it("muestra el valor inicial", () => {
-		render(<Contador inicial={5} />);
-		expect(screen.getByText("Valor: 5")).toBeInTheDocument();
+describe("Counter", () => {
+	it("shows the initial value", () => {
+		render(<Counter initial={5} />);
+		expect(screen.getByText("Value: 5")).toBeInTheDocument();
 	});
 
-	it("suma al pulsar Sumar", async () => {
+	it("increments when Increment is clicked", async () => {
 		const user = userEvent.setup();
-		render(<Contador />);
+		render(<Counter />);
 
-		await user.click(screen.getByRole("button", { name: "Sumar" }));
+		await user.click(screen.getByRole("button", { name: "Increment" }));
 
-		expect(screen.getByText("Valor: 1")).toBeInTheDocument();
+		expect(screen.getByText("Value: 1")).toBeInTheDocument();
 	});
 
-	it("deshabilita Restar en cero", () => {
-		render(<Contador inicial={0} />);
-		expect(screen.getByRole("button", { name: "Restar" })).toBeDisabled();
+	it("disables Decrement at zero", () => {
+		render(<Counter initial={0} />);
+		expect(screen.getByRole("button", { name: "Decrement" })).toBeDisabled();
 	});
 
-	it("avisa del cambio por onCambio", async () => {
+	it("notifies the change through onChange", async () => {
 		const user = userEvent.setup();
-		const onCambio = vi.fn();
-		render(<Contador inicial={2} onCambio={onCambio} />);
+		const onChange = vi.fn();
+		render(<Counter initial={2} onChange={onChange} />);
 
-		await user.click(screen.getByRole("button", { name: "Sumar" }));
+		await user.click(screen.getByRole("button", { name: "Increment" }));
 
-		expect(onCambio).toHaveBeenCalledWith(3);
+		expect(onChange).toHaveBeenCalledWith(3);
 	});
 });
 ```
@@ -161,8 +161,8 @@ describe("Contador", () => {
 El archivo es `.tsx` porque contiene JSX. El patrón de cada test es siempre el mismo:
 
 <Steps>
-	1. **Renderizar** el componente con las props del caso: `render(<Contador inicial={5} />)`.
-	2. **Encontrar** el elemento con `screen`: el botón "Sumar", el texto "Valor: 5".
+	1. **Renderizar** el componente con las props del caso: `render(<Counter inicial={5} />)`.
+	2. **Encontrar** el elemento con `screen`: el botón "Sumar", el texto "Value: 5".
 	3. **Interactuar**, si procede, con `user.click`, `user.type`… siempre con `await`.
 	4. **Comprobar** el resultado con un matcher de jest-dom o con `vi.fn` si lo que importa es un callback.
 </Steps>
@@ -173,10 +173,10 @@ El archivo es `.tsx` porque contiene JSX. El patrón de cada test es siempre el 
 
 | Consulta | Encuentra por | Ejemplo |
 | :--- | :--- | :--- |
-| `getByRole` | rol accesible y nombre | `getByRole("button", { name: "Guardar" })` |
-| `getByLabelText` | la `<label>` de un campo | `getByLabelText("Correo")` |
-| `getByPlaceholderText` | el placeholder | `getByPlaceholderText("Buscar…")` |
-| `getByText` | el texto visible | `getByText("No hay resultados")` |
+| `getByRole` | rol accesible y nombre | `getByRole("button", { name: "Save" })` |
+| `getByLabelText` | la `<label>` de un campo | `getByLabelText("Email")` |
+| `getByPlaceholderText` | el placeholder | `getByPlaceholderText("Search…")` |
+| `getByText` | el texto visible | `getByText("No results")` |
 | `getByDisplayValue` | el valor actual de un input | `getByDisplayValue("Ana")` |
 | `getByTestId` | `data-testid="…"` | último recurso |
 
@@ -197,9 +197,9 @@ Cada consulta tiene tres variantes según qué esperas:
 | `findBy` | espera hasta 1 s, luego lanza | elementos que aparecen **después** (async) |
 
 ```tsx
-expect(screen.getByText("Guardado")).toBeInTheDocument();      // debe estar
-expect(screen.queryByText("Error")).not.toBeInTheDocument();   // no debe estar
-expect(await screen.findByText("Cargado")).toBeInTheDocument(); // aparecerá
+expect(screen.getByText("Saved")).toBeInTheDocument();      // must be present
+expect(screen.queryByText("Error")).not.toBeInTheDocument();   // must not be present
+expect(await screen.findByText("Loaded")).toBeInTheDocument(); // will appear
 ```
 
 Las versiones en plural (`getAllByRole`, `queryAllByText`…) devuelven arrays, para listas.
@@ -211,9 +211,9 @@ Las versiones en plural (`getAllByRole`, `queryAllByText`…) devuelven arrays, 
 ```tsx
 const user = userEvent.setup();
 
-await user.click(screen.getByRole("button", { name: "Añadir" }));
-await user.type(screen.getByLabelText("Nombre"), "Ana");
-await user.clear(screen.getByLabelText("Nombre"));
+await user.click(screen.getByRole("button", { name: "Add" }));
+await user.type(screen.getByLabelText("Name"), "Ana");
+await user.clear(screen.getByLabelText("Name"));
 await user.selectOptions(screen.getByRole("combobox"), "editor");
 await user.keyboard("{Enter}");
 ```
@@ -224,14 +224,14 @@ await user.keyboard("{Enter}");
 
 ## Un formulario completo
 
-```tsx title="src/components/FormularioLogin.tsx"
+```tsx title="src/components/LoginForm.tsx"
 import { useState, type FormEvent } from "react";
 
 interface Props {
-	onLogin: (datos: { email: string; password: string }) => void;
+	onLogin: (data: { email: string; password: string }) => void;
 }
 
-export function FormularioLogin({ onLogin }: Props) {
+export function LoginForm({ onLogin }: Props) {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [error, setError] = useState("");
@@ -239,7 +239,7 @@ export function FormularioLogin({ onLogin }: Props) {
 	function handleSubmit(e: FormEvent) {
 		e.preventDefault();
 		if (!email.includes("@")) {
-			setError("Introduce un correo válido");
+			setError("Enter a valid email");
 			return;
 		}
 		setError("");
@@ -248,49 +248,49 @@ export function FormularioLogin({ onLogin }: Props) {
 
 	return (
 		<form onSubmit={handleSubmit} noValidate>
-			<label htmlFor="email">Correo</label>
+			<label htmlFor="email">Email</label>
 			<input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} />
 
-			<label htmlFor="password">Contraseña</label>
+			<label htmlFor="password">Password</label>
 			<input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} />
 
 			{error && <p role="alert">{error}</p>}
 
-			<button type="submit">Entrar</button>
+			<button type="submit">Sign in</button>
 		</form>
 	);
 }
 ```
 
-```tsx title="src/components/FormularioLogin.test.tsx"
+```tsx title="src/components/LoginForm.test.tsx"
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { FormularioLogin } from "./FormularioLogin";
+import { LoginForm } from "./LoginForm";
 
-describe("FormularioLogin", () => {
-	it("envía los datos cuando el correo es válido", async () => {
+describe("LoginForm", () => {
+	it("submits the data when the email is valid", async () => {
 		const user = userEvent.setup();
 		const onLogin = vi.fn();
-		render(<FormularioLogin onLogin={onLogin} />);
+		render(<LoginForm onLogin={onLogin} />);
 
-		await user.type(screen.getByLabelText("Correo"), "ana@correo.com");
-		await user.type(screen.getByLabelText("Contraseña"), "secreto");
-		await user.click(screen.getByRole("button", { name: "Entrar" }));
+		await user.type(screen.getByLabelText("Email"), "ana@example.com");
+		await user.type(screen.getByLabelText("Password"), "secret");
+		await user.click(screen.getByRole("button", { name: "Sign in" }));
 
-		expect(onLogin).toHaveBeenCalledWith({ email: "ana@correo.com", password: "secreto" });
+		expect(onLogin).toHaveBeenCalledWith({ email: "ana@example.com", password: "secret" });
 		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 	});
 
-	it("muestra un error y no envía si el correo no es válido", async () => {
+	it("shows an error and does not submit when the email is invalid", async () => {
 		const user = userEvent.setup();
 		const onLogin = vi.fn();
-		render(<FormularioLogin onLogin={onLogin} />);
+		render(<LoginForm onLogin={onLogin} />);
 
-		await user.type(screen.getByLabelText("Correo"), "ana");
-		await user.click(screen.getByRole("button", { name: "Entrar" }));
+		await user.type(screen.getByLabelText("Email"), "ana");
+		await user.click(screen.getByRole("button", { name: "Sign in" }));
 
-		expect(screen.getByRole("alert")).toHaveTextContent("Introduce un correo válido");
+		expect(screen.getByRole("alert")).toHaveTextContent("Enter a valid email");
 		expect(onLogin).not.toHaveBeenCalled();
 	});
 });
