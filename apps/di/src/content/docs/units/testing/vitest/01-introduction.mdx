@@ -97,12 +97,12 @@ No hace falta ningún archivo de configuración para empezar: Vitest encuentra s
 En una aplicación React, lo primero que se prueba son las **utilidades** que usa la interfaz: pequeñas funciones puras que formatean o calculan algo que luego pinta un componente. Crea `src/utils/format.ts` con dos que necesitará la app de tareas: el precio de un producto en una tarjeta y el texto del contador de pendientes.
 
 ```ts title="src/utils/format.ts"
-export function formatearPrecio(precio: number): string {
-	return `${precio.toFixed(2).replace(".", ",")} €`;
+export function formatPrice(price: number): string {
+	return `${price.toFixed(2).replace(".", ",")} €`;
 }
 
-export function pluralizar(cantidad: number, singular: string, plural: string): string {
-	return `${cantidad} ${cantidad === 1 ? singular : plural}`;
+export function pluralize(count: number, singular: string, plural: string): string {
+	return `${count} ${count === 1 ? singular : plural}`;
 }
 ```
 
@@ -110,26 +110,26 @@ Y su archivo de pruebas, **al lado**, con el mismo nombre más `.test`:
 
 ```ts title="src/utils/format.test.ts"
 import { describe, it, expect } from "vitest";
-import { formatearPrecio, pluralizar } from "./format";
+import { formatPrice, pluralize } from "./format";
 
-describe("formatearPrecio", () => {
-	it("formatea con dos decimales, coma y símbolo de euro", () => {
-		expect(formatearPrecio(19.99)).toBe("19,99 €");
+describe("formatPrice", () => {
+	it("formats with two decimals, a comma and the euro sign", () => {
+		expect(formatPrice(19.99)).toBe("19,99 €");
 	});
 
-	it("añade los decimales a los enteros", () => {
-		expect(formatearPrecio(5)).toBe("5,00 €");
+	it("adds decimals to integers", () => {
+		expect(formatPrice(5)).toBe("5,00 €");
 	});
 });
 
-describe("pluralizar", () => {
-	it("usa el singular con 1", () => {
-		expect(pluralizar(1, "tarea pendiente", "tareas pendientes")).toBe("1 tarea pendiente");
+describe("pluralize", () => {
+	it("uses the singular for 1", () => {
+		expect(pluralize(1, "pending task", "pending tasks")).toBe("1 pending task");
 	});
 
-	it("usa el plural con 0 y con varios", () => {
-		expect(pluralizar(0, "tarea pendiente", "tareas pendientes")).toBe("0 tareas pendientes");
-		expect(pluralizar(3, "tarea pendiente", "tareas pendientes")).toBe("3 tareas pendientes");
+	it("uses the plural for 0 and for several", () => {
+		expect(pluralize(0, "pending task", "pending tasks")).toBe("0 pending tasks");
+		expect(pluralize(3, "pending task", "pending tasks")).toBe("3 pending tasks");
 	});
 });
 ```
@@ -152,10 +152,10 @@ Vitest arranca en **modo watch**: ejecuta todo, muestra el resultado y se queda 
 
 ```txt
  ✓ src/utils/format.test.ts (4 tests) 3ms
-   ✓ formatearPrecio > formatea con dos decimales, coma y símbolo de euro
-   ✓ formatearPrecio > añade los decimales a los enteros
-   ✓ pluralizar > usa el singular con 1
-   ✓ pluralizar > usa el plural con 0 y con varios
+   ✓ formatPrice > formats with two decimals, a comma and the euro sign
+   ✓ formatPrice > adds decimals to integers
+   ✓ pluralize > uses the singular for 1
+   ✓ pluralize > uses the plural for 0 and for several
 
  Test Files  1 passed (1)
       Tests  4 passed (4)
@@ -164,7 +164,7 @@ Vitest arranca en **modo watch**: ejecuta todo, muestra el resultado y se queda 
 Prueba a romper algo: cambia `toFixed(2)` por `toFixed(1)`, guarda y mira la salida. Vitest señala el test que falla, la línea exacta y la diferencia entre lo esperado y lo obtenido:
 
 ```txt
- FAIL  src/utils/format.test.ts > formatearPrecio > formatea con dos decimales, coma y símbolo de euro
+ FAIL  src/utils/format.test.ts > formatPrice > formats with two decimals, a comma and the euro sign
 AssertionError: expected '19,9 €' to be '19,99 €' // Object.is equality
 
 - Expected   "19,99 €"
