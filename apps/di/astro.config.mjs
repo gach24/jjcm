@@ -62,6 +62,18 @@ export default defineConfig({
               ],
             },
             {
+              label: "[lucide:book-open] React",
+              collapsed: true,
+              items: [
+                {
+                  label: "[lucide:braces] GuitarLA",
+                  autogenerate: {
+                    directory: "units/react",
+                  },
+                },
+              ],
+            },
+            {
               label: "[lucide:book-open] Informes",
               collapsed: true, 
                 items: [
