@@ -1,6 +1,6 @@
 import starlight from "@astrojs/starlight";
-import { defineConfig } from "astro/config";
 import starlightClientMermaid from "@pasqal-io/starlight-client-mermaid";
+import { defineConfig } from "astro/config";
 import { ion } from "starlight-ion-theme";
 
 // https://astro.build/config
@@ -39,7 +39,7 @@ export default defineConfig({
           items: [
             {
               label: "[lucide:book-open] Introducción",
-              collapsed: true, 
+              collapsed: true,
               items: [
                 {
                   label: "[lucide:braces] JavaScript",
@@ -75,25 +75,25 @@ export default defineConfig({
             },
             {
               label: "[lucide:book-open] Informes",
-              collapsed: true, 
-                items: [
-                  {
-                    label: "[lucide:braces] Despliegue",
-                    autogenerate: {
-                      directory: "units/reports/environment/",
-                    },
+              collapsed: true,
+              items: [
+                {
+                  label: "[lucide:braces] Despliegue",
+                  autogenerate: {
+                    directory: "units/reports/environment/",
                   },
-                  {
-                    label: "[lucide:braces] App",
-                    autogenerate: {
-                      directory: "units/reports/sakila-app/",
-                    },
+                },
+                {
+                  label: "[lucide:braces] App",
+                  autogenerate: {
+                    directory: "units/reports/sakila-app/",
                   },
+                },
               ],
             },
             {
               label: "[lucide:book-open] Documentación",
-              collapsed: true, 
+              collapsed: true,
               items: [
                 {
                   label: "[lucide:braces] Typedoc",
@@ -106,7 +106,7 @@ export default defineConfig({
                   autogenerate: {
                     directory: "units/documentation/storybook/",
                   },
-                }
+                },
               ],
             },
             {
@@ -138,7 +138,7 @@ export default defineConfig({
                   },
                 },
               ],
-            }
+            },
           ],
         },
         {
