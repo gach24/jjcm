@@ -1,0 +1,583 @@
+---
+title: Preparar el proyecto
+description: "Crear GuitarLA desde cero: proyecto Vite + React + TypeScript, limpieza de la plantilla, Prettier y ESLint, Tailwind con el plugin de Vite y primer commit en el repositorio di-react de GitHub."
+evaluations:
+  - id: RA3
+    statement: Crea componentes visuales valorando y empleando herramientas específicas.
+    criteria:
+      - Se han identificado las herramientas para diseño y prueba de componentes.
+    contents:
+      - Andamiaje Vite + React + TypeScript
+      - Formateo y análisis estático con Prettier y ESLint
+      - Tailwind CSS con el plugin de Vite
+      - Repositorio Git y publicación en GitHub
+sources:
+  - author: Vite
+    url: https://vite.dev/guide/
+  - author: React
+    url: https://react.dev/learn
+  - author: Tailwind Labs
+    url: https://tailwindcss.com/docs/installation/using-vite
+  - author: gach24
+    url: https://github.com/gach24/DID/tree/main/03-project_01
+sidebar:
+  order: 0
+date: 2026-10-13
+updated: 2026-10-13
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	FileTree,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+En esta unidad vas a construir **GuitarLA**, una tienda de guitarras con carrito de la compra, y la vas a hacer crecer página a página: componentes, estado, props y eventos, hooks propios, contexto, rutas y conexión con un backend. A diferencia de las unidades de introducción, aquí hay **un único proyecto** que evoluciona en un único repositorio, `di-react`.
+
+Esta primera página crea el proyecto y lo deja con formateo automático, linter y Tailwind, bajo control de versiones y publicado en GitHub. La siguiente añade el material de inicio y las herramientas de pruebas y documentación.
+
+<CardGrid stagger>
+	<Card title="Vite + React + TypeScript" icon="rocket">
+		La plantilla oficial, limpia de ejemplos. React 19, TypeScript 6 y Vite 8, con el flujo de arranque que ya conoces de la unidad de pruebas.
+	</Card>
+	<Card title="Prettier y ESLint" icon="approve-check">
+		Por primera vez la configuración de formato y linter vive en el repositorio: quien lo clone trabaja igual que tú.
+	</Card>
+	<Card title="Tailwind desde el inicio" icon="seti:css">
+		El plugin de Vite genera el CSS al vuelo. Hoy solo lo instalas; las clases las irás escribiendo componente a componente en las páginas siguientes.
+	</Card>
+</CardGrid>
+
+<Aside type="note" title="Requisitos previos">
+	Necesitas **Node.js**, **Git** y VS Code configurados según [Instalaciones](/jjcm/di/installations/). Esta página da por hechas las unidades de [JavaScript](/jjcm/di/units/introduction/javascript/00-project-setup/), [TypeScript](/jjcm/di/units/introduction/typescript/00-project-setup/) y [Tailwind](/jjcm/di/units/introduction/tailwind/00-project-setup/).
+</Aside>
+
+## Qué vas a construir
+
+GuitarLA es una página con tres zonas: una cabecera con el logotipo y el icono del carrito, que abre un panel lateral con su contenido, un catálogo de doce guitarras con botón de compra y un pie. En la siguiente página recibirás esa página en HTML semántico **sin estilos**, junto con las imágenes, los datos y unas capturas del diseño final, y la llevarás a React tal cual. En las páginas posteriores la dividirás en componentes, le darás estilo con Tailwind y la harás funcionar.
+
+De momento el repositorio tiene una sola rama, `main`. Cuando empiecen las fases de desarrollo se creará una rama por fase y se fusionará en `main` al terminarla; se explica cuando llegue el momento.
+
+## Crear el proyecto
+
+<Steps>
+	1. En la carpeta donde guardes los proyectos del módulo, crea el proyecto con la plantilla React + TypeScript:
+
+		```bash
+		npm create vite@latest di-react -- --template react-ts
+		```
+
+		Si el asistente hace alguna pregunta adicional, acepta la respuesta por defecto.
+
+	2. Entra, instala las dependencias y abre la carpeta en VS Code:
+
+		```bash
+		cd di-react
+		npm install
+		code .
+		```
+
+	3. Arranca el servidor y comprueba en `http://localhost:5173` que se ve la página de bienvenida de Vite. Después páralo con `Ctrl+C`.
+
+		```bash
+		npm run dev
+		```
+</Steps>
+
+<Aside type="note" title="La plantilla cambia con el tiempo">
+	La plantilla actual (Vite 8) trae `oxlint` como linter, un `public/icons.svg` y una imagen `src/assets/hero.png`. Versiones anteriores traían ESLint y otros archivos. No importa: el siguiente paso deja el proyecto en un estado conocido, sea cual sea la versión.
+</Aside>
+
+## Limpiar la plantilla
+
+La página de bienvenida y sus recursos sobran. Déjalo todo en blanco para construir encima:
+
+<Steps>
+	1. Borra `src/App.css`, la carpeta `src/assets/` y todo el contenido de `public/` (los iconos de Vite).
+	2. Si existe `.oxlintrc.json`, bórralo también: vas a usar ESLint.
+	3. Sustituye `src/App.tsx` por un componente mínimo:
+
+		```tsx title="src/App.tsx"
+		const App = () => <h1>GuitarLA</h1>;
+
+		export default App;
+		```
+
+	4. Vacía `src/index.css` (lo rellenarás al instalar Tailwind).
+	5. Sustituye `index.html` para cambiar el idioma, el título y cargar la fuente **Outfit** de Google Fonts, que usa el diseño:
+
+		```html title="index.html" {2,6-10,11}
+		<!doctype html>
+		<html lang="es">
+			<head>
+				<meta charset="UTF-8" />
+				<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+				<link rel="preconnect" href="https://fonts.googleapis.com" />
+				<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+				<link
+					href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap"
+					rel="stylesheet"
+				/>
+				<title>GuitarLA</title>
+			</head>
+			<body>
+				<div id="root"></div>
+				<script type="module" src="/src/main.tsx"></script>
+			</body>
+		</html>
+		```
+
+	6. Arranca `npm run dev` y comprueba que la página muestra solo el título "GuitarLA" y que la consola del navegador (`F12`) no tiene errores.
+</Steps>
+
+## Prettier y ESLint
+
+En las unidades de introducción bastaba con el formateador de VS Code. Ahora el proyecto tiene `package.json`, así que la configuración de formato y de linter **se guarda en el repositorio** y todo el que lo clone trabaja igual.
+
+### Prettier
+
+<Steps>
+	1. Instala Prettier y el plugin de Tailwind, que ordena las clases automáticamente (lo prometido en la [unidad de Tailwind](/jjcm/di/units/introduction/tailwind/06-components/#orden-de-las-clases)):
+
+		```bash
+		npm install -D prettier prettier-plugin-tailwindcss
+		```
+
+	2. Crea la configuración en la raíz del proyecto:
+
+		```json title=".prettierrc"
+		{
+			"semi": true,
+			"singleQuote": true,
+			"tabWidth": 2,
+			"trailingComma": "es5",
+			"printWidth": 80,
+			"plugins": ["prettier-plugin-tailwindcss"]
+		}
+		```
+
+		```txt title=".prettierignore"
+		dist
+		node_modules
+		coverage
+		storybook-static
+		package-lock.json
+		```
+
+	3. Configura VS Code para que use Prettier al guardar y recomiende las extensiones del proyecto:
+
+		```json title=".vscode/settings.json"
+		{
+			"editor.defaultFormatter": "esbenp.prettier-vscode",
+			"editor.formatOnSave": true
+		}
+		```
+
+		```json title=".vscode/extensions.json"
+		{
+			"recommendations": [
+				"esbenp.prettier-vscode",
+				"dbaeumer.vscode-eslint",
+				"bradlc.vscode-tailwindcss"
+			]
+		}
+		```
+
+	4. El `.gitignore` de la plantilla excluye toda la carpeta `.vscode/` salvo `extensions.json`. Añade una excepción para que `settings.json` también se comparta:
+
+		```txt title=".gitignore" ins={3}
+		.vscode/*
+		!.vscode/extensions.json
+		!.vscode/settings.json
+		```
+</Steps>
+
+<Aside type="caution" title="Si VS Code no formatea al guardar">
+	Comprueba que la extensión **Prettier - Code formatter** está instalada (la página de [Instalaciones](/jjcm/di/installations/) explica cómo) y que has abierto la carpeta `di-react` como raíz, no un archivo suelto. Si VS Code pregunta qué formateador usar, elige Prettier.
+</Aside>
+
+### ESLint
+
+ESLint detecta errores y malas prácticas que TypeScript no ve: hooks mal usados, variables sin usar, componentes que rompen la recarga en caliente. Se instala con los plugins de React y con `eslint-config-prettier`, que desactiva las reglas de estilo para que no choque con Prettier.
+
+<Steps>
+	1. Instala ESLint y los plugins:
+
+		```bash
+		npm install -D eslint @eslint/js globals typescript-eslint eslint-plugin-react-hooks eslint-plugin-react-refresh eslint-config-prettier
+		```
+
+	2. Crea la configuración en la raíz:
+
+		```js title="eslint.config.js"
+		import js from '@eslint/js';
+		import prettier from 'eslint-config-prettier';
+		import reactHooks from 'eslint-plugin-react-hooks';
+		import reactRefresh from 'eslint-plugin-react-refresh';
+		import { defineConfig, globalIgnores } from 'eslint/config';
+		import globals from 'globals';
+		import tseslint from 'typescript-eslint';
+
+		export default defineConfig([
+			globalIgnores(['dist', 'storybook-static']),
+			{
+				files: ['**/*.{ts,tsx}'],
+				extends: [
+					js.configs.recommended,
+					tseslint.configs.recommended,
+					reactHooks.configs.flat.recommended,
+					reactRefresh.configs.vite,
+					prettier,
+				],
+				languageOptions: {
+					ecmaVersion: 2020,
+					globals: globals.browser,
+				},
+			},
+		]);
+		```
+
+	3. Sustituye el bloque `scripts` de `package.json` para tener los comandos de formato y linter:
+
+		```json title="package.json" {5-8}
+		"scripts": {
+			"dev": "vite",
+			"build": "tsc -b && vite build",
+			"preview": "vite preview",
+			"lint": "eslint .",
+			"format": "prettier --write .",
+			"format:check": "prettier --check ."
+		}
+		```
+
+	4. Si la plantilla traía `oxlint` en `devDependencies`, desinstálalo: `npm uninstall oxlint`.
+	5. Comprueba que ambos pasan sin mensajes:
+
+		```bash
+		npm run lint
+		npm run format:check
+		```
+</Steps>
+
+| Script | Para qué |
+| :--- | :--- |
+| `npm run lint` | Lista los problemas que detecta ESLint en todo el proyecto |
+| `npm run format` | Formatea todos los archivos con Prettier |
+| `npm run format:check` | Comprueba el formato sin tocar nada (lo que ejecutará CI) |
+
+<Aside type="note" title="`strict` ya viene activado">
+	En la unidad de TypeScript activabas `strict: true` a mano. Desde TypeScript 6 es el valor por defecto, por eso no aparece en `tsconfig.app.json`. El proyecto es estricto igualmente: cero `any`, `null` comprobado, parámetros tipados.
+</Aside>
+
+## Tailwind
+
+Tailwind se integra con Vite mediante un plugin: no hay CLI en modo `watch` ni `output.css`; Vite genera el CSS al vuelo.
+
+<Steps>
+	1. Instala Tailwind y el plugin:
+
+		```bash
+		npm install -D tailwindcss @tailwindcss/vite
+		```
+
+	2. Registra el plugin en la configuración de Vite:
+
+		```ts title="vite.config.ts" {2,7}
+		import react from '@vitejs/plugin-react';
+		import tailwindcss from '@tailwindcss/vite';
+		import { defineConfig } from 'vite';
+
+		// https://vite.dev/config/
+		export default defineConfig({
+			plugins: [tailwindcss(), react()],
+		});
+		```
+
+	3. Importa Tailwind en el CSS global y declara Outfit como fuente del proyecto:
+
+		```css title="src/index.css"
+		@import 'tailwindcss';
+
+		@theme {
+			--font-sans: 'Outfit', sans-serif;
+		}
+		```
+
+	4. Pon una clase en `App.tsx` para comprobarlo, por ejemplo `<h1 className="text-4xl font-black">GuitarLA</h1>`, y mira el resultado en el navegador. Si el título es grande, negro y con la fuente Outfit, Tailwind funciona.
+</Steps>
+
+<Aside type="tip" title="`@theme` sustituye a `tailwind.config.js`">
+	En Tailwind 4 la personalización se escribe en CSS. `--font-sans` redefine la familia que usa la clase `font-sans` y, como Tailwind la aplica al `body` por defecto, toda la página hereda Outfit sin añadir ninguna clase.
+</Aside>
+
+## Comprobar que todo pasa
+
+Antes de cada commit, tres comandos que deben terminar sin errores. Si `format:check` se queja, ejecuta `npm run format` y vuelve a probar.
+
+```bash
+npm run lint
+npm run format:check
+npm run build
+```
+
+## Crear el repositorio Git
+
+Con el proyecto configurado, conviértelo en repositorio y guarda el primer punto del historial. Es el mismo flujo que en [Preparar el proyecto de JavaScript](/jjcm/di/units/introduction/javascript/00-project-setup/#crear-el-repositorio-git), explicado allí con más detalle.
+
+<Steps>
+	1. Inicializa el repositorio y comprueba que `node_modules/` y `dist/` **no** aparecen en la lista (la plantilla ya trae un `.gitignore` que los excluye):
+
+		```bash
+		git init
+		git status
+		```
+
+	2. Prepara y confirma el commit inicial:
+
+		```bash
+		git add .
+		git commit -m "Initial project setup"
+		```
+
+	3. Revisa el historial. Debe haber un único commit en la rama `main`:
+
+		```bash
+		git log --oneline
+		git branch
+		```
+</Steps>
+
+<Aside type="tip" title="Mensajes de commit en inglés">
+	A partir de esta unidad los mensajes de commit, las etiquetas y las notas de las releases se escriben **en inglés**. Es el idioma de casi todos los repositorios en los que trabajarás, y conviene acostumbrarse ya. La fórmula es la misma que en las unidades anteriores: un verbo en imperativo y qué cambia (`Add Vitest and Storybook`, `Fix cart total`), sin punto final.
+</Aside>
+
+<Aside type="note" title="Solo `main`, de momento">
+	Hasta que termine la configuración del proyecto todos los commits van a `main`. A partir de la fase de componentes cada fase se desarrollará en una rama propia que se fusionará en `main` al acabar; verás cómo en su página.
+</Aside>
+
+## Publicar en GitHub
+
+<Tabs>
+	<TabItem label="Desde la web" icon="lucide:globe">
+
+		<Steps>
+
+		1. Entra en [github.com/new](https://github.com/new), pon **`di-react`** como nombre y **no marques** ninguna opción de *Initialize this repository*.
+		2. Pulsa **Create repository** y **enlaza** el remoto desde tu terminal, sustituyendo `TU-USUARIO`:
+
+			```bash
+			git remote add origin https://github.com/TU-USUARIO/di-react.git
+			git branch -M main
+			git push -u origin main
+			```
+
+		3. **Recarga** la página de GitHub: deben aparecer `src/`, `.vscode/` y los archivos de configuración, pero **no** `node_modules/`.
+
+		</Steps>
+
+	</TabItem>
+	<TabItem label="Con GitHub CLI" icon="lucide:terminal">
+
+		```bash
+		gh auth login
+		gh repo create di-react --public --source=. --remote=origin --push
+		gh repo view --web
+		```
+
+	</TabItem>
+</Tabs>
+
+<Aside type="tip" title="Clonar en otro equipo">
+	Después de `git clone`, `npm install` reinstala todo con las versiones exactas de `package-lock.json`, y VS Code leerá `.vscode/settings.json` y formateará igual. Es el motivo de guardar la configuración en el repositorio.
+</Aside>
+
+## Crear una release
+
+El repositorio ya está en GitHub, pero `main` va a cambiar en cada página. Una **release** marca un punto concreto del historial con un nombre de versión y lo deja **descargable** como zip, con una descripción de lo que contiene. Sirve para tres cosas:
+
+- **Recuperar un estado conocido.** Si en una fase posterior rompes el proyecto, puedes descargar la release de la configuración inicial y empezar esa fase de nuevo sin rehacer esta página.
+- **Entregar.** Quien corrige no tiene que buscar un commit entre cien: descarga la versión que se pide, por ejemplo `v0.1.0`, y ve exactamente lo que había en ese momento.
+- **Comunicar.** Las notas de la release resumen qué incluye esa versión. Es lo que verás en cualquier librería que instales con npm: cada versión tiene su etiqueta y sus notas.
+
+Una release se apoya en una **etiqueta** (*tag*) de Git: un nombre fijo para un commit. El convenio de nombres es el **versionado semántico** `vMAYOR.MENOR.PARCHE`. Como la aplicación aún no está terminada, empezarás en `v0.1.0` y subirás el número menor en cada fase.
+
+<Steps>
+	1. Crea la etiqueta sobre el commit actual y súbela a GitHub. Las etiquetas no viajan con `git push` normal; hay que enviarlas aparte:
+
+		```bash
+		git tag -a v0.1.0 -m "Initial project setup"
+		git push origin v0.1.0
+		```
+
+	2. Crea la release a partir de la etiqueta:
+
+		<Tabs>
+			<TabItem label="Desde la web" icon="lucide:globe">
+
+				<Steps>
+
+				1. En la página del repositorio, entra en **Releases** (columna derecha) y pulsa **Draft a new release**.
+				2. En **Choose a tag** selecciona `v0.1.0`.
+				3. Pon como título `v0.1.0 · Initial project setup` y, en la descripción, qué incluye en inglés: `Vite + React + TypeScript, Prettier, ESLint and Tailwind`.
+				4. Pulsa **Publish release**.
+
+				</Steps>
+
+			</TabItem>
+			<TabItem label="Con GitHub CLI" icon="lucide:terminal">
+
+				```bash
+				gh release create v0.1.0 --title "v0.1.0 · Initial project setup" --notes "Vite + React + TypeScript, Prettier, ESLint and Tailwind."
+				```
+
+			</TabItem>
+		</Tabs>
+
+	3. Comprueba el resultado: en **Releases** aparece `v0.1.0` con sus notas y dos enlaces, **Source code (zip)** y **Source code (tar.gz)**, que GitHub genera solos. Descarga el zip y confirma que contiene el proyecto sin `node_modules/`.
+</Steps>
+
+<Aside type="note" title="Qué contiene el zip y qué no">
+	El zip de una release es el contenido del repositorio en ese commit: lo que no está en Git (`node_modules/`, `dist/`) tampoco está en el zip. Quien lo descargue tiene que ejecutar `npm install`, igual que tras un `git clone`. Es lo esperado: el repositorio guarda la receta, no los ingredientes.
+</Aside>
+
+<Aside type="tip" title="Una release por fase">
+	A partir de ahora, cada fase terminada y fusionada en `main` cierra con una etiqueta y una release: `v0.2.0` con el material y las herramientas, `v0.3.0` con los componentes, y así sucesivamente. `git tag` lista las que tienes y `git log --oneline --decorate` muestra en qué commit está cada una.
+</Aside>
+
+## Estructura del proyecto
+
+<FileTree>
+
+- di-react/
+  - .vscode/
+    - extensions.json
+    - settings.json
+  - public/             vacía, de momento
+  - src/
+    - App.tsx
+    - index.css         @import de Tailwind y fuente Outfit
+    - main.tsx
+  - .gitignore
+  - .prettierrc
+  - .prettierignore
+  - eslint.config.js
+  - index.html
+  - package.json
+  - tsconfig.json
+  - tsconfig.app.json
+  - tsconfig.node.json
+  - vite.config.ts      plugins de Tailwind y React
+
+</FileTree>
+
+## Comprobación final
+
+<Steps>
+	1. `npm run dev` muestra en `http://localhost:5173` el título "GuitarLA" con la fuente Outfit y sin errores en consola.
+	2. Al guardar un archivo mal formateado, Prettier lo arregla.
+	3. `npm run lint`, `npm run format:check` y `npm run build` terminan sin errores.
+	4. `git log --oneline` muestra el commit inicial en `main` y `git remote -v` apunta a tu repositorio `di-react` en GitHub.
+	5. La release `v0.1.0` aparece en GitHub con su zip descargable.
+</Steps>
+
+## 🧩 Aplicación en el proyecto
+
+Este es el punto de partida de todas las páginas de la unidad y la referencia para cualquier aplicación React que entregues en el módulo. Lo importante no es la lista de comandos, sino la decisión que hay detrás: **la configuración del equipo vive en el repositorio** y se decide el primer día. Quien clone `di-react` dentro de tres meses tendrá el mismo formato, el mismo linter y las mismas versiones que tú hoy.
+
+## Resumen rápido
+
+| Pieza | Comando o archivo |
+| :--- | :--- |
+| **Crear** | `npm create vite@latest di-react -- --template react-ts` |
+| **Formato** | `.prettierrc` con `prettier-plugin-tailwindcss`, `editor.formatOnSave` en `.vscode/settings.json` |
+| **Linter** | `eslint.config.js` con React Hooks, React Refresh y `eslint-config-prettier` |
+| **Tailwind** | `@tailwindcss/vite` en `vite.config.ts`, `@import 'tailwindcss'` en `index.css` |
+| **Scripts** | `lint`, `format`, `format:check` además de `dev`, `build` y `preview` |
+| **Git** | `git init`, commit inicial en `main`, remoto `di-react` en GitHub |
+| **Release** | `git tag -a v0.1.0`, `git push origin v0.1.0`, release en GitHub con zip descargable |
+
+## Convención práctica
+
+<Steps>
+	1. **Tres comandos antes de cada commit**: `lint`, `format:check` y `build`. Si alguno falla, no se confirma.
+	2. **Configuración en el repositorio**: Prettier, ESLint y `.vscode/` se versionan; `node_modules/` y `dist/` van en `.gitignore`.
+	3. **Abre siempre la carpeta `di-react`** como raíz en VS Code: es lo que hace que Prettier, ESLint y TypeScript encuentren su configuración.
+	4. **Nombres fijos**: el proyecto se llama `di-react` y el repositorio también; evita renombrarlo después.
+	5. **Una release por hito**: etiqueta `vX.Y.0` y release en GitHub con notas al cerrar cada fase; es la versión que se entrega.
+	6. **Commits, etiquetas y notas en inglés**, con verbo en imperativo: `Add …`, `Fix …`, `Update …`.
+</Steps>
+
+## Referencias
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://vite.dev/guide/"
+		title="Guía de Vite"
+		description="Crear un proyecto, servidor de desarrollo, carpeta public y build."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://tailwindcss.com/docs/installation/using-vite"
+		title="Tailwind con Vite"
+		description="Instalación oficial del plugin @tailwindcss/vite."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://prettier.io/docs/configuration"
+		title="Configuración de Prettier"
+		description="Opciones de .prettierrc y archivos ignorados."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://eslint.org/docs/latest/use/configure/configuration-files"
+		title="Configuración de ESLint"
+		description="El formato flat config de eslint.config.js."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://docs.github.com/es/repositories/releasing-projects-on-github/managing-releases-in-a-repository"
+		title="Releases en GitHub"
+		description="Crear, editar y publicar releases, en español."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://semver.org/lang/es/"
+		title="Versionado semántico"
+		description="Qué significan MAYOR, MENOR y PARCHE en un número de versión."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+## Siguientes pasos
+
+<CardGrid>
+	<LinkCard
+		href="/jjcm/di/units/react/01-starter-material/"
+		title="Material de inicio, pruebas y documentación"
+		description="Llevar la maqueta de GuitarLA a React e instalar Vitest y Storybook."
+	/>
+	<LinkCard
+		href="/jjcm/di/units/testing/vitest/00-project-setup/"
+		title="Preparar el proyecto (Vitest)"
+		description="Qué genera Vite y cómo arranca una aplicación React, explicado desde cero."
+	/>
+</CardGrid>

@@ -1,0 +1,172 @@
+---
+title: Recursos
+description: Documentación oficial, repositorios de ejemplo, comandos habituales y currículo del módulo.
+tableOfContents:
+  minHeadingLevel: 2
+  maxHeadingLevel: 3
+---
+
+import { Aside, Card, CardGrid, LinkCard, Tabs, TabItem } from "@astrojs/starlight/components";
+
+Esta página reúne los enlaces y comandos que se usan a lo largo del curso. Vuelve a ella cuando necesites consultar la documentación oficial de una herramienta o recordar un comando.
+
+## Documentación oficial
+
+### Fundamentos
+
+<CardGrid>
+  <LinkCard title="MDN Web Docs" description="Referencia de JavaScript y de la plataforma web, en español." href="https://developer.mozilla.org/es/docs/Web/JavaScript" target="_blank" />
+  <LinkCard title="TypeScript" description="Manual oficial y referencia de tsconfig." href="https://www.typescriptlang.org/docs/" target="_blank" />
+  <LinkCard title="Tailwind CSS" description="Clases de utilidad, diseño responsive y configuración." href="https://tailwindcss.com/docs" target="_blank" />
+</CardGrid>
+
+### Interfaces con React
+
+<CardGrid>
+  <LinkCard title="React" description="Tutorial y referencia de componentes, hooks y estado." href="https://react.dev/learn" target="_blank" />
+  <LinkCard title="Vite" description="Creación del proyecto, servidor de desarrollo y build." href="https://vite.dev/guide/" target="_blank" />
+  <LinkCard title="React Router" description="Rutas y navegación en aplicaciones React." href="https://reactrouter.com/" target="_blank" />
+</CardGrid>
+
+### Informes
+
+<CardGrid>
+  <LinkCard title="JasperReports Server" description="Guía de administración del servidor de informes." href="https://community.jaspersoft.com/documentation/" target="_blank" />
+  <LinkCard title="Axios" description="Cliente HTTP para consumir el servidor de informes desde React." href="https://axios-http.com/docs/intro" target="_blank" />
+</CardGrid>
+
+### Documentación
+
+<CardGrid>
+  <LinkCard title="TypeDoc" description="Generación de documentación de API a partir del código TypeScript." href="https://typedoc.org/" target="_blank" />
+  <LinkCard title="Storybook" description="Catálogo y documentación de componentes." href="https://storybook.js.org/docs" target="_blank" />
+</CardGrid>
+
+### Pruebas
+
+<CardGrid>
+  <LinkCard title="Vitest" description="Pruebas unitarias y de componentes." href="https://vitest.dev/guide/" target="_blank" />
+  <LinkCard title="Testing Library" description="Pruebas de componentes React centradas en el usuario." href="https://testing-library.com/docs/react-testing-library/intro/" target="_blank" />
+  <LinkCard title="Playwright" description="Pruebas de extremo a extremo en el navegador." href="https://playwright.dev/docs/intro" target="_blank" />
+</CardGrid>
+
+### Despliegues
+
+<CardGrid>
+  <LinkCard title="Electron" description="Aplicaciones de escritorio con tecnologías web." href="https://www.electronjs.org/docs/latest/" target="_blank" />
+  <LinkCard title="electron-builder" description="Empaquetado y creación del instalador NSIS." href="https://www.electron.build/" target="_blank" />
+</CardGrid>
+
+### Git y GitHub
+
+<CardGrid>
+  <LinkCard title="GitHub Docs" description="Primeros pasos, repositorios, releases y Actions, en español." href="https://docs.github.com/es" target="_blank" />
+  <LinkCard title="Pro Git" description="Libro de referencia de Git, gratuito y en español." href="https://git-scm.com/book/es/v2" target="_blank" />
+</CardGrid>
+
+## Repositorios de ejemplo
+
+Repositorios con el código de las unidades. Úsalos para comparar con tu solución, no para copiarla.
+
+<CardGrid>
+  <LinkCard title="dam-di-javascript" description="Ejercicios resueltos de la unidad de JavaScript." href="https://github.com/IESJJCM/dam-di-javascript" target="_blank" />
+  <LinkCard title="dam-di-typescript" description="Ejercicios resueltos de la unidad de TypeScript." href="https://github.com/IESJJCM/dam-di-typescript" target="_blank" />
+  <LinkCard title="dam-di-tailwind" description="Ejercicios resueltos de la unidad de Tailwind CSS." href="https://github.com/IESJJCM/dam-di-tailwind" target="_blank" />
+  <LinkCard title="DID" description="Proyectos de referencia del módulo, incluido el punto de partida de GuitarLA." href="https://github.com/gach24/DID" target="_blank" />
+</CardGrid>
+
+## Comandos habituales
+
+<Tabs>
+  <TabItem label="Git" icon="seti:git">
+
+Flujo de trabajo para cada entrega:
+
+```bash
+git status                       # ver qué ha cambiado
+git add .                        # preparar todos los cambios
+git commit -m "Mensaje claro"    # guardar el commit
+git push                         # subir a GitHub
+```
+
+Crear un repositorio nuevo y subirlo por primera vez:
+
+```bash
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin https://github.com/TU-USUARIO/NOMBRE-REPO.git
+git push -u origin main
+```
+
+Otros comandos útiles:
+
+```bash
+git log --oneline                # historial resumido
+git diff                         # cambios sin preparar
+git restore ARCHIVO              # descartar cambios de un archivo
+git checkout -b nombre-rama      # crear y cambiar a una rama
+git pull                         # traer cambios del remoto
+```
+
+  </TabItem>
+  <TabItem label="npm y Vite" icon="seti:npm">
+
+```bash
+npm install                      # instalar dependencias del proyecto
+npm install nombre-paquete       # añadir una dependencia
+npm install -D nombre-paquete    # añadir una dependencia de desarrollo
+npm run dev                      # servidor de desarrollo (http://localhost:5173)
+npm run build                    # build de producción en dist/
+npm run preview                  # servir la build localmente
+npm run lint                     # comprobar el código con ESLint
+npm run format:check             # comprobar el formato con Prettier
+```
+
+Crear un proyecto nuevo con Vite:
+
+```bash
+npx create-vite@latest nombre-proyecto --template react-ts
+```
+
+  </TabItem>
+  <TabItem label="Pruebas y docs" icon="seti:config">
+
+```bash
+npx vitest run                   # ejecutar las pruebas unitarias una vez
+npx vitest                       # ejecutar en modo watch
+npx vitest run --coverage        # informe de cobertura
+npx playwright test              # pruebas de extremo a extremo
+npx playwright test --ui         # interfaz gráfica de Playwright
+npx playwright show-report       # abrir el último informe
+npm run storybook                # abrir Storybook (http://localhost:6006)
+npx typedoc                      # generar la documentación de API
+```
+
+  </TabItem>
+  <TabItem label="TypeScript" icon="seti:typescript">
+
+```bash
+npx tsc --version                # comprobar la versión instalada
+npx tsc --init                   # generar un tsconfig.json comentado
+npx tsc                          # compilar según tsconfig.json
+npx tsc --noEmit                 # solo comprobar tipos
+npx tsc --watch                  # recompilar al guardar
+```
+
+  </TabItem>
+</Tabs>
+
+## Currículo del módulo
+
+El currículo oficial del módulo 0488 está publicado en el Real Decreto 405/2023. El extracto con los resultados de aprendizaje, los criterios de evaluación y los contenidos básicos está disponible para descarga.
+
+<CardGrid>
+  <LinkCard title="Extracto del BOE (PDF)" description="Resultados de aprendizaje, criterios de evaluación y contenidos básicos del módulo 0488." href="/jjcm/di/downloads/modulo_0488_desarrollo_de_interfaces_boe.pdf" target="_blank" />
+  <LinkCard title="Presentación del módulo" description="Objetivos del curso y relación de cada sección con los resultados de aprendizaje." href="/jjcm/di/getting-started/" />
+</CardGrid>
+
+<Aside type="tip">
+  Cada unidad indica en su cabecera los resultados de aprendizaje y los criterios de evaluación que trabaja. Consulta el extracto del BOE si quieres ver el enunciado completo.
+</Aside>

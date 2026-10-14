@@ -1,0 +1,548 @@
+---
+title: Material de inicio, pruebas y documentación
+description: "Llevar la página de GuitarLA a React (imágenes, datos y HTML semántico sin estilos convertido a JSX), conocer el diseño objetivo que se construirá con Tailwind en las páginas siguientes, e instalar Vitest con Testing Library y Storybook con un primer test y una primera story."
+evaluations:
+  - id: RA3
+    statement: Crea componentes visuales valorando y empleando herramientas específicas.
+    criteria:
+      - Se han identificado las herramientas para diseño y prueba de componentes.
+      - Se han realizado pruebas unitarias sobre los componentes desarrollados.
+      - Se han documentado los componentes creados.
+    contents:
+      - Recursos estáticos en `public/` y datos en `src/data/`
+      - Conversión de HTML a JSX
+      - Vitest y Testing Library integrados en el proyecto
+      - Storybook con documentación automática
+sources:
+  - author: Vitest
+    url: https://vitest.dev/guide/
+  - author: Testing Library
+    url: https://testing-library.com/docs/react-testing-library/intro/
+  - author: Storybook
+    url: https://storybook.js.org/docs/get-started/install
+  - author: gach24
+    url: https://github.com/gach24/DID/tree/main/03-project_01
+sidebar:
+  order: 1
+date: 2026-10-13
+updated: 2026-10-13
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	FileTree,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+import { Image } from "astro:assets";
+import desktop from "../../../../assets/react/desktop.png";
+import desktopCart from "../../../../assets/react/desktop-cart.png";
+import mobile from "../../../../assets/react/mobile.png";
+import mobileCart from "../../../../assets/react/mobile-cart.png";
+
+El proyecto `di-react` ya está configurado y publicado. Esta página le añade lo que falta para empezar a programar: el **contenido de GuitarLA** (el HTML, las imágenes y los datos) y las dos herramientas que acompañarán a cada componente que escribas, **Vitest** para probarlo y **Storybook** para documentarlo. Al terminar, la app muestra todo el contenido, tiene un test que pasa y un Storybook que arranca, y todo está en `main`.
+
+El HTML llega **sin estilos**, a propósito. En las páginas siguientes irás extrayendo cada componente y, al hacerlo, le darás su aspecto con Tailwind mirando el diseño objetivo que también recibes. Así cada pieza se construye entera: estructura, estilo, test y story.
+
+<CardGrid stagger>
+	<Card title="Material de inicio" icon="seti:html">
+		La página en HTML semántico, las imágenes, el catálogo de guitarras y el diseño objetivo en capturas. Pasan a `public/`, `src/data/` y `App.tsx`.
+	</Card>
+	<Card title="Vitest desde el inicio" icon="approve-check">
+		Un test que comprueba que la app muestra el catálogo. Modesto, pero deja la infraestructura montada para los componentes.
+	</Card>
+	<Card title="Storybook desde el inicio" icon="open-book">
+		Una story de la app completa con documentación automática. Cada componente nuevo tendrá la suya.
+	</Card>
+</CardGrid>
+
+<Aside type="note" title="Requisitos previos">
+	Haber completado [Preparar el proyecto](/jjcm/di/units/react/00-project-setup/). Las herramientas se explican en las unidades de [Vitest](/jjcm/di/units/testing/vitest/01-introduction/) y [Storybook](/jjcm/di/units/documentation/storybook/01-introduction/); aquí solo se instalan en el proyecto y se comprueba que funcionan.
+</Aside>
+
+## Material de inicio
+
+Descarga el material y descomprímelo fuera del proyecto:
+
+<LinkCard
+	href="/jjcm/di/downloads/di-react-inicio.zip"
+	title="di-react-inicio.zip"
+	description="HTML semántico sin estilos, imágenes (logotipo, carrito, cabecera y 12 guitarras), catálogo en TypeScript y capturas del diseño objetivo."
+/>
+
+<FileTree>
+
+- di-react-inicio/
+  - README.md
+  - index.html          la página en HTML semántico, sin ninguna clase
+  - design/
+    - desktop.png       diseño objetivo en escritorio
+    - desktop-cart.png  escritorio con el panel del carrito abierto
+    - mobile.png        diseño objetivo en móvil
+    - mobile-cart.png   móvil con el panel del carrito abierto
+  - img/
+    - logo.svg
+    - carrito.png
+    - header.jpg
+    - guitarra_01.jpg … guitarra_12.jpg
+  - data/
+    - db.ts             catálogo de guitarras
+
+</FileTree>
+
+### El diseño objetivo
+
+Las capturas de `design/` son la referencia de lo que tendrá que verse al final de la unidad. Míralas ahora para saber adónde vas, y vuelve a ellas en cada página de componentes cuando toque escribir las clases de Tailwind.
+
+<Tabs>
+	<TabItem label="Escritorio" icon="lucide:monitor">
+		<Image src={desktop} alt="GuitarLA en escritorio: cabecera oscura con logotipo e icono del carrito, catálogo en tres columnas y pie" />
+	</TabItem>
+	<TabItem label="Carrito abierto" icon="lucide:shopping-cart">
+		<Image src={desktopCart} alt="GuitarLA con el panel lateral del carrito abierto sobre un fondo oscurecido: título, botón de cerrar, tabla con una guitarra, total y botón de vaciar" />
+	</TabItem>
+	<TabItem label="Móvil" icon="lucide:smartphone">
+		<Image src={mobile} alt="GuitarLA en móvil: una columna con las guitarras apiladas" width="390" />
+	</TabItem>
+	<TabItem label="Móvil con carrito" icon="lucide:smartphone">
+		<Image src={mobileCart} alt="Panel del carrito ocupando toda la pantalla del móvil" width="390" />
+	</TabItem>
+</Tabs>
+
+Fíjate en lo que tendrás que resolver más adelante: la cabecera con imagen de fondo oscurecida, el carrito como **panel lateral** que se desliza desde la derecha sobre un fondo oscurecido (y ocupa toda la pantalla en móvil), la rejilla de tres columnas que pasa a una en móvil y las tarjetas con imagen a la izquierda. Todo es Tailwind que ya conoces: `bg-[url(…)]`, `fixed inset-y-0 right-0`, `translate-x-full`, `grid-cols-1 md:grid-cols-2 lg:grid-cols-3`, `flex`. Abrir y cerrar el panel será el primer uso de estado en React.
+
+<Aside type="tip" title="Abre `index.html` con Live Server">
+	Verás la página en texto plano, con las imágenes a tamaño real y el contenido del carrito (un `aside` tras la cabecera) visible debajo, en vez de oculto en un panel. Es normal: no tiene CSS. Es exactamente lo que verá la app de React al terminar esta página, y la distancia entre eso y las capturas es el trabajo de las páginas siguientes.
+</Aside>
+
+### Copiar los recursos
+
+<Steps>
+	1. Copia la carpeta `img/` dentro de `public/` del proyecto. Lo que está en `public/` se sirve tal cual desde la raíz, así que `public/img/logo.svg` se carga como `/img/logo.svg`.
+	2. Copia `data/db.ts` a `src/data/db.ts`. Es un array de objetos con `id`, `name`, `image`, `description` y `price`; le pondrás tipo en la página de estado.
+	3. Las capturas de `design/` **no** se copian al proyecto: son referencia para ti, no parte de la aplicación.
+</Steps>
+
+<FileTree>
+
+- di-react/
+  - public/
+    - img/              copiado del material
+  - src/
+    - data/
+      - db.ts           copiado del material
+    - App.tsx
+    - index.css
+    - main.tsx
+
+</FileTree>
+
+### Del HTML al JSX
+
+Ahora la página entera pasa a `App.tsx`. Es un componente demasiado grande, y en la página de componentes lo dividirás; de momento el objetivo es ver el contenido dentro de React.
+
+<Steps>
+	1. Abre `index.html` del material y copia **todo lo que hay dentro de `<body>`** (el `header`, el `main` y el `footer`, sin la etiqueta `body`).
+	2. Pégalo en `App.tsx` dentro de un fragmento `<>…</>`:
+
+		```tsx title="src/App.tsx"
+		const App = () => {
+			return (
+				<>
+					{/* aquí va el header, el main y el footer de la página */}
+				</>
+			);
+		};
+
+		export default App;
+		```
+
+	3. Las imágenes ahora se sirven desde `public/`, con ruta absoluta. Usa **Buscar y reemplazar** de VS Code (`Ctrl+H`) sobre `App.tsx` para cambiar `./img/` por `/img/`.
+	4. Guarda: Prettier reformatea el archivo. Arranca `npm run dev` y comprueba que se ve todo el contenido: logotipo, botón del carrito, el `aside` del carrito con su tabla, el título "Nuestra Colección", las doce guitarras con su botón y el pie.
+</Steps>
+
+<Aside type="note" title="Por qué no hay errores de `class`">
+	Como el HTML viene sin clases, no hay nada que convertir a `className`. Lo verás en cuanto escribas la primera clase de Tailwind en un componente: en JSX el atributo es `className`, porque `class` es palabra reservada de JavaScript. El resto de reglas de JSX (toda etiqueta se cierra, un único elemento raíz, atributos en camelCase) se explican en la página de componentes.
+</Aside>
+
+## Vitest y Testing Library
+
+El proyecto se prueba desde hoy. La configuración es la de la [unidad de Vitest](/jjcm/di/units/testing/vitest/03-testing-react/#instalación-y-configuración); aquí se aplica sin explicarla de nuevo.
+
+<Steps>
+	1. Instala Vitest, jsdom y Testing Library:
+
+		```bash
+		npm install -D vitest jsdom @testing-library/react @testing-library/dom @testing-library/user-event @testing-library/jest-dom
+		```
+
+	2. Añade el bloque `test` a la configuración de Vite (la primera línea le dice a TypeScript que esa propiedad existe):
+
+		```ts title="vite.config.ts" {1,9-12}
+		/// <reference types="vitest/config" />
+		import react from '@vitejs/plugin-react';
+		import tailwindcss from '@tailwindcss/vite';
+		import { defineConfig } from 'vite';
+
+		// https://vite.dev/config/
+		export default defineConfig({
+			plugins: [tailwindcss(), react()],
+			test: {
+				environment: 'jsdom',
+				setupFiles: './src/setupTests.ts',
+			},
+		});
+		```
+
+		```ts title="src/setupTests.ts"
+		import '@testing-library/jest-dom/vitest';
+		import { cleanup } from '@testing-library/react';
+		import { afterEach } from 'vitest';
+
+		afterEach(() => {
+			cleanup();
+		});
+		```
+
+		`setupFiles` indica un archivo que Vitest ejecuta **antes de cada archivo de test**, para preparar el entorno una sola vez en lugar de repetirlo en cada `.test.tsx`. Este hace dos cosas:
+
+		- La primera línea registra en `expect` los **matchers de jest-dom**: `toBeInTheDocument()`, `toBeDisabled()`, `toHaveValue()`… Sin ella, `expect(elemento).toBeInTheDocument()` no existe y el test falla antes de empezar.
+		- `afterEach(cleanup)` **desmonta** los componentes renderizados al terminar cada test. Testing Library lo haría sola si `afterEach` fuera una función global, pero en Vitest no lo es, así que hay que registrarlo. Sin esta línea, lo que renderiza un test sigue en el DOM durante el siguiente, y una consulta como `getByRole('heading')` fallaría con *Found multiple elements* en cuanto hubiera dos tests sobre el mismo componente.
+
+	3. Añade el script `"test": "vitest"` a `package.json`.
+	4. Escribe el primer test: la app muestra el título del catálogo.
+
+		```tsx title="src/App.test.tsx"
+		import { render, screen } from '@testing-library/react';
+		import { describe, expect, it } from 'vitest';
+		import App from './App';
+
+		describe('App', () => {
+			it('shows the collection title', () => {
+				render(<App />);
+				expect(
+					screen.getByRole('heading', { name: 'Nuestra Colección' })
+				).toBeInTheDocument();
+			});
+		});
+		```
+
+	5. Ejecútalo una vez y comprueba que pasa:
+
+		```bash
+		npx vitest run
+		```
+
+		```txt
+		 ✓ src/App.test.tsx (1 test)
+
+		 Test Files  1 passed (1)
+		      Tests  1 passed (1)
+		```
+</Steps>
+
+Es un test modesto, pero deja montada la infraestructura. Fíjate en que no depende de los estilos: cuando añadas Tailwind a los componentes, seguirá pasando. En cada página siguiente, cada componente nuevo llega con su archivo `.test.tsx` al lado.
+
+## Storybook
+
+Lo mismo con la documentación visual: Storybook se instala ahora y cada componente que crees tendrá su story. La [unidad de Storybook](/jjcm/di/units/documentation/storybook/01-introduction/) explica qué es y cómo escribir stories; aquí solo lo dejas funcionando.
+
+<Steps>
+	1. Instala Storybook con las funciones de documentación y accesibilidad, sin arrancarlo al terminar:
+
+		```bash
+		npx storybook@latest init --yes --no-dev --features docs a11y
+		```
+
+		El comando, parte por parte:
+
+		| Parte | Qué hace |
+		| :--- | :--- |
+		| `npx storybook@latest` | Descarga y ejecuta la última versión del CLI de Storybook sin instalarla globalmente, igual que `npm create vite@latest` |
+		| `init` | Añade Storybook a un proyecto que ya existe: detecta el framework (React) y el bundler (Vite) y elige el paquete adecuado, `@storybook/react-vite` |
+		| `--yes` | Responde "sí" a todas las preguntas del asistente, para que el resultado sea el mismo en todos los equipos |
+		| `--no-dev` | No arranca Storybook al terminar; lo harás tú después de configurarlo |
+		| `--features docs a11y` | Instala solo dos extras: **docs** (documentación automática de cada componente) y **a11y** (panel que señala problemas de accesibilidad). Sin esta opción instalaría además la integración con Vitest, que no queremos |
+
+		Al terminar, el asistente ha instalado los paquetes, ha creado `.storybook/` con `main.ts` y `preview.tsx`, ha añadido los scripts `storybook` y `build-storybook` a `package.json`, ha ampliado `.gitignore` y ha generado stories de ejemplo en `src/stories/`.
+
+	2. Borra la carpeta `src/stories/`: son ejemplos que no pertenecen a GuitarLA.
+	3. Sustituye `.storybook/preview.tsx` para cargar el CSS del proyecto (así las stories verán las clases de Tailwind que escribas en las páginas siguientes) y activar la documentación automática:
+
+		```tsx title=".storybook/preview.tsx" {3,6}
+		import type { Preview } from '@storybook/react-vite';
+
+		import '../src/index.css';
+
+		const preview: Preview = {
+			tags: ['autodocs'],
+			parameters: {
+				controls: {
+					matchers: {
+						color: /(background|color)$/i,
+						date: /Date$/i,
+					},
+				},
+			},
+		};
+
+		export default preview;
+		```
+
+	4. El asistente instala `eslint-plugin-storybook`. Añádelo a `eslint.config.js` para que ESLint también revise las stories:
+
+		```js title="eslint.config.js" ins={5,24}
+		import js from '@eslint/js';
+		import prettier from 'eslint-config-prettier';
+		import reactHooks from 'eslint-plugin-react-hooks';
+		import reactRefresh from 'eslint-plugin-react-refresh';
+		import storybook from 'eslint-plugin-storybook';
+		import { defineConfig, globalIgnores } from 'eslint/config';
+		import globals from 'globals';
+		import tseslint from 'typescript-eslint';
+
+		export default defineConfig([
+			globalIgnores(['dist', 'storybook-static']),
+			{
+				files: ['**/*.{ts,tsx}'],
+				extends: [
+					js.configs.recommended,
+					tseslint.configs.recommended,
+					reactHooks.configs.flat.recommended,
+					reactRefresh.configs.vite,
+					prettier,
+				],
+				languageOptions: {
+					ecmaVersion: 2020,
+					globals: globals.browser,
+				},
+			},
+			...storybook.configs['flat/recommended'],
+		]);
+		```
+
+	5. Incluye la carpeta `.storybook/` en la configuración de TypeScript. `tsconfig.app.json` solo cubre `src/`, así que VS Code trata `preview.tsx` como un archivo suelto, sin saber que el proyecto usa JSX ni dónde están los tipos, y lo llena de errores falsos:
+
+		```json title="tsconfig.app.json" ins={2}
+		{
+			"include": ["src", ".storybook/**/*"]
+		}
+		```
+
+		Con esto `tsc -b` también comprueba los tipos de `main.ts` y `preview.tsx` en cada `npm run build`.
+
+	6. Escribe una primera story que muestre la app completa. `layout: 'fullscreen'` quita el relleno que Storybook añade alrededor, que aquí no tiene sentido:
+
+		```tsx title="src/App.stories.tsx"
+		import type { Meta, StoryObj } from '@storybook/react-vite';
+		import App from './App';
+
+		const meta = {
+			component: App,
+			parameters: {
+				layout: 'fullscreen',
+			},
+		} satisfies Meta<typeof App>;
+
+		export default meta;
+		type Story = StoryObj<typeof meta>;
+
+		export const Default: Story = {};
+		```
+
+	7. Arranca Storybook y comprueba en `http://localhost:6006` que la story **App / Default** muestra el contenido de la página y que la pestaña **Docs** existe. Páralo con `Ctrl+C`.
+
+		```bash
+		npm run storybook
+		```
+</Steps>
+
+<Aside type="caution" title="No instales la opción `test` de Storybook">
+	Si ejecutas `npx storybook@latest init` sin `--features`, el asistente instala además su integración con Vitest: descarga navegadores de Playwright, añade varios paquetes y **reescribe `vite.config.ts`** con una configuración por proyectos. Es útil en equipos grandes, pero complica el proyecto de aula y choca con la configuración de Vitest de esta página. Las pruebas de componentes se escriben con Testing Library, como en la unidad de pruebas.
+</Aside>
+
+<Aside type="note" title="TypeDoc, más adelante">
+	TypeDoc documenta funciones, tipos y hooks, y de momento no hay ninguno que documentar. Se incorpora en la página del hook `useCart`, siguiendo la [unidad de TypeDoc](/jjcm/di/units/documentation/typedoc/01-introduction/).
+</Aside>
+
+## Comprobar que todo pasa
+
+A los tres comandos de la página anterior se suma el de pruebas. Los cuatro deben terminar sin errores:
+
+```bash
+npm run lint
+npm run format:check
+npx vitest run
+npm run build
+```
+
+## Entrega
+
+Confirma el trabajo en dos commits, todavía en `main`: uno con el material de inicio y otro con las herramientas. Así el historial distingue lo que es contenido de lo que es configuración. Recuerda que los mensajes van en inglés.
+
+<Steps>
+	1. Confirma el material de inicio (imágenes, datos y el HTML en `App.tsx`):
+
+		```bash
+		git add .
+		git commit -m "Add GuitarLA starter material"
+		```
+
+	2. Si aún no lo has hecho, instala Vitest y Storybook como se indica arriba, y confirma la configuración, el test y la story:
+
+		```bash
+		git add .
+		git commit -m "Add Vitest and Storybook"
+		```
+
+	3. Sube ambos commits a GitHub y comprueba que `public/img/`, `src/data/` y `.storybook/` aparecen en el repositorio, pero no `storybook-static/`:
+
+		```bash
+		git push
+		```
+
+	4. Cierra el hito con una etiqueta y una release, como hiciste con `v0.1.0` en la [página anterior](/jjcm/di/units/react/00-project-setup/#crear-una-release):
+
+		```bash
+		git tag -a v0.2.0 -m "Starter material, Vitest and Storybook"
+		git push origin v0.2.0
+		gh release create v0.2.0 --title "v0.2.0 · Starter material, testing and docs" --notes "GuitarLA markup in React, Vitest with Testing Library and Storybook."
+		```
+
+		Si no usas GitHub CLI, crea la release desde la web eligiendo la etiqueta `v0.2.0`.
+</Steps>
+
+<Aside type="note" title="Últimos commits directos en `main`">
+	Con esto termina la configuración del proyecto. A partir de la página de componentes, cada fase se desarrolla en una rama propia que nace de `main` y se fusiona al terminar; `main` dejará de editarse directamente.
+</Aside>
+
+## Estructura final
+
+<FileTree>
+
+- di-react/
+  - .storybook/
+    - main.ts
+    - preview.tsx       importa index.css y activa autodocs
+  - .vscode/
+    - extensions.json
+    - settings.json
+  - public/
+    - img/              logotipo, carrito, cabecera y guitarras
+  - src/
+    - data/
+      - db.ts
+    - App.tsx           toda la página, sin estilos, de momento
+    - App.test.tsx
+    - App.stories.tsx
+    - index.css
+    - main.tsx
+    - setupTests.ts
+  - .gitignore
+  - .prettierrc
+  - .prettierignore
+  - eslint.config.js
+  - index.html
+  - package.json
+  - tsconfig.json
+  - tsconfig.app.json   include con src y .storybook
+  - tsconfig.node.json
+  - vite.config.ts      plugins de Tailwind y React, bloque test
+
+</FileTree>
+
+## Comprobación final
+
+<Steps>
+	1. `npm run dev` muestra todo el contenido de GuitarLA con la fuente Outfit: cabecera, panel del carrito, doce guitarras y pie, sin estilos.
+	2. `npm run lint`, `npm run format:check`, `npx vitest run` y `npm run build` terminan sin errores.
+	3. `npm run storybook` muestra la story **App / Default** y su pestaña **Docs**.
+	4. `git log --oneline` muestra tres commits en `main` y GitHub contiene `public/img/`, `src/data/` y `.storybook/`.
+	5. En **Releases** aparecen `v0.1.0` y `v0.2.0`.
+	6. Tienes localizadas las capturas de `design/` para consultarlas en las páginas siguientes.
+</Steps>
+
+## 🧩 Aplicación en el proyecto
+
+Dos decisiones de esta página marcan cómo se trabaja en el resto de la unidad. La primera: **las herramientas de calidad se instalan antes de escribir el primer componente**, no cuando la aplicación ya está hecha; cada `Header`, `Guitar` o `Footer` llegará con su `.test.tsx` y su `.stories.tsx`. La segunda: **el marcado va antes que el estilo**. Partir de HTML semántico y añadir las utilidades de Tailwind al extraer cada componente te obliga a entender qué hace cada clase, en lugar de copiar un bloque de veinte que escribió otro.
+
+## Resumen rápido
+
+| Pieza | Comando o archivo |
+| :--- | :--- |
+| **Material** | `public/img/`, `src/data/db.ts`, HTML sin estilos en `App.tsx` con rutas `/img/`; capturas en `design/` como referencia |
+| **Pruebas** | `vitest` + Testing Library, bloque `test` en `vite.config.ts`, `setupTests.ts`, `App.test.tsx` |
+| **Documentación** | `storybook init --yes --no-dev --features docs a11y`, `preview.tsx` con CSS y autodocs, `App.stories.tsx` |
+| **Linter y tipos** | `eslint-plugin-storybook` en `eslint.config.js`; `.storybook/**/*` en el `include` de `tsconfig.app.json` |
+| **Comprobación** | `lint`, `format:check`, `vitest run`, `build` |
+| **Git** | Dos commits más en `main` y release `v0.2.0`; desde la siguiente página, ramas por fase |
+
+## Convención práctica
+
+<Steps>
+	1. **Cuatro comandos antes de cada commit**: `lint`, `format:check`, `vitest run` y `build`.
+	2. **Cada componente nuevo** llega con su `.test.tsx` y su `.stories.tsx` al lado, en el mismo commit.
+	3. **Marcado primero, estilo después**: las clases de Tailwind se escriben al extraer cada componente, con la captura de `design/` delante.
+	4. **Rutas de imágenes absolutas** (`/img/…`): lo que está en `public/` se sirve desde la raíz.
+	5. **`storybook-static/` y `coverage/` no se versionan**; están en `.gitignore` y en `.prettierignore`.
+</Steps>
+
+## Referencias
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://vitest.dev/guide/"
+		title="Guía oficial de Vitest"
+		description="Instalación, configuración y conceptos."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://testing-library.com/docs/react-testing-library/intro/"
+		title="React Testing Library"
+		description="Introducción y principios: probar como el usuario."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://storybook.js.org/docs/get-started/install"
+		title="Instalar Storybook"
+		description="Opciones del asistente y archivos que genera."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://react.dev/learn/writing-markup-with-jsx"
+		title="Escribir marcado con JSX (React)"
+		description="Las reglas de JSX: una raíz, etiquetas cerradas y camelCase."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+## Siguientes pasos
+
+<CardGrid>
+	<LinkCard
+		href="/jjcm/di/units/react/02-components/"
+		title="Componentes"
+		description="Extraer Header, Guitar y Footer, darles estilo con Tailwind según el diseño, y añadir sus tests y stories en la primera rama de desarrollo."
+	/>
+	<LinkCard
+		href="/jjcm/di/units/react/00-project-setup/"
+		title="Preparar el proyecto"
+		description="Volver a la configuración inicial si algo no encaja."
+	/>
+</CardGrid>
