@@ -142,14 +142,8 @@ export default defineConfig({
           ],
         },
         {
-          label: "[changelog] Changelog",
-          link: "/changelog/",
-        },
-        {
-          label: "[book] Reference",
-          autogenerate: {
-            directory: "reference",
-          },
+          label: "[book] Recursos",
+          link: "/resources/",
         },
       ],
       customCss: [
