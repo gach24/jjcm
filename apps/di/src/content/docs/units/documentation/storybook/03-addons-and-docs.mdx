@@ -268,8 +268,14 @@ Componentes → Badge → Info
   ⚠️ 1 incomplete (color contrast)
 ```
 
+El panel separa tres listas: **Violations** (fallos seguros: una imagen sin `alt`, un botón sin nombre accesible, contraste insuficiente, ARIA mal usado), **Passes** (lo que ha comprobado y está bien) e **Inconclusive** (lo que axe no puede decidir solo, como el contraste de un texto sobre una imagen; hay que mirarlo a mano).
+
 <Aside type="note" title="Accesibilidad como parte del desarrollo">
-	El addon A11y no reemplaza una auditoría completa, pero detecta problemas comunes (contraste, labels, roles ARIA…) mientras desarrollas, antes de que lleguen a producción.
+	El addon A11y no reemplaza una auditoría completa: una herramienta automática detecta en torno a un tercio de los problemas, y el teclado o el lector de pantalla se prueban a mano. Pero señala los fallos comunes mientras desarrollas, antes de que lleguen a producción, y Storybook es el mejor sitio para revisarlos porque aísla cada componente en cada estado. Por defecto es un panel que miras; convertirlo en un test que falla requiere el addon de Vitest de Storybook, que no se usa en este módulo (los tests de Testing Library por rol y nombre cumplen esa función). Los fundamentos están en [usabilidad y accesibilidad](/jjcm/di/units/ux/fundamentals/01-introduction/).
+</Aside>
+
+<Aside type="tip" title="Y la usabilidad">
+	Storybook no la mide, porque depende de personas. Lo que aporta es poder ver cada componente en **todos sus estados** sin navegar hasta ellos, simular pantallas con el addon **Viewport** y publicar el catálogo para que quien no programa (diseño, cliente, profesor) lo revise y opine.
 </Aside>
 
 ## Publicar Storybook como sitio estático

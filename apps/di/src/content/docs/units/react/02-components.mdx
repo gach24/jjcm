@@ -50,6 +50,7 @@ import {
 import { Image } from "astro:assets";
 import desktop from "../../../../assets/react/desktop.png";
 import desktopCart from "../../../../assets/react/desktop-cart.png";
+import storybookA11y from "../../../../assets/react/storybook-a11y-violation.png";
 
 `App.tsx` contiene toda la página en un solo bloque. Funciona, pero no se puede reutilizar nada ni probar nada por separado. En esta página la divides en **cuatro componentes** (`Header`, `Cart`, `Guitar` y `Footer`) y, al extraer cada uno, le das su aspecto con Tailwind mirando el diseño, escribes su test y su story, y lo confirmas en un commit. Es la primera fase de desarrollo, y por tanto la primera que se hace en una **rama**.
 
@@ -798,7 +799,17 @@ const App = () => {
 export default App;
 ```
 
-Arranca `npm run storybook`: en el lateral aparecen **App**, **Cart**, **Footer**, **Guitar** y **Header**, cada uno con su story `Default` y su pestaña **Docs**. Abre `Header` y mira el panel **Accessibility**: no debe haber violaciones. Prueba a quitar el `alt` del logotipo y vuelve a mirar.
+Arranca `npm run storybook`: en el lateral aparecen **App**, **Cart**, **Footer**, **Guitar** y **Header**, cada uno con su story `Default` y su pestaña **Docs**. Abre `Header` y mira el panel **Accessibility**: no debe haber violaciones.
+
+### Cómo se ve un fallo de accesibilidad
+
+Para ver el panel en acción, quita la línea `aria-label="Abrir carrito"` del botón en `Header.tsx`, guarda y vuelve a la story:
+
+<Image src={storybookA11y} alt="Storybook con la story Header abierta y el panel Accessibility mostrando una violación: Button name, regla button-name, impacto Critical" />
+
+La pestaña **Accessibility** pasa a marcar **1** y la lista **Violations** muestra la regla incumplida, **Button name** (`button-name`), con impacto **Critical**: el botón no tiene ningún texto que un lector de pantalla pueda anunciar. Al desplegarla verás el fragmento de HTML afectado y las formas de arreglarlo que propone axe (texto visible dentro del botón, `aria-label`, `aria-labelledby` o `title`). Las otras dos listas, **Passes** (10 comprobaciones superadas) e **Inconclusive**, no cambian.
+
+Vuelve a poner el `aria-label`: la violación desaparece. Es la misma comprobación que hace el test `shows the button to open the cart`, desde el otro lado: el test falla porque no encuentra un botón con ese nombre; axe avisa porque el botón no tiene ninguno. Cuando una de las dos cosas ocurra en un componente nuevo, la causa casi siempre es la misma.
 
 ## Comprobar que todo pasa
 
@@ -867,7 +878,7 @@ La fase está terminada: cuatro commits en `feat/components`, todo en verde. Aho
 	1. `src/components/` contiene una carpeta por componente, cada una con el componente, su `.test.tsx`, su `.stories.tsx` y su `index.ts`, más el índice general.
 	2. `npm run dev` muestra la cabecera con la foto oscurecida, tres tarjetas en rejilla, el panel del carrito a la derecha y el pie, como en las capturas.
 	3. `npx vitest run` ejecuta 9 tests en 5 archivos (uno de ellos de snapshot), todos en verde; `lint`, `format:check` y `build` pasan.
-	4. `npm run storybook` lista los cinco componentes sin violaciones de accesibilidad.
+	4. `npm run storybook` lista los cinco componentes sin violaciones de accesibilidad, y has visto cómo aparece una al quitar el `aria-label` del botón del carrito.
 	5. `git log --oneline --graph` muestra la rama fusionada en `main`, `git branch` ya no lista `feat/components` y en GitHub existe la release `v0.3.0`.
 </Steps>
 

@@ -159,6 +159,12 @@ Ninguna herramienta automática detecta más de un tercio de los problemas de ac
 	5. **Prueba con usuarios.** Cinco personas haciendo tres tareas mientras piensan en voz alta encuentran la mayoría de los problemas de usabilidad. No hace falta laboratorio: un compañero que no haya visto la app y un cronómetro.
 </Steps>
 
+<Aside type="note" title="Qué puede y qué no puede hacer Storybook">
+	**Accesibilidad, sí**: el addon de accesibilidad ejecuta axe sobre cada story y separa **violaciones** (*Violations*, fallos seguros), **comprobaciones superadas** (*Passes*) y **no concluyentes** (*Inconclusive*, las que necesitan revisión humana, como el contraste sobre una imagen). Es un panel que miras, no un test que falla, y cubre solo lo automatizable; el teclado y el lector de pantalla se prueban a mano, y Storybook es un buen sitio para hacerlo porque aísla el componente.
+
+	**Usabilidad, no**: depende de personas y no se automatiza. Lo que Storybook aporta es indirecto: ver cada componente en **todos sus estados** (vacío, cargando, error, texto largo) sin navegar hasta ellos, simular tamaños de pantalla con el addon **Viewport** y publicar el catálogo para que alguien que no programa lo revise. Las pruebas de interacción comprueban comportamiento, no si la interfaz es fácil de usar.
+</Aside>
+
 ## 🧩 Aplicación en el proyecto
 
 En GuitarLA ya has aplicado accesibilidad sin llamarla así: HTML semántico (`header`, `nav`, `main`, `article`, `footer`), `alt` en las imágenes, `aria-label` en el botón del carrito, y tests que buscan por **rol y nombre accesible**, que fallan cuando a un control le falta su nombre. A partir de ahora cada componente nuevo pasa por el panel de accesibilidad de Storybook antes de confirmarlo, y las páginas de estado y formularios añadirán el foco, `aria-expanded` en el panel del carrito y mensajes de error comprensibles. La usabilidad se trabajará con la evaluación heurística de la app completa y una prueba con usuarios en el proyecto final.
