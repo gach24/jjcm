@@ -52,12 +52,20 @@ Con pruebas, `npm test` responde en segundos a la pregunta "¿sigue funcionando 
 
 ### Qué hace buena una prueba
 
-No basta con que exista. Una prueba útil es:
+No basta con que exista. Una prueba útil cumple estas propiedades:
 
-- **Fácil de escribir.** Si montar el test cuesta más que escribir el código, el código está mal diseñado (demasiadas dependencias, demasiadas responsabilidades) y el test lo está delatando.
-- **Fácil de leer.** Alguien que no ha visto el código debe entender, solo con el nombre del test y sus tres o cuatro líneas, qué comportamiento se comprueba.
-- **Rápida.** Cientos de tests deben correr en segundos. Un test que toca la red o el disco rompe esta regla.
-- **Flexible.** Comprueba **qué** hace el código, no **cómo** lo hace. Si refactorizas una función sin cambiar su resultado, el test debe seguir pasando.
+| Propiedad | Qué significa |
+| :--- | :--- |
+| **Automatizable** | Se ejecuta con un comando, sin que nadie tenga que pulsar nada ni mirar una pantalla. Es lo que permite lanzarla en integración continua en cada `push` |
+| **Repetible** | Da el mismo resultado cada vez que se ejecuta, hoy y dentro de un mes, en tu equipo y en el servidor de CI. Un test que depende de la fecha, de la red o de un orden concreto no lo es |
+| **Independiente** | No depende de que otro test se haya ejecutado antes ni deja estado que afecte al siguiente. Vitest puede ejecutarlos en otro orden o en paralelo |
+| **Rápida** | Cientos de tests deben correr en segundos. Un test que tarda se deja de ejecutar, y un test que no se ejecuta no sirve. La red y el disco quedan fuera |
+| **Completa** | Cubre la lógica que importa: caso normal, límites y errores. No significa probar cada línea (ver cobertura más abajo), sino no dejar sin probar lo que se puede romper |
+| **Fácil de escribir** | Si montar el test cuesta más que escribir el código, el código tiene demasiadas dependencias o responsabilidades, y el test lo está delatando |
+| **Fácil de leer** | Alguien que no ha visto el código entiende, con el nombre del test y sus pocas líneas, qué comportamiento se comprueba |
+| **Flexible** | Comprueba **qué** hace el código, no **cómo** lo hace. Si refactorizas una función sin cambiar su resultado, el test sigue pasando |
+
+Las tres primeras son las que hacen posible la integración continua, que verás al final de la unidad: un workflow que ejecuta `vitest run` en cada commit solo funciona si los tests no necesitan a nadie delante, dan siempre el mismo resultado y no dependen unos de otros.
 
 ### Mitos sobre las pruebas
 
@@ -247,7 +255,7 @@ El objetivo no es cubrir el 100 % del código, sino que las partes con lógica t
 | **Archivo de test** | `nombre.test.ts` junto al archivo probado |
 | **Estructura** | `describe` (grupo) → `it` (prueba) → `expect` (aserción) |
 | **Dentro de cada test** | Arrange (preparar) → Act (actuar) → Assert (comprobar) |
-| **Buena prueba** | Fácil de escribir y de leer, rápida, y comprueba el qué, no el cómo |
+| **Buena prueba** | Automatizable, repetible, independiente, rápida, completa, fácil de escribir y de leer, y comprueba el qué, no el cómo |
 | **Ejecutar** | `npm test` (watch) · `npx vitest run` (una vez) · `--ui` · `--coverage` |
 | **Cobertura** | Líneas, ramas, funciones y condiciones; para descubrir huecos, no para perseguir el 100 % |
 
