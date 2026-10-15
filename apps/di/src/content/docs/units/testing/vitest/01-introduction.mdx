@@ -47,8 +47,35 @@ Sin pruebas, cada cambio obliga a comprobar a mano todo lo que podría haberse v
 Con pruebas, `npm test` responde en segundos a la pregunta "¿sigue funcionando todo lo que funcionaba?". No sustituyen a probar la app a mano, pero cubren la parte repetitiva y aburrida, que es precisamente la que se deja de hacer.
 
 <Aside type="tip" title="Tres niveles de prueba">
-	**Unitarias**: una función o un componente aislado (Vitest). **De integración**: varias piezas juntas, por ejemplo un formulario con su lista (Vitest + Testing Library). **De extremo a extremo (E2E)**: la aplicación real en un navegador real (Playwright, el siguiente subapartado). En este módulo tocarás las tres.
+	**Unitarias**: una función o un componente aislado (Vitest). **De integración**: varias piezas juntas, por ejemplo un formulario con su lista (Vitest + Testing Library). **De extremo a extremo (E2E)**: la aplicación real en un navegador real (Playwright, el siguiente subapartado). En este módulo tocarás las tres, empezando por las unitarias: las piezas más pequeñas y menos acopladas son las más fáciles de probar y donde antes se nota el beneficio.
 </Aside>
+
+### Qué hace buena una prueba
+
+No basta con que exista. Una prueba útil cumple estas propiedades:
+
+| Propiedad | Qué significa |
+| :--- | :--- |
+| **Automatizable** | Se ejecuta con un comando, sin que nadie tenga que pulsar nada ni mirar una pantalla. Es lo que permite lanzarla en integración continua en cada `push` |
+| **Repetible** | Da el mismo resultado cada vez que se ejecuta, hoy y dentro de un mes, en tu equipo y en el servidor de CI. Un test que depende de la fecha, de la red o de un orden concreto no lo es |
+| **Independiente** | No depende de que otro test se haya ejecutado antes ni deja estado que afecte al siguiente. Vitest puede ejecutarlos en otro orden o en paralelo |
+| **Rápida** | Cientos de tests deben correr en segundos. Un test que tarda se deja de ejecutar, y un test que no se ejecuta no sirve. La red y el disco quedan fuera |
+| **Completa** | Cubre la lógica que importa: caso normal, límites y errores. No significa probar cada línea (ver cobertura más abajo), sino no dejar sin probar lo que se puede romper |
+| **Fácil de escribir** | Si montar el test cuesta más que escribir el código, el código tiene demasiadas dependencias o responsabilidades, y el test lo está delatando |
+| **Fácil de leer** | Alguien que no ha visto el código entiende, con el nombre del test y sus pocas líneas, qué comportamiento se comprueba |
+| **Flexible** | Comprueba **qué** hace el código, no **cómo** lo hace. Si refactorizas una función sin cambiar su resultado, el test sigue pasando |
+
+Las tres primeras son las que hacen posible la integración continua, que verás al final de la unidad: un workflow que ejecuta `vitest run` en cada commit solo funciona si los tests no necesitan a nadie delante, dan siempre el mismo resultado y no dependen unos de otros.
+
+### Mitos sobre las pruebas
+
+| Mito | Realidad |
+| :--- | :--- |
+| "Con tests mi aplicación no tiene errores" | Los tests encuentran los errores que has imaginado; los que no, siguen ahí. Reducen fallos, no los eliminan |
+| "Los tests no pueden fallar" | Fallan, y es su trabajo. Un test que falla te está dando información; un test que nunca falla puede que no esté comprobando nada |
+| "Hacen más lenta mi aplicación" | Los tests no van en el código que se despliega. Lo que tardan es en tu máquina y en CI |
+| "Son una pérdida de tiempo" | Cuestan tiempo al escribirlos y lo devuelven en cada cambio posterior, que ya no hay que volver a comprobar a mano |
+| "Hay que probar todo" | Se prueba lo que tiene lógica y lo que se rompe con frecuencia. Un componente que solo pinta texto no necesita tres tests |
 
 ## Por qué Vitest
 
@@ -142,6 +169,18 @@ Las tres piezas que se repiten en todo test:
 	3. **`expect(valor).matcher(esperado)`** es la **aserción**: la comprobación concreta. `toBe` compara con `===`; en la siguiente página verás el resto de *matchers*.
 </Steps>
 
+### Arrange, Act, Assert
+
+Por dentro, cada `it` sigue siempre el mismo orden, conocido como la **triple A**:
+
+| Fase | Qué se hace | En el test de `pluralize` |
+| :--- | :--- | :--- |
+| **Arrange** (preparar) | Importar lo necesario, crear datos y estado inicial | `import { pluralize } from "./format"` y los argumentos `1, "pending task", "pending tasks"` |
+| **Act** (actuar) | Ejecutar lo que se prueba: llamar a la función, simular un clic | `pluralize(1, "pending task", "pending tasks")` |
+| **Assert** (comprobar) | Afirmar qué debería haber ocurrido | `expect(…).toBe("1 pending task")` |
+
+En un test de una línea las tres fases van juntas en el `expect`. Cuando el test crece (un carrito al que se añaden productos y luego se consulta el total), separarlas en tres bloques, incluso con una línea en blanco entre ellos, es lo que lo mantiene legible. Si un test tiene dos "Act", suelen ser dos tests.
+
 ## Ejecutar los tests
 
 ```bash
@@ -180,6 +219,10 @@ Otros modos de ejecución que usarás:
 | `npx vitest run format` | Solo los archivos cuya ruta contenga `format` |
 | `npx vitest run --coverage` | Informe de qué líneas se han ejecutado durante los tests (instala `@vitest/coverage-v8`) |
 
+<Aside type="note" title="Qué mide la cobertura">
+	El informe de `--coverage` da cuatro porcentajes: **líneas** ejecutadas, **ramas** de cada `if` o ternario recorridas, **funciones** invocadas y **condiciones** evaluadas en ambos sentidos (`true` y `false`). Sirven para **descubrir** lo que no has probado (una rama `else` que ningún test alcanza), no como objetivo: un 100 % de cobertura con aserciones vacías no prueba nada, y un 70 % con buenos tests sobre la lógica importante es mejor.
+</Aside>
+
 <Aside type="caution" title="Watch en la terminal, run en CI">
 	`vitest` a secas no termina nunca: es para desarrollar. En un script de build o en GitHub Actions usa siempre `vitest run`, que ejecuta una vez y devuelve un código de salida (0 si todo pasa, 1 si algo falla).
 </Aside>
@@ -211,13 +254,16 @@ El objetivo no es cubrir el 100 % del código, sino que las partes con lógica t
 | **Instalar** | `npm install -D vitest` + script `"test": "vitest"` |
 | **Archivo de test** | `nombre.test.ts` junto al archivo probado |
 | **Estructura** | `describe` (grupo) → `it` (prueba) → `expect` (aserción) |
+| **Dentro de cada test** | Arrange (preparar) → Act (actuar) → Assert (comprobar) |
+| **Buena prueba** | Automatizable, repetible, independiente, rápida, completa, fácil de escribir y de leer, y comprueba el qué, no el cómo |
 | **Ejecutar** | `npm test` (watch) · `npx vitest run` (una vez) · `--ui` · `--coverage` |
+| **Cobertura** | Líneas, ramas, funciones y condiciones; para descubrir huecos, no para perseguir el 100 % |
 
 ## Convención práctica
 
 <Steps>
 	1. Nombra cada `it` como una **frase que describe el comportamiento** ("devuelve 0 con lista vacía"), no la implementación ("llama a reduce").
-	2. Un `it` comprueba **una cosa**. Si tiene cinco `expect` sobre asuntos distintos, son cinco tests.
+	2. Un `it` comprueba **una cosa** y sigue el orden **Arrange, Act, Assert**. Si tiene cinco `expect` sobre asuntos distintos, son cinco tests.
 	3. Coloca el test **junto al archivo** que prueba y con el mismo nombre más `.test`.
 	4. Ejecuta `npm test` **antes de cada commit**; un test que falla no se commitea.
 	5. Prueba primero lo que tiene **lógica** (cálculos, condiciones); dejar sin test un componente que solo pinta texto es aceptable.

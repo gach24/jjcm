@@ -1,0 +1,255 @@
+---
+title: Usabilidad y accesibilidad
+description: "Qué es la usabilidad y qué es la accesibilidad, en qué se diferencian, los estándares que las definen (ISO 9241, heurísticas de Nielsen, WCAG), cómo se aplican en una interfaz web y con qué herramientas se evalúan."
+evaluations:
+  - id: RA4
+    statement: Diseña interfaces gráficas identificando y aplicando criterios de usabilidad y accesibilidad.
+    criteria:
+      - Se han identificado los principales estándares de usabilidad y accesibilidad.
+      - Se ha valorado la importancia del uso de estándares para la creación de interfaces.
+      - Se han realizado pruebas para evaluar la usabilidad y accesibilidad de la aplicación.
+    contents:
+      - Usabilidad y accesibilidad. Características. Pautas. Estándares.
+      - Medidas de usabilidad y accesibilidad de las aplicaciones; herramientas.
+sources:
+  - author: W3C Web Accessibility Initiative
+    url: https://www.w3.org/WAI/fundamentals/accessibility-intro/es
+  - author: W3C
+    url: https://www.w3.org/TR/WCAG22/
+  - author: Nielsen Norman Group
+    url: https://www.nngroup.com/articles/ten-usability-heuristics/
+  - author: MDN Web Docs
+    url: https://developer.mozilla.org/es/docs/Web/Accessibility
+sidebar:
+  order: 1
+date: 2026-10-15
+updated: 2026-10-15
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+Una interfaz puede funcionar, pasar todos los tests y aun así ser mala: porque el usuario no encuentra el botón, porque el mensaje de error no dice qué hacer, o porque una persona ciega no puede usarla. **Usabilidad** y **accesibilidad** son los dos criterios que miden eso, y son parte del módulo igual que React o las pruebas. Esta página presenta los conceptos y los estándares; las unidades siguientes los aplican sobre GuitarLA.
+
+<CardGrid stagger>
+	<Card title="Usabilidad" icon="seti:smarty">
+		Hasta qué punto una persona consigue lo que quiere con la interfaz: con eficacia, sin esfuerzo innecesario y sin frustrarse.
+	</Card>
+	<Card title="Accesibilidad" icon="approve-check">
+		Que **todas** las personas puedan usarla, incluidas las que tienen una discapacidad visual, auditiva, motora o cognitiva, o usan tecnologías de asistencia.
+	</Card>
+	<Card title="Estándares" icon="open-book">
+		No son opiniones: ISO 9241, las heurísticas de Nielsen y las WCAG definen qué se exige y cómo se comprueba.
+	</Card>
+</CardGrid>
+
+## Usabilidad
+
+La norma **ISO 9241-11** define la usabilidad como el grado en que un producto puede ser usado por unos usuarios concretos para lograr unos objetivos concretos con **eficacia**, **eficiencia** y **satisfacción** en un contexto de uso determinado. Tres palabras que se pueden medir:
+
+| Atributo | Pregunta | Cómo se mide |
+| :--- | :--- | :--- |
+| **Eficacia** | ¿Consigue el usuario lo que quería? | Porcentaje de tareas completadas, errores cometidos |
+| **Eficiencia** | ¿Con cuánto esfuerzo? | Tiempo por tarea, número de clics, pasos atrás |
+| **Satisfacción** | ¿Cómo se ha sentido? | Cuestionarios como SUS, comentarios, si volvería a usarla |
+
+Fíjate en "usuarios concretos" y "contexto de uso": una interfaz no es usable en abstracto. La app de informes del módulo es para administrativos en un escritorio; GuitarLA, para compradores que pueden estar en un móvil. Lo que es usable para unos no lo es para otros.
+
+### Las heurísticas de Nielsen
+
+Jakob Nielsen formuló en 1994 diez principios que siguen siendo la lista de comprobación más usada. No requieren usuarios: un desarrollador puede revisar su propia interfaz contra ellos.
+
+<Steps>
+	1. **Visibilidad del estado del sistema.** El usuario siempre sabe qué está pasando: un spinner mientras carga, el carrito muestra cuántos artículos tiene.
+	2. **Relación entre el sistema y el mundo real.** Palabras y conceptos del usuario, no del programador: "Vaciar carrito", no "Reset state".
+	3. **Control y libertad.** Se puede deshacer y salir: cerrar el carrito, quitar un artículo, volver atrás.
+	4. **Consistencia y estándares.** Lo mismo se hace igual en toda la app: todos los botones principales tienen el mismo aspecto, el icono del carrito está donde todo el mundo lo espera.
+	5. **Prevención de errores.** Mejor que un buen mensaje de error es que no se pueda cometer: el botón de añadir se deshabilita si no hay stock.
+	6. **Reconocer antes que recordar.** Las opciones están a la vista, no hay que memorizar: el total se ve en el carrito, no hay que calcularlo.
+	7. **Flexibilidad y eficiencia.** Atajos para quien ya sabe (teclado, acciones rápidas) sin estorbar a quien empieza.
+	8. **Diseño estético y minimalista.** Cada elemento en pantalla compite por la atención; lo que no ayuda, sobra.
+	9. **Ayudar a reconocer y recuperarse de errores.** Los mensajes dicen qué ha pasado y qué hacer, en lenguaje llano: "El correo no es válido", no "Error 422".
+	10. **Ayuda y documentación.** Cuando hace falta, es fácil de encontrar y va al grano. Es la unidad de documentación.
+</Steps>
+
+<Aside type="tip" title="Dónde encajan con el módulo">
+	Los criterios de evaluación de usabilidad del módulo hablan de menús coherentes, controles bien distribuidos, el control adecuado para cada dato, legibilidad de colores y fuentes, y mensajes claros. Son las heurísticas 4, 5, 6, 8 y 9 aplicadas a formularios y pantallas. Las verás en acción cuando GuitarLA tenga formularios y mensajes.
+</Aside>
+
+## Accesibilidad
+
+La accesibilidad web es que personas con discapacidad puedan **percibir, entender, navegar e interactuar** con la web. Afecta a más gente de la que parece: discapacidades visuales (ceguera, baja visión, daltonismo), auditivas, motoras (no poder usar el ratón) y cognitivas, pero también situaciones temporales (un brazo roto, sol en la pantalla, una conexión lenta) y el envejecimiento. Y en muchos ámbitos es obligatoria por ley: en España, el Real Decreto 1112/2018 para el sector público y la Ley 11/2023 para productos y servicios digitales.
+
+### Tecnologías de asistencia
+
+Para diseñar accesible hay que saber cómo usan la web las personas con discapacidad:
+
+| Tecnología | Quién la usa | Qué necesita de tu interfaz |
+| :--- | :--- | :--- |
+| **Lector de pantalla** (NVDA, JAWS, VoiceOver, TalkBack) | Personas ciegas o con baja visión | HTML semántico, textos alternativos, nombres accesibles en botones y enlaces, orden lógico |
+| **Navegación por teclado** | Personas con discapacidad motora, usuarios avanzados | Que todo sea alcanzable con `Tab` y activable con `Enter` o espacio, y que se vea dónde está el foco |
+| **Ampliación y alto contraste** | Baja visión | Texto que escala, contraste suficiente, diseño que no se rompe al 200 % |
+| **Subtítulos y transcripciones** | Personas sordas o con hipoacusia | Alternativas al audio y al vídeo |
+
+Un lector de pantalla no "ve" la página: recorre el **árbol de accesibilidad** que el navegador construye a partir del HTML. Un `<button>` se anuncia como botón; un `<div onClick>` no se anuncia como nada. Un `<img alt="Guitarra Lukather">` se describe; uno sin `alt` se lee como "imagen, guitarra_01.jpg". De ahí que el HTML semántico sea la base de todo.
+
+### Las WCAG
+
+Las **Web Content Accessibility Guidelines** del W3C (versión 2.2, 2023) son el estándar que todas las leyes citan. Se organizan en cuatro principios, conocidos por sus siglas en inglés **POUR**:
+
+<Tabs>
+	<TabItem label="Perceptible">
+		La información se puede percibir por algún sentido. Texto alternativo en imágenes, subtítulos, contraste mínimo de **4,5:1** entre texto y fondo, contenido que no dependa solo del color ("los campos en rojo son obligatorios" deja fuera al daltonismo).
+	</TabItem>
+	<TabItem label="Operable">
+		Se puede manejar. Todo funciona con teclado, el foco es visible, hay tiempo suficiente, nada parpadea de forma que provoque crisis, la navegación es predecible y los títulos describen la página.
+	</TabItem>
+	<TabItem label="Comprensible">
+		Se entiende. Idioma declarado (`lang="es"`), texto legible, comportamiento predecible (nada cambia de golpe al recibir el foco), errores identificados y explicados, etiquetas e instrucciones en los formularios.
+	</TabItem>
+	<TabItem label="Robusto">
+		Funciona con las tecnologías actuales y futuras. HTML válido, nombre, rol y estado de cada control expuestos correctamente (es donde entran `aria-label`, `aria-expanded`, `role`).
+	</TabItem>
+</Tabs>
+
+Cada principio tiene pautas, y cada pauta criterios de éxito con un **nivel**: **A** (mínimo imprescindible), **AA** (el que exigen las leyes y el objetivo habitual) y **AAA** (el más exigente, no siempre alcanzable). Cuando alguien dice "cumplir WCAG" normalmente quiere decir **WCAG 2.2 nivel AA**.
+
+<Aside type="note" title="ARIA no arregla el HTML">
+	`aria-*` son atributos para dar a las tecnologías de asistencia información que el HTML no expresa por sí solo. La primera regla de ARIA es **no usar ARIA** si existe un elemento HTML que ya lo hace: `<button>` antes que `<div role="button">`, `<label>` antes que `aria-label` en un campo. Se usa para lo que el HTML no cubre: un botón con solo un icono (`aria-label`), un panel que se abre y se cierra (`aria-expanded`), un mensaje que aparece (`role="alert"`). Lo irás viendo en GuitarLA.
+</Aside>
+
+## Usabilidad y accesibilidad no son lo mismo
+
+Se suelen confundir porque se solapan mucho: una interfaz accesible suele ser más usable para todos (los subtítulos sirven en un bar ruidoso; el buen contraste, al sol), y una interfaz confusa es inaccesible en la práctica. La diferencia:
+
+| | Usabilidad | Accesibilidad |
+| :--- | :--- | :--- |
+| **Pregunta** | ¿Es fácil y agradable de usar? | ¿Pueden usarla todas las personas? |
+| **Para quién** | Los usuarios objetivo | También quienes usan tecnologías de asistencia |
+| **Estándar** | ISO 9241, heurísticas | WCAG, legislación |
+| **Se evalúa con** | Pruebas con usuarios, evaluación heurística | Auditorías automáticas, revisión manual, lector de pantalla |
+| **Es obligatoria** | No, pero decide si la gente usa tu producto | Sí, por ley en muchos casos |
+
+Una interfaz puede ser accesible y poco usable (todo está etiquetado, pero el flujo es un laberinto) y usable pero inaccesible (preciosa con ratón, imposible con teclado). El objetivo del módulo es que sea las dos cosas.
+
+## Cómo se evalúa
+
+Ninguna herramienta automática detecta más de un tercio de los problemas de accesibilidad y ninguna mide la usabilidad. Se combinan:
+
+<Steps>
+	1. **Auditoría automática.** Lighthouse en Chrome (pestaña *Lighthouse* de las DevTools) puntúa la accesibilidad y lista los fallos detectables: contraste, `alt`, etiquetas, nombres. El panel **Accessibility** de Storybook hace lo mismo componente a componente con axe, y es lo que ya tienes instalado en GuitarLA.
+	2. **Revisión manual con teclado.** Suelta el ratón y recorre la página con `Tab`, `Shift+Tab`, `Enter` y espacio. ¿Se ve dónde estás? ¿Llegas a todo? ¿Se queda atrapado el foco en algún sitio?
+	3. **Lector de pantalla.** NVDA es gratuito en Windows; VoiceOver viene con macOS e iOS; TalkBack con Android. Diez minutos escuchando tu propia interfaz cambian cómo la programas.
+	4. **Evaluación heurística.** Recorre las diez heurísticas de Nielsen con la interfaz delante y anota cada incumplimiento, con su gravedad.
+	5. **Prueba con usuarios.** Cinco personas haciendo tres tareas mientras piensan en voz alta encuentran la mayoría de los problemas de usabilidad. No hace falta laboratorio: un compañero que no haya visto la app y un cronómetro.
+</Steps>
+
+<Aside type="note" title="Qué puede y qué no puede hacer Storybook">
+	**Accesibilidad, sí**: el addon de accesibilidad ejecuta axe sobre cada story y separa **violaciones** (*Violations*, fallos seguros), **comprobaciones superadas** (*Passes*) y **no concluyentes** (*Inconclusive*, las que necesitan revisión humana, como el contraste sobre una imagen). Es un panel que miras, no un test que falla, y cubre solo lo automatizable; el teclado y el lector de pantalla se prueban a mano, y Storybook es un buen sitio para hacerlo porque aísla el componente.
+
+	**Usabilidad, no**: depende de personas y no se automatiza. Lo que Storybook aporta es indirecto: ver cada componente en **todos sus estados** (vacío, cargando, error, texto largo) sin navegar hasta ellos, simular tamaños de pantalla con el addon **Viewport** y publicar el catálogo para que alguien que no programa lo revise. Las pruebas de interacción comprueban comportamiento, no si la interfaz es fácil de usar.
+</Aside>
+
+## 🧩 Aplicación en el proyecto
+
+En GuitarLA ya has aplicado accesibilidad sin llamarla así: HTML semántico (`header`, `nav`, `main`, `article`, `footer`), `alt` en las imágenes, `aria-label` en el botón del carrito, y tests que buscan por **rol y nombre accesible**, que fallan cuando a un control le falta su nombre. A partir de ahora cada componente nuevo pasa por el panel de accesibilidad de Storybook antes de confirmarlo, y las páginas de estado y formularios añadirán el foco, `aria-expanded` en el panel del carrito y mensajes de error comprensibles. La usabilidad se trabajará con la evaluación heurística de la app completa y una prueba con usuarios en el proyecto final.
+
+## Resumen rápido
+
+| Concepto | Detalle |
+| :--- | :--- |
+| **Usabilidad** | Eficacia, eficiencia y satisfacción para unos usuarios y un contexto (ISO 9241-11) |
+| **Heurísticas de Nielsen** | Diez principios para revisar una interfaz sin usuarios |
+| **Accesibilidad** | Que personas con discapacidad puedan percibir, entender, navegar e interactuar |
+| **WCAG 2.2** | Cuatro principios (POUR), niveles A, AA y AAA; el objetivo legal es AA |
+| **Base técnica** | HTML semántico, `alt`, nombres accesibles, teclado, contraste 4,5:1, `lang` |
+| **ARIA** | Solo para lo que el HTML no expresa: `aria-label`, `aria-expanded`, `role="alert"` |
+| **Evaluar** | Lighthouse y axe (automático) + teclado + lector de pantalla + heurísticas + usuarios |
+
+## Convención práctica
+
+<Steps>
+	1. **HTML semántico primero**: el elemento correcto (`button`, `a`, `label`, `nav`) antes que un `div` con clases y ARIA.
+	2. **Todo control tiene nombre**: texto visible, `label`, `alt` o, si no hay otra opción, `aria-label`. Si el test no lo encuentra por rol y nombre, falta.
+	3. **Todo funciona con teclado** y el foco se ve; nunca `outline-none` sin un `focus-visible:` que lo sustituya.
+	4. **Contraste mínimo 4,5:1** en texto; compruébalo en las DevTools o en el panel de Storybook antes de dar por buena una combinación de colores.
+	5. **Mensajes que dicen qué ha pasado y qué hacer**, en el lenguaje del usuario.
+	6. **Lighthouse y el panel de accesibilidad en verde** antes de fusionar una fase.
+</Steps>
+
+## Referencias
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://www.w3.org/WAI/fundamentals/accessibility-intro/es"
+		title="Introducción a la accesibilidad web (W3C WAI)"
+		description="Qué es, a quién afecta y por qué importa, en español."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://www.w3.org/WAI/WCAG22/quickref/"
+		title="WCAG 2.2: referencia rápida"
+		description="Todos los criterios de éxito filtrables por nivel y tecnología."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://www.nngroup.com/articles/ten-usability-heuristics/"
+		title="Las diez heurísticas de usabilidad (NN/g)"
+		description="El artículo original de Nielsen, con ejemplos actuales."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.mozilla.org/es/docs/Web/Accessibility"
+		title="Accesibilidad (MDN)"
+		description="HTML semántico, ARIA, teclado y buenas prácticas, en español."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://www.w3.org/WAI/ARIA/apg/"
+		title="ARIA Authoring Practices Guide"
+		description="Patrones accesibles para menús, diálogos, pestañas y otros componentes."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://developer.chrome.com/docs/lighthouse/accessibility/"
+		title="Auditoría de accesibilidad con Lighthouse"
+		description="Qué comprueba Lighthouse y cómo interpretar la puntuación."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+## Siguientes pasos
+
+<CardGrid>
+	<LinkCard
+		href="/jjcm/di/units/react/02-components/"
+		title="Componentes (React)"
+		description="Donde ya se aplica: nombres accesibles, alt, aria-label y el panel de accesibilidad de Storybook."
+	/>
+	<LinkCard
+		href="/jjcm/di/units/documentation/storybook/03-addons-and-docs/"
+		title="Addons de Storybook"
+		description="El addon de accesibilidad que audita cada componente con axe."
+	/>
+</CardGrid>

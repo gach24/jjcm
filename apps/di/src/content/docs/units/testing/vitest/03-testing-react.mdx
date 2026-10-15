@@ -161,8 +161,8 @@ describe("Counter", () => {
 El archivo es `.tsx` porque contiene JSX. El patrón de cada test es siempre el mismo:
 
 <Steps>
-	1. **Renderizar** el componente con las props del caso: `render(<Counter inicial={5} />)`.
-	2. **Encontrar** el elemento con `screen`: el botón "Sumar", el texto "Value: 5".
+	1. **Renderizar** el componente con las props del caso: `render(<Counter initial={5} />)`.
+	2. **Encontrar** el elemento con `screen`: el botón "Increment", el texto "Value: 5".
 	3. **Interactuar**, si procede, con `user.click`, `user.type`… siempre con `await`.
 	4. **Comprobar** el resultado con un matcher de jest-dom o con `vi.fn` si lo que importa es un callback.
 </Steps>
@@ -185,6 +185,26 @@ Roles habituales: `button`, `textbox` (input de texto y textarea), `checkbox`, `
 <Aside type="tip" title="Si no encuentras el rol">
 	`screen.logTestingPlaygroundURL()` dentro de un test imprime un enlace que abre el HTML renderizado en *Testing Playground*, donde pulsas un elemento y te dice qué consulta usar. Y `screen.debug()` imprime el HTML actual en la terminal.
 </Aside>
+
+### `screen` o `container`
+
+`render` devuelve un objeto con, entre otras cosas, `container`: el `div` en el que se ha montado el componente. En tutoriales antiguos verás consultas sobre él, pero no es lo recomendado:
+
+| | `screen` | `container` |
+| :--- | :--- | :--- |
+| Qué es | El `document.body` completo, con las mismas consultas (`getByRole`, `getByText`…) | El `div` que envuelve lo que ha renderizado **este** `render` |
+| Cómo busca | Como el usuario: por rol, etiqueta o texto | Como el DOM: `container.querySelector(".card")`, `container.firstChild` |
+| Úsalo para | Casi todo. No hace falta guardar el resultado de `render` | Casos sin alternativa accesible: comprobar que no se renderiza **nada** (`container` vacío) o inspeccionar un nodo sin rol ni texto, como un `<svg>` o un `<hr>` |
+
+```tsx
+const { container } = render(<Divider />);
+expect(container.querySelector("hr")).toBeInTheDocument(); // no role, no text
+
+render(<Empty />);
+expect(screen.queryByRole("list")).not.toBeInTheDocument(); // the normal way
+```
+
+Si te sorprendes escribiendo `container.querySelector` para un botón o un título, vuelve a `screen`: el test está mirando la implementación en lugar de lo que ve el usuario, y se romperá en cuanto cambies una clase.
 
 ### `getBy`, `queryBy` y `findBy`
 
@@ -351,7 +371,7 @@ Con eso, los componentes que concentran la lógica de la interfaz quedan cubiert
 | :--- | :--- |
 | Configurar | `test: { environment: "jsdom", setupFiles }` + `import "@testing-library/jest-dom/vitest"` |
 | Renderizar | `render(<C prop={x} />)` |
-| Encontrar | `screen.getByRole("button", { name })`, `getByLabelText`, `getByText` |
+| Encontrar | `screen.getByRole("button", { name })`, `getByLabelText`, `getByText`; `container` solo para nodos sin rol ni texto |
 | Variantes | `getBy` (debe estar) · `queryBy` (no debe) · `findBy` (aparecerá, con `await`) |
 | Interactuar | `const user = userEvent.setup()` → `await user.click/type/clear` |
 | Comprobar | `toBeInTheDocument`, `toBeDisabled`, `toHaveValue`, `toHaveTextContent`, `toBeChecked` |

@@ -74,6 +74,18 @@ export default defineConfig({
               ],
             },
             {
+              label: "[lucide:book-open] Usabilidad y accesibilidad",
+              collapsed: true,
+              items: [
+                {
+                  label: "[lucide:braces] Fundamentos",
+                  autogenerate: {
+                    directory: "units/ux/fundamentals",
+                  },
+                },
+              ],
+            },
+            {
               label: "[lucide:book-open] Informes",
               collapsed: true,
               items: [
