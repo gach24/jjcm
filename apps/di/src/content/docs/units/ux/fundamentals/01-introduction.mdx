@@ -133,6 +133,19 @@ Cada principio tiene pautas, y cada pauta criterios de éxito con un **nivel**: 
 	`aria-*` son atributos para dar a las tecnologías de asistencia información que el HTML no expresa por sí solo. La primera regla de ARIA es **no usar ARIA** si existe un elemento HTML que ya lo hace: `<button>` antes que `<div role="button">`, `<label>` antes que `aria-label` en un campo. Se usa para lo que el HTML no cubre: un botón con solo un icono (`aria-label`), un panel que se abre y se cierra (`aria-expanded`), un mensaje que aparece (`role="alert"`). Lo irás viendo en GuitarLA.
 </Aside>
 
+### Paneles y desplegables
+
+El primer patrón ARIA que aparece en GuitarLA es un botón que muestra y oculta un panel (el carrito). La [guía de patrones del W3C](https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/) lo llama *disclosure* y pide cuatro cosas, que se cumplen en la [página de estado](/jjcm/di/units/react/03-state/#abrir-y-cerrar-el-carrito):
+
+| Requisito | Cómo | Para qué |
+| :--- | :--- | :--- |
+| El control es un `<button>` | Nunca un `div` con `onClick` | Recibe el foco con `Tab` y se activa con `Enter` y espacio sin programar nada |
+| `aria-expanded="true/false"` en el botón | Se actualiza con el estado | El lector de pantalla anuncia "expandido" o "contraído": el usuario sabe si el panel está abierto sin verlo |
+| `aria-controls="id-del-panel"` | El `id` del elemento que se muestra | Relaciona el botón con lo que controla |
+| El panel tiene nombre | `aria-labelledby` apuntando a su título, o `aria-label` | Se anuncia como "Tu carrito, complementario" al llegar a él |
+
+Y dos más de usabilidad que todo el mundo espera aunque ninguna norma las exija: **`Escape` cierra** el panel y **hacer clic fuera** también. Si el panel cubre la página (como el carrito en móvil), bloquear el scroll de fondo evita que el usuario se pierda. Cuando el panel sea un diálogo que exige respuesta (confirmar un borrado), el patrón es otro, *dialog*, con el foco atrapado dentro; llegará con los formularios.
+
 ## Usabilidad y accesibilidad no son lo mismo
 
 Se suelen confundir porque se solapan mucho: una interfaz accesible suele ser más usable para todos (los subtítulos sirven en un bar ruidoso; el buen contraste, al sol), y una interfaz confusa es inaccesible en la práctica. La diferencia:
@@ -242,6 +255,11 @@ En GuitarLA ya has aplicado accesibilidad sin llamarla así: HTML semántico (`h
 ## Siguientes pasos
 
 <CardGrid>
+	<LinkCard
+		href="/jjcm/di/units/ux/fundamentals/02-human-decisions/"
+		title="Cómo deciden las personas"
+		description="Los modelos de comportamiento en los que se apoya el diseño UX, según el roadmap de UX Design."
+	/>
 	<LinkCard
 		href="/jjcm/di/units/react/02-components/"
 		title="Componentes (React)"

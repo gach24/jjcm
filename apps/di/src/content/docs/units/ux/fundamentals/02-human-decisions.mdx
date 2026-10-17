@@ -1,0 +1,265 @@
+---
+title: Cómo deciden las personas
+description: "Los modelos de decisión y comportamiento en los que se apoya el diseño UX: pensamiento rápido y lento, el modelo de Fogg, el embudo CREATE, el espectro de intervenciones, los hábitos y las estrategias para cambiar o crear un comportamiento."
+evaluations:
+  - id: RA4
+    statement: Diseña interfaces gráficas identificando y aplicando criterios de usabilidad y accesibilidad.
+    criteria:
+      - Se han identificado los principales estándares de usabilidad y accesibilidad.
+      - Se ha valorado la importancia del uso de estándares para la creación de interfaces.
+    contents:
+      - Usabilidad y accesibilidad. Características. Pautas. Estándares.
+sources:
+  - author: roadmap.sh
+    url: https://roadmap.sh/ux-design
+  - author: Stephen Wendel
+    url: https://www.oreilly.com/library/view/designing-for-behavior/9781492056027/
+  - author: BJ Fogg
+    url: https://behaviormodel.org/
+  - author: Nir Eyal
+    url: https://www.nirandfar.com/hooked/
+sidebar:
+  order: 2
+date: 2026-10-17
+updated: 2026-10-17
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+La [página anterior](/jjcm/di/units/ux/fundamentals/01-introduction/) define la usabilidad como conseguir un objetivo con eficacia, eficiencia y satisfacción. Para diseñar eso hay que entender primero **cómo decide una persona** hacer algo en una interfaz: pulsar un botón, rellenar un formulario, volver mañana. El [roadmap de UX Design](https://roadmap.sh/ux-design) empieza por ahí, con los modelos de la psicología y la economía del comportamiento que el diseño UX usa como herramienta. Esta página los presenta; las dos siguientes los convierten en proceso y en patrones.
+
+<CardGrid stagger>
+	<Card title="Dos modos de pensar" icon="seti:smarty">
+		Casi todo lo que hacemos en una interfaz es automático. El diseño decide si una acción se hace sin pensar, por hábito o tras evaluarla.
+	</Card>
+	<Card title="Modelos" icon="open-book">
+		Fogg, el embudo CREATE y el espectro de intervenciones explican por qué una acción ocurre o no, paso a paso.
+	</Card>
+	<Card title="Cambiar comportamientos" icon="setting">
+		Crear un hábito nuevo, modificar uno existente o apoyar una decisión consciente son estrategias distintas con tácticas distintas.
+	</Card>
+</CardGrid>
+
+## Pensamiento rápido y lento
+
+La **teoría del proceso dual** (Kahneman la popularizó como *sistema 1* y *sistema 2*) describe dos modos de pensamiento que conviven:
+
+| | Sistema 1 (rápido) | Sistema 2 (lento) |
+| :--- | :--- | :--- |
+| **Cómo funciona** | Automático, intuitivo, sin esfuerzo, siempre encendido | Deliberado, lógico, costoso, se activa cuando hace falta |
+| **Ejemplos** | Reconocer un botón, leer un precio, pulsar "Agregar al carrito" por tercera vez | Comparar dos guitarras, decidir si el envío compensa, rellenar un formulario largo |
+| **Para el diseño** | Lo que se diseña para el sistema 1 debe ser **reconocible** al instante: convenciones, iconos conocidos, jerarquía visual | Lo que exige sistema 2 debe **merecer** el esfuerzo y hacerlo fácil: información clara, pocas opciones, sin distracciones |
+
+La consecuencia práctica: la mayoría de las acciones en una interfaz son del sistema 1. Si un botón obliga a pensar ("¿esto añade o compra?"), el usuario duda o se va. Si un formulario pide esfuerzo de sistema 2 sin motivo, se abandona.
+
+## El modelo de comportamiento de Fogg
+
+BJ Fogg (Stanford) resume cuándo ocurre un comportamiento en una fórmula: **B = MAP**. Un comportamiento (*Behavior*) ocurre cuando coinciden, en el mismo momento, **motivación** (*Motivation*), **capacidad** (*Ability*) y un **detonante** (*Prompt*, antes llamado *Trigger*).
+
+<Steps>
+	1. **Motivación**: cuánto quiere la persona hacerlo. Sube y baja; es lo más difícil de cambiar desde la interfaz.
+	2. **Capacidad**: lo fácil que es. Es lo que el diseño controla de verdad: menos pasos, menos campos, menos decisiones.
+	3. **Detonante**: lo que dispara la acción en ese instante: un botón visible, una notificación, un correo, un recordatorio.
+</Steps>
+
+Si una acción no ocurre, falta uno de los tres. El error típico es intentar subir la motivación (más texto persuasivo) cuando lo que faltaba era capacidad (el botón no se veía) o un detonante (nadie se lo pidió). La regla de Fogg: **hacerlo más fácil funciona mejor que motivar más**.
+
+<Aside type="tip" title="En GuitarLA">
+	Que el botón "Agregar al carrito" esté en cada tarjeta, a todo el ancho y con contraste alto, es un **detonante** siempre presente y una acción de **capacidad** máxima (un clic). Que el carrito se abra en un panel sin salir del catálogo mantiene la capacidad alta para seguir comprando. La **motivación** la ponen el producto y el precio; la interfaz solo puede no estorbarla.
+</Aside>
+
+### La rejilla de comportamientos de Fogg
+
+Fogg también clasifica los comportamientos en una **rejilla** para elegir la estrategia adecuada. Dos ejes:
+
+- **Tipo de cambio**: hacer algo **nuevo** (verde), hacer algo **familiar** (azul), hacer **más** de algo (morado), hacer **menos** (gris) o **dejar** de hacer algo (negro).
+- **Duración**: **una vez** (punto), durante un **periodo** (tramo) o **para siempre** (camino).
+
+Quince combinaciones, y cada una pide tácticas distintas: no es lo mismo conseguir que alguien compre una vez (nuevo, una vez) que que revise su carrito cada semana (familiar, para siempre). Antes de diseñar, **clasifica** el comportamiento que quieres.
+
+## El embudo CREATE
+
+Stephen Wendel, en *Designing for Behavior Change*, descompone el instante de la decisión en cinco condiciones que se tienen que cumplir **en orden**, como un embudo. Si falla una, la acción no ocurre:
+
+| Letra | Condición | Pregunta del usuario | Qué puede hacer la interfaz |
+| :--- | :--- | :--- | :--- |
+| **C** | *Cue* (señal) | ¿Me he dado cuenta de que puedo hacerlo? | Que la acción se vea: posición, contraste, texto que la nombra |
+| **R** | *Reaction* (reacción) | ¿Me da buena sensación? | Aspecto profesional, autoridad, prueba social, coherencia |
+| **E** | *Evaluation* (evaluación) | ¿Merece la pena el coste? | Mostrar el beneficio, reducir el coste percibido, evitar sobrecarga de opciones |
+| **A** | *Ability* (capacidad) | ¿Puedo hacerlo ahora? | Pocos pasos, valores por defecto, información a mano |
+| **T** | *Timing* (momento) | ¿Por qué ahora y no luego? | Urgencia honesta, recordatorios, compromisos previos |
+| **E** | *Experience* (experiencia) | ¿Cómo ha ido? ¿Repito? | Feedback inmediato, confirmación, recompensa |
+
+Las **buenas prácticas** de la [cuarta página](/jjcm/di/units/ux/fundamentals/04-ux-patterns/#buenas-prácticas-ux) están organizadas exactamente por estas etapas: conseguir la atención (C), una reacción positiva (R), una evaluación favorable (E), urgencia (T) y facilidad (A).
+
+## El espectro de intervenciones
+
+No todas las acciones deben pensarse. Wendel distingue tres formas de conseguir un comportamiento, de menos a más esfuerzo mental para el usuario:
+
+<Tabs>
+	<TabItem label="Hacer trampa">
+		Conseguir el resultado **sin que el usuario actúe**: valores por defecto ya puestos, la acción ocurre sola, o se hace de paso al hacer otra cosa. Es la opción más potente y la que menos se usa. Ejemplo: guardar el carrito automáticamente en lugar de pedir "guardar".
+	</TabItem>
+	<TabItem label="Crear un hábito">
+		La acción se repite sin pensar porque tiene una **señal**, una **rutina** y una **recompensa** estables. Ejemplo: abrir la app cada mañana porque hay algo nuevo cada mañana.
+	</TabItem>
+	<TabItem label="Apoyar la decisión consciente">
+		El usuario **piensa** y la interfaz le ayuda a decidir bien: información clara, comparación, educación. Ejemplo: elegir entre dos guitarras con una ficha comparativa.
+	</TabItem>
+</Tabs>
+
+Elegir mal el nivel es un error frecuente: pedir una decisión consciente para algo que debería ser automático (confirmar cada vez que se añade al carrito) cansa; automatizar lo que el usuario quiere decidir (suscribirle a algo por defecto) rompe la confianza.
+
+### Las palabras que vas a oír
+
+Cinco términos que aparecen en artículos y ofertas de trabajo y que nombran casi lo mismo desde ángulos distintos:
+
+| Término | De dónde viene | Idea central |
+| :--- | :--- | :--- |
+| **Economía conductual** | Kahneman, Thaler; economía y psicología | Las personas no decidimos racionalmente; tenemos sesgos predecibles |
+| **Ciencia del comportamiento** | Psicología experimental | Estudio empírico de por qué hacemos lo que hacemos |
+| **Nudge** (empujón) | Thaler y Sunstein, 2008 | Cambiar la "arquitectura de la decisión" (defaults, orden, presentación) sin prohibir ni obligar |
+| **Tecnología persuasiva** | Fogg, 1990s | Ordenadores e interfaces diseñados para cambiar actitudes o comportamientos |
+| **Diseño de comportamiento** | Fogg, Wendel | Aplicar todo lo anterior al diseño de productos |
+
+<Aside type="caution" title="La misma herramienta sirve para manipular">
+	Un *nudge* honesto ayuda al usuario a hacer lo que quería (recordarle que el carrito tiene artículos). Un *dark pattern* usa las mismas técnicas contra él: casillas premarcadas de suscripción, urgencia falsa ("solo quedan 2" cuando no es verdad), cancelar es un laberinto. La diferencia está en si el usuario, sabiendo lo que haces, te daría las gracias. En Europa varias de estas prácticas son ilegales (Ley de Servicios Digitales, normativa de consumo). En el módulo se aplican estas técnicas **solo** a favor del usuario.
+</Aside>
+
+## Cambiar comportamientos
+
+Según el comportamiento esté ya ahí o no, las estrategias cambian.
+
+### Crear un comportamiento nuevo
+
+Dos modelos describen cómo se forma un hábito:
+
+<Tabs>
+	<TabItem label="Señal, rutina, recompensa">
+		El **bucle del hábito** (Duhigg): una **señal** dispara una **rutina** que produce una **recompensa**; con la repetición, el cerebro anticipa la recompensa al ver la señal y la rutina se vuelve automática. Para crear un hábito con una interfaz: señal fiable (siempre en el mismo sitio, siempre a la misma hora), rutina corta, recompensa inmediata y visible.
+	</TabItem>
+	<TabItem label="El modelo Hook">
+		Nir Eyal lo adapta a productos digitales en cuatro fases que se encadenan: **detonante** (externo al principio, interno con el tiempo), **acción** (la más sencilla posible), **recompensa variable** (no siempre la misma, que es lo que engancha) e **inversión** (el usuario pone algo suyo: datos, configuración, contenido, que hace el producto más valioso la próxima vez). Es el modelo de las redes sociales, con lo bueno y lo malo que eso implica.
+	</TabItem>
+</Tabs>
+
+### Cambiar un comportamiento existente
+
+Deshacer un hábito es más difícil que crear uno, porque la señal y la rutina ya están grabadas. Wendel lista cinco palancas, de la más suave a la más consciente:
+
+<Steps>
+	1. **Evitar la señal.** Si el usuario no ve lo que dispara el hábito, no lo ejecuta. Quitar la notificación, mover el elemento.
+	2. **Sustituir la rutina.** Mantener la señal y la recompensa, pero cambiar lo que se hace en medio. La señal "aburrimiento" lleva a otra acción.
+	3. **Interponer la consciencia.** Un paso que obliga a pensar: una confirmación, una pregunta ("¿seguro que quieres vaciar el carrito?").
+	4. **Atención plena ante la señal.** Enseñar al usuario a notar la señal y decidir, en lugar de reaccionar.
+	5. **Desplazar el hábito viejo con uno nuevo.** No luchar contra él: llenar el hueco con otro comportamiento que lo haga innecesario.
+</Steps>
+
+### Hacer trampa
+
+Las tácticas del primer nivel del espectro, que consiguen el resultado sin pedir una acción:
+
+- **Valores por defecto.** Lo que viene marcado es lo que la mayoría deja. Es la herramienta más potente del diseño de comportamiento, y por eso la más regulada.
+- **Hacerlo incidental.** El resultado se obtiene como efecto secundario de otra cosa que el usuario ya hace.
+- **Automatizar la repetición.** La primera vez se decide; las siguientes se hacen solas (guardar la tarjeta, recordar el filtro, renovar).
+
+### Apoyar la acción consciente
+
+Cuando la decisión debe ser del usuario, la interfaz **educa y anima** (explica qué es cada opción, muestra el beneficio) y **le ayuda a pensar** (compara, resume, hace visible la consecuencia antes de confirmar). Es el terreno de los mensajes claros y los controles adecuados que piden los criterios del módulo.
+
+## 🧩 Aplicación en el proyecto
+
+En GuitarLA, el comportamiento objetivo es "añadir guitarras al carrito y completar la compra": en la rejilla de Fogg, **nuevo** y **una vez** para el primer pedido, **familiar** y **periódico** para quien vuelve. El embudo CREATE dice qué revisar en cada pantalla: ¿se ve el botón (C)? ¿la tarjeta transmite confianza (R)? ¿el precio y el beneficio están claros (E)? ¿añadir es un clic (A)? ¿hay motivo para hacerlo ahora (T)? ¿el carrito confirma al instante lo añadido (E)? Y el espectro marca el nivel de cada acción: **trampa** para guardar el carrito (`localStorage`, en la página del hook), **consciente** para vaciarlo (confirmación), y **hábito** para volver (eso lo decidirá el producto, no la interfaz).
+
+## Resumen rápido
+
+| Modelo | Idea en una frase |
+| :--- | :--- |
+| **Proceso dual** | Casi todo es sistema 1 (automático); diseña para reconocer, no para pensar, salvo cuando pensar merece la pena |
+| **Fogg B = MAP** | Un comportamiento ocurre si coinciden motivación, capacidad y detonante; subir la capacidad es lo más eficaz |
+| **Rejilla de Fogg** | Clasifica el comportamiento (nuevo, familiar, más, menos, parar × una vez, periodo, siempre) antes de diseñar |
+| **CREATE** | Señal, reacción, evaluación, capacidad, momento, experiencia: si falla una etapa, la acción no ocurre |
+| **Espectro** | Trampa (sin acción), hábito (sin pensar) o decisión consciente; elige el nivel adecuado |
+| **Hábitos** | Señal, rutina, recompensa; Hook añade recompensa variable e inversión |
+| **Cambiar hábitos** | Evitar la señal, sustituir la rutina, interponer consciencia, atención plena, desplazar |
+
+## Convención práctica
+
+<Steps>
+	1. Antes de diseñar una pantalla, **nombra el comportamiento** que debe producir y clasifícalo en la rejilla de Fogg.
+	2. Si una acción no ocurre, revisa el embudo **en orden**: primero si se ve, luego si gusta, luego si compensa, luego si es fácil, luego si es el momento.
+	3. **Primero capacidad, después motivación**: quitar un paso vale más que añadir un argumento.
+	4. Decide el **nivel del espectro** de cada acción: automatiza lo rutinario, pide confirmación solo en lo irreversible.
+	5. Aplica estas técnicas **a favor del usuario**: si no se lo contarías, es un patrón oscuro.
+</Steps>
+
+## Referencias
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://roadmap.sh/ux-design"
+		title="UX Design Roadmap (roadmap.sh)"
+		description="El mapa completo en el que se basa esta unidad, con recursos por tema."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://behaviormodel.org/"
+		title="Fogg Behavior Model"
+		description="B = MAP explicado por su autor, con la rejilla de comportamientos."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://www.oreilly.com/library/view/designing-for-behavior/9781492056027/"
+		title="Designing for Behavior Change (Stephen Wendel)"
+		description="El libro del que salen CREATE, el espectro de intervenciones y las estrategias de cambio."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://www.nirandfar.com/hooked/"
+		title="Hooked (Nir Eyal)"
+		description="El modelo Hook: detonante, acción, recompensa variable e inversión."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://www.deceptive.design/"
+		title="Deceptive patterns"
+		description="Catálogo de patrones oscuros: lo que no hay que hacer con estas técnicas."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+## Siguientes pasos
+
+<CardGrid>
+	<LinkCard
+		href="/jjcm/di/units/ux/fundamentals/03-ux-process/"
+		title="El proceso de diseño UX"
+		description="Entender el producto, definir usuarios, escribir historias y diseñar conceptualmente antes de programar."
+	/>
+	<LinkCard
+		href="/jjcm/di/units/ux/fundamentals/04-ux-patterns/"
+		title="Patrones y buenas prácticas"
+		description="Las tácticas concretas, organizadas por el embudo CREATE, y cómo medir si funcionan."
+	/>
+</CardGrid>
