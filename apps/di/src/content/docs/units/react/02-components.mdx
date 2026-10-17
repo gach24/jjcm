@@ -199,20 +199,25 @@ Empieza por el más sencillo, para fijar el procedimiento que repetirás con los
 
 	3. En `App.tsx`, sustituye el `<footer>` por el componente e impórtalo:
 
-		```tsx title="src/App.tsx" ins={1,8}
-		import { Footer } from './components';
+		```diff lang="tsx" title="src/App.tsx"
+		+import { Footer } from './components';
+		+
+		 const App = () => {
+		   return (
+		     <>
+		       {/* header, aside y main, sin cambios de momento */}
 
-		const App = () => {
-		  return (
-		    <>
-		      {/* header, aside y main, sin cambios de momento */}
+		-      <footer>
+		-        <div>
+		-          <p>GuitarLA - Todos los derechos reservados</p>
+		-        </div>
+		-      </footer>
+		+      <Footer />
+		     </>
+		   );
+		 };
 
-		      <Footer />
-		    </>
-		  );
-		};
-
-		export default App;
+		 export default App;
 		```
 
 	4. Comprueba en el navegador que el pie sigue ahí. No ha cambiado nada visible: solo dónde vive el código.
@@ -226,18 +231,21 @@ Empieza por el más sencillo, para fijar el procedimiento que repetirás con los
 
 Mira el pie en la captura de escritorio: banda oscura a todo el ancho, texto blanco centrado y grande, separado del catálogo. Con Tailwind:
 
-```tsx title="src/components/Footer/Footer.tsx" {3-5}
-export const Footer = () => {
-  return (
-    <footer className="mt-10 bg-gray-900 py-10">
-      <div className="mx-auto max-w-6xl px-4">
-        <p className="text-center text-2xl text-white">
-          GuitarLA - Todos los derechos reservados
-        </p>
-      </div>
-    </footer>
-  );
-};
+```diff lang="tsx" title="src/components/Footer/Footer.tsx"
+ export const Footer = () => {
+   return (
+-    <footer>
+-      <div>
+-        <p>GuitarLA - Todos los derechos reservados</p>
++    <footer className="mt-10 bg-gray-900 py-10">
++      <div className="mx-auto max-w-6xl px-4">
++        <p className="text-center text-2xl text-white">
++          GuitarLA - Todos los derechos reservados
++        </p>
+       </div>
+     </footer>
+   );
+ };
 ```
 
 | Clases | Qué hacen |
@@ -273,24 +281,24 @@ Ejecuta `npx vitest run`: dos archivos, dos tests, ambos en verde. El de `App` s
 
 Para un componente **estático** como este hay una segunda comprobación útil: que el HTML que genera no cambie sin que nadie se dé cuenta. Es lo que hace un **snapshot**:
 
-```tsx title="src/components/Footer/Footer.test.tsx" ins={13-16}
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
-import { Footer } from './Footer';
+```diff lang="tsx" title="src/components/Footer/Footer.test.tsx"
+ import { render, screen } from '@testing-library/react';
+ import { describe, expect, it } from 'vitest';
+ import { Footer } from './Footer';
 
-describe('Footer', () => {
-  it('shows the copyright notice', () => {
-    render(<Footer />);
-    expect(
-      screen.getByText('GuitarLA - Todos los derechos reservados')
-    ).toBeInTheDocument();
-  });
-
-  it('matches the snapshot', () => {
-    const { container } = render(<Footer />);
-    expect(container).toMatchSnapshot();
-  });
-});
+ describe('Footer', () => {
+   it('shows the copyright notice', () => {
+     render(<Footer />);
+     expect(
+       screen.getByText('GuitarLA - Todos los derechos reservados')
+     ).toBeInTheDocument();
+   });
++
++  it('matches the snapshot', () => {
++    const { container } = render(<Footer />);
++    expect(container).toMatchSnapshot();
++  });
+ });
 ```
 
 Aquí sí se usa `container` en lugar de `screen` (la diferencia está en [probar componentes React](/jjcm/di/units/testing/vitest/03-testing-react/#screen-o-container)): lo que se guarda es el HTML completo que ha renderizado **este** componente, no toda la página.
@@ -515,16 +523,19 @@ export const Guitar = () => {
 
 La rejilla y el título del catálogo van en `App.tsx`, porque pertenecen a la página, no a una tarjeta:
 
-```tsx title="src/App.tsx" {4-5}
-<main className="mx-auto mt-10 max-w-6xl px-4">
-  <h2 className="text-center text-4xl font-black">Nuestra Colección</h2>
+```diff lang="tsx" title="src/App.tsx"
+-<main>
+-  <h2>Nuestra Colección</h2>
++<main className="mx-auto mt-10 max-w-6xl px-4">
++  <h2 className="text-center text-4xl font-black">Nuestra Colección</h2>
 
-  <div className="mt-10 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-    <Guitar />
-    <Guitar />
-    <Guitar />
-  </div>
-</main>
+-  <div>
++  <div className="mt-10 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+     <Guitar />
+     <Guitar />
+     <Guitar />
+   </div>
+ </main>
 ```
 
 | Clases | Qué hacen |

@@ -117,27 +117,30 @@ La página de bienvenida y sus recursos sobran. Déjalo todo en blanco para cons
 		```
 
 	4. Vacía `src/index.css` (lo rellenarás al instalar Tailwind).
-	5. Sustituye `index.html` para cambiar el idioma, el título y cargar la fuente **Outfit** de Google Fonts, que usa el diseño:
+	5. Modifica `index.html` para cambiar el idioma, el título y cargar la fuente **Outfit** de Google Fonts, que usa el diseño:
 
-		```html title="index.html" {2,6-10,11}
-		<!doctype html>
-		<html lang="es">
-			<head>
-				<meta charset="UTF-8" />
-				<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-				<link rel="preconnect" href="https://fonts.googleapis.com" />
-				<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-				<link
-					href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap"
-					rel="stylesheet"
-				/>
-				<title>GuitarLA</title>
-			</head>
-			<body>
-				<div id="root"></div>
-				<script type="module" src="/src/main.tsx"></script>
-			</body>
-		</html>
+		```diff lang="html" title="index.html"
+		 <!doctype html>
+		-<html lang="en">
+		+<html lang="es">
+		 	<head>
+		 		<meta charset="UTF-8" />
+		-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		+		<link
+		+			href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap"
+		+			rel="stylesheet"
+		+		/>
+		-		<title>di-react</title>
+		+		<title>GuitarLA</title>
+		 	</head>
+		 	<body>
+		 		<div id="root"></div>
+		 		<script type="module" src="/src/main.tsx"></script>
+		 	</body>
+		 </html>
 		```
 
 	6. Arranca `npm run dev` y comprueba que la página muestra solo el título "GuitarLA" y que la consola del navegador (`F12`) no tiene errores.
@@ -198,10 +201,10 @@ En las unidades de introducción bastaba con el formateador de VS Code. Ahora el
 
 	4. El `.gitignore` de la plantilla excluye toda la carpeta `.vscode/` salvo `extensions.json`. Añade una excepción para que `settings.json` también se comparta:
 
-		```txt title=".gitignore" ins={3}
-		.vscode/*
-		!.vscode/extensions.json
-		!.vscode/settings.json
+		```diff title=".gitignore"
+		 .vscode/*
+		 !.vscode/extensions.json
+		+!.vscode/settings.json
 		```
 </Steps>
 
@@ -250,17 +253,18 @@ ESLint detecta errores y malas prácticas que TypeScript no ve: hooks mal usados
 		]);
 		```
 
-	3. Sustituye el bloque `scripts` de `package.json` para tener los comandos de formato y linter:
+	3. Completa el bloque `scripts` de `package.json` para tener los comandos de formato y linter:
 
-		```json title="package.json" {5-8}
-		"scripts": {
-			"dev": "vite",
-			"build": "tsc -b && vite build",
-			"preview": "vite preview",
-			"lint": "eslint .",
-			"format": "prettier --write .",
-			"format:check": "prettier --check ."
-		}
+		```diff lang="json" title="package.json"
+		 "scripts": {
+		 	"dev": "vite",
+		 	"build": "tsc -b && vite build",
+		-	"lint": "oxlint",
+		+	"lint": "eslint .",
+		+	"format": "prettier --write .",
+		+	"format:check": "prettier --check .",
+		 	"preview": "vite preview"
+		 }
 		```
 
 	4. Si la plantilla traía `oxlint` en `devDependencies`, desinstálalo: `npm uninstall oxlint`.
@@ -295,15 +299,16 @@ Tailwind se integra con Vite mediante un plugin: no hay CLI en modo `watch` ni `
 
 	2. Registra el plugin en la configuración de Vite:
 
-		```ts title="vite.config.ts" {2,7}
-		import react from '@vitejs/plugin-react';
-		import tailwindcss from '@tailwindcss/vite';
-		import { defineConfig } from 'vite';
+		```diff lang="ts" title="vite.config.ts"
+		 import react from '@vitejs/plugin-react';
+		+import tailwindcss from '@tailwindcss/vite';
+		 import { defineConfig } from 'vite';
 
-		// https://vite.dev/config/
-		export default defineConfig({
-			plugins: [tailwindcss(), react()],
-		});
+		 // https://vite.dev/config/
+		 export default defineConfig({
+		-	plugins: [react()],
+		+	plugins: [tailwindcss(), react()],
+		 });
 		```
 
 	3. Importa Tailwind en el CSS global y declara Outfit como fuente del proyecto:

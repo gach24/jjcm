@@ -190,20 +190,20 @@ El proyecto se prueba desde hoy. La configuración es la de la [unidad de Vitest
 
 	2. Añade el bloque `test` a la configuración de Vite (la primera línea le dice a TypeScript que esa propiedad existe):
 
-		```ts title="vite.config.ts" {1,9-12}
-		/// <reference types="vitest/config" />
-		import react from '@vitejs/plugin-react';
-		import tailwindcss from '@tailwindcss/vite';
-		import { defineConfig } from 'vite';
+		```diff lang="ts" title="vite.config.ts"
+		+/// <reference types="vitest/config" />
+		 import react from '@vitejs/plugin-react';
+		 import tailwindcss from '@tailwindcss/vite';
+		 import { defineConfig } from 'vite';
 
-		// https://vite.dev/config/
-		export default defineConfig({
-			plugins: [tailwindcss(), react()],
-			test: {
-				environment: 'jsdom',
-				setupFiles: './src/setupTests.ts',
-			},
-		});
+		 // https://vite.dev/config/
+		 export default defineConfig({
+		 	plugins: [tailwindcss(), react()],
+		+	test: {
+		+		environment: 'jsdom',
+		+		setupFiles: './src/setupTests.ts',
+		+	},
+		 });
 		```
 
 		```ts title="src/setupTests.ts"
@@ -279,66 +279,67 @@ Lo mismo con la documentación visual: Storybook se instala ahora y cada compone
 		Al terminar, el asistente ha instalado los paquetes, ha creado `.storybook/` con `main.ts` y `preview.tsx`, ha añadido los scripts `storybook` y `build-storybook` a `package.json`, ha ampliado `.gitignore` y ha generado stories de ejemplo en `src/stories/`.
 
 	2. Borra la carpeta `src/stories/`: son ejemplos que no pertenecen a GuitarLA.
-	3. Sustituye `.storybook/preview.tsx` para cargar el CSS del proyecto (así las stories verán las clases de Tailwind que escribas en las páginas siguientes) y activar la documentación automática:
+	3. Modifica `.storybook/preview.tsx` para cargar el CSS del proyecto (así las stories verán las clases de Tailwind que escribas en las páginas siguientes) y activar la documentación automática:
 
-		```tsx title=".storybook/preview.tsx" {3,6}
-		import type { Preview } from '@storybook/react-vite';
+		```diff lang="tsx" title=".storybook/preview.tsx"
+		 import type { Preview } from '@storybook/react-vite';
 
-		import '../src/index.css';
+		+import '../src/index.css';
+		+
+		 const preview: Preview = {
+		+	tags: ['autodocs'],
+		 	parameters: {
+		 		controls: {
+		 			matchers: {
+		 				color: /(background|color)$/i,
+		 				date: /Date$/i,
+		 			},
+		 		},
+		 	},
+		 };
 
-		const preview: Preview = {
-			tags: ['autodocs'],
-			parameters: {
-				controls: {
-					matchers: {
-						color: /(background|color)$/i,
-						date: /Date$/i,
-					},
-				},
-			},
-		};
-
-		export default preview;
+		 export default preview;
 		```
 
 	4. El asistente instala `eslint-plugin-storybook`. Añádelo a `eslint.config.js` para que ESLint también revise las stories:
 
-		```js title="eslint.config.js" ins={5,24}
-		import js from '@eslint/js';
-		import prettier from 'eslint-config-prettier';
-		import reactHooks from 'eslint-plugin-react-hooks';
-		import reactRefresh from 'eslint-plugin-react-refresh';
-		import storybook from 'eslint-plugin-storybook';
-		import { defineConfig, globalIgnores } from 'eslint/config';
-		import globals from 'globals';
-		import tseslint from 'typescript-eslint';
+		```diff lang="js" title="eslint.config.js"
+		 import js from '@eslint/js';
+		 import prettier from 'eslint-config-prettier';
+		 import reactHooks from 'eslint-plugin-react-hooks';
+		 import reactRefresh from 'eslint-plugin-react-refresh';
+		+import storybook from 'eslint-plugin-storybook';
+		 import { defineConfig, globalIgnores } from 'eslint/config';
+		 import globals from 'globals';
+		 import tseslint from 'typescript-eslint';
 
-		export default defineConfig([
-			globalIgnores(['dist', 'storybook-static']),
-			{
-				files: ['**/*.{ts,tsx}'],
-				extends: [
-					js.configs.recommended,
-					tseslint.configs.recommended,
-					reactHooks.configs.flat.recommended,
-					reactRefresh.configs.vite,
-					prettier,
-				],
-				languageOptions: {
-					ecmaVersion: 2020,
-					globals: globals.browser,
-				},
-			},
-			...storybook.configs['flat/recommended'],
-		]);
+		 export default defineConfig([
+		 	globalIgnores(['dist', 'storybook-static']),
+		 	{
+		 		files: ['**/*.{ts,tsx}'],
+		 		extends: [
+		 			js.configs.recommended,
+		 			tseslint.configs.recommended,
+		 			reactHooks.configs.flat.recommended,
+		 			reactRefresh.configs.vite,
+		 			prettier,
+		 		],
+		 		languageOptions: {
+		 			ecmaVersion: 2020,
+		 			globals: globals.browser,
+		 		},
+		 	},
+		+	...storybook.configs['flat/recommended'],
+		 ]);
 		```
 
 	5. Incluye la carpeta `.storybook/` en la configuración de TypeScript. `tsconfig.app.json` solo cubre `src/`, así que VS Code trata `preview.tsx` como un archivo suelto, sin saber que el proyecto usa JSX ni dónde están los tipos, y lo llena de errores falsos:
 
-		```json title="tsconfig.app.json" ins={2}
-		{
-			"include": ["src", ".storybook/**/*"]
-		}
+		```diff lang="json" title="tsconfig.app.json"
+		 {
+		-	"include": ["src"]
+		+	"include": ["src", ".storybook/**/*"]
+		 }
 		```
 
 		Con esto `tsc -b` también comprueba los tipos de `main.ts` y `preview.tsx` en cada `npm run build`.
