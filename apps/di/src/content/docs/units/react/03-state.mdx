@@ -107,7 +107,7 @@ const [isCartOpen, setIsCartOpen] = useState(false);
 
 ### Dónde vive el estado
 
-El botón que abre el carrito está en `Header` y el panel es `Cart`. Para que el botón controle el panel, los dos tienen que ver el mismo estado. La regla de React: **el estado vive en el componente más cercano que contiene a todos los que lo necesitan**. Hoy ese componente es `Header`: el botón es suyo, y `Cart` pasa a renderizarse dentro de él. En la página siguiente, cuando `Guitar` también tenga que hablar con el carrito, el estado subirá a `App`.
+El botón que abre el carrito está en `Header` y el panel es `Cart`. Para que el botón controle el panel, los dos tienen que ver el mismo estado. La regla de React: **el estado vive en el componente más cercano que contiene a todos los que lo necesitan**. Hoy ese componente es `Header`: el botón es suyo, y `Cart` pasa a renderizarse dentro de él. En la página siguiente, cuando `Guitar` también tenga que hablar con el carrito, el **contenido** del carrito vivirá en `App`; `isCartOpen` seguirá aquí, porque solo lo usan `Header` y `Cart`.
 
 ### Extraer, conectar y renderizar
 
@@ -555,7 +555,7 @@ Todo lo que una interfaz "hace" es estado que cambia por eventos y, a veces, un 
 	<LinkCard
 		href="/jjcm/di/units/react/04-props-events/"
 		title="Props y eventos"
-		description="Cada tarjeta recibe su guitarra, el carrito se cierra desde su botón y el estado sube a App, en la rama feat/props-events."
+		description="Cada tarjeta recibe su guitarra, el carrito vive en App y se llena desde el catálogo, el panel se cierra desde su botón, en la rama feat/props-events."
 	/>
 	<LinkCard
 		href="/jjcm/di/units/ux/fundamentals/01-introduction/"

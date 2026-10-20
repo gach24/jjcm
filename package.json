@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter ./apps/template dev",
+    "dev": "pnpm --filter ./apps/template dev --host",
     "di:dev": "pnpm --filter ./apps/di dev --host",
     "changeset": "changeset",
     "ci:install": "pnpm install --frozen-lockfile",

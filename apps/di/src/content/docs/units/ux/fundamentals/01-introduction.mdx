@@ -146,6 +146,38 @@ El primer patrón ARIA que aparece en GuitarLA es un botón que muestra y oculta
 
 Y dos más de usabilidad que todo el mundo espera aunque ninguna norma las exija: **`Escape` cierra** el panel y **hacer clic fuera** también. Si el panel cubre la página (como el carrito en móvil), bloquear el scroll de fondo evita que el usuario se pierda. Cuando el panel sea un diálogo que exige respuesta (confirmar un borrado), el patrón es otro, *dialog*, con el foco atrapado dentro; llegará con los formularios.
 
+### Nombres que dicen lo que hacen
+
+Un control con nombre no basta cuando hay muchos iguales. En el catálogo de GuitarLA hay doce botones "Agregar al carrito": para la vista, cada uno está junto a su guitarra; para un lector de pantalla que lista los botones de la página, son doce idénticos. La solución es **completar** el nombre accesible con el dato que lo distingue, sin cambiar lo que se ve:
+
+```tsx
+<button type="button">
+  Agregar al carrito<span className="sr-only">: {name}</span>
+</button>
+```
+
+`sr-only` (Tailwind) oculta el `span` visualmente pero lo deja en el DOM, así que el nombre es "Agregar al carrito: Lukather". ¿Por qué no `aria-label="Agregar Lukather al carrito"`? Porque `aria-label` **sustituye** el contenido, y el criterio [Label in Name](https://www.w3.org/WAI/WCAG22/Understanding/label-in-name.html) de las WCAG (2.5.3, nivel A) pide que el nombre accesible **contenga el texto visible**: quien usa control por voz dice lo que lee ("pulsa Agregar al carrito") y, si el nombre fuera otro, la orden no encontraría el botón. La regla práctica:
+
+| Situación | Técnica |
+| :--- | :--- |
+| El control tiene texto visible y es único | Nada que añadir |
+| El control tiene texto visible y se repite | Texto visible + `span` con `sr-only` que lo distingue |
+| El control solo tiene un icono | `aria-label` con la acción y, si se repite, con el dato: `` aria-label={`Eliminar ${name} del carrito`} `` |
+
+### Avisar de lo que cambia
+
+La primera heurística de Nielsen, **visibilidad del estado del sistema**, dice que la interfaz debe informar de lo que acaba de pasar. Al pulsar "Agregar al carrito", quien ve la pantalla ve subir el contador sobre el icono; quien usa un lector de pantalla no recibe nada, porque el foco sigue en el botón de la tarjeta y nada le ha hablado. Para eso existen las **regiones vivas**:
+
+```tsx
+<p className="sr-only" aria-live="polite">
+  {itemCount} artículos en el carrito
+</p>
+```
+
+Un elemento con `aria-live` hace que el lector de pantalla **anuncie su contenido cada vez que cambia**, sin mover el foco. Con `polite` espera a que el usuario termine lo que está oyendo; `assertive` interrumpe, y se reserva para errores. El elemento tiene que **existir desde el principio** (vacío o con el valor inicial): si se crea en el momento del cambio, el lector no lo registra. Dos atajos del HTML: `role="status"` equivale a `aria-live="polite"` y `role="alert"` a `assertive`.
+
+Y la otra mitad de avisar es el **foco**. Cuando una acción abre algo (un panel, un diálogo), el foco debe ir a ese algo, o quien navega con teclado se queda "detrás" de lo que acaba de abrir. En el carrito de GuitarLA, `autoFocus` en el botón de cerrar hace que al abrirse el panel el lector anuncie dónde está y que `Enter` lo cierre. Cuando se cierra, lo ideal es devolver el foco al botón que lo abrió; llegará con los diálogos.
+
 ## Usabilidad y accesibilidad no son lo mismo
 
 Se suelen confundir porque se solapan mucho: una interfaz accesible suele ser más usable para todos (los subtítulos sirven en un bar ruidoso; el buen contraste, al sol), y una interfaz confusa es inaccesible en la práctica. La diferencia:
@@ -180,7 +212,7 @@ Ninguna herramienta automática detecta más de un tercio de los problemas de ac
 
 ## 🧩 Aplicación en el proyecto
 
-En GuitarLA ya has aplicado accesibilidad sin llamarla así: HTML semántico (`header`, `nav`, `main`, `article`, `footer`), `alt` en las imágenes, `aria-label` en el botón del carrito, y tests que buscan por **rol y nombre accesible**, que fallan cuando a un control le falta su nombre. A partir de ahora cada componente nuevo pasa por el panel de accesibilidad de Storybook antes de confirmarlo, y las páginas de estado y formularios añadirán el foco, `aria-expanded` en el panel del carrito y mensajes de error comprensibles. La usabilidad se trabajará con la evaluación heurística de la app completa y una prueba con usuarios en el proyecto final.
+En GuitarLA ya has aplicado accesibilidad sin llamarla así: HTML semántico (`header`, `nav`, `main`, `article`, `footer`), `alt` en las imágenes, `aria-label` en el botón del carrito, nombres que distinguen los doce botones del catálogo, una región viva que anuncia cuántos artículos hay, y tests que buscan por **rol y nombre accesible**, que fallan cuando a un control le falta su nombre. A partir de ahora cada componente nuevo pasa por el panel de accesibilidad de Storybook antes de confirmarlo, y las páginas de estado y formularios añadirán el foco, `aria-expanded` en el panel del carrito y mensajes de error comprensibles. La usabilidad se trabajará con la evaluación heurística de la app completa y una prueba con usuarios en el proyecto final.
 
 ## Resumen rápido
 
@@ -191,7 +223,8 @@ En GuitarLA ya has aplicado accesibilidad sin llamarla así: HTML semántico (`h
 | **Accesibilidad** | Que personas con discapacidad puedan percibir, entender, navegar e interactuar |
 | **WCAG 2.2** | Cuatro principios (POUR), niveles A, AA y AAA; el objetivo legal es AA |
 | **Base técnica** | HTML semántico, `alt`, nombres accesibles, teclado, contraste 4,5:1, `lang` |
-| **ARIA** | Solo para lo que el HTML no expresa: `aria-label`, `aria-expanded`, `role="alert"` |
+| **ARIA** | Solo para lo que el HTML no expresa: `aria-label`, `aria-expanded`, `aria-live`, `role="alert"` |
+| **Avisar** | Nombre accesible que contiene el texto visible; `aria-live` para cambios sin foco; el foco va a lo que se abre |
 | **Evaluar** | Lighthouse y axe (automático) + teclado + lector de pantalla + heurísticas + usuarios |
 
 ## Convención práctica
