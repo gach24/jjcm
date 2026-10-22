@@ -71,10 +71,60 @@ Las extensiones añaden funciones al editor. Para instalarlas: abre el **panel d
     **ID para buscar:** `ritwickdey.LiveServer`
   </Card>
 
+  <Card title="ES7+ React/Redux/React-Native snippets" icon="seti:react">
+    **Instalar:** [ES7+ React snippets en el marketplace](https://marketplace.visualstudio.com/items?itemName=dsznajder.es7-react-js-snippets)
+
+    **Para qué sirve:** Añade atajos que generan el esqueleto de un componente, un hook o un test de React con TypeScript. Escribes unas letras, pulsas `Tab` y aparece el código base. Te ahorra teclear lo repetitivo de cada componente nuevo de la unidad de React.
+
+    **Qué notarás:** En un archivo `.tsx`, al escribir `tsrafce` y pulsar `Tab` aparece un componente de función con flecha, tipado y exportado; `tsrafc` hace lo mismo sin el `export default`. Otros útiles: `useState` (`useState`), `useEffect` (`useEffect`), `imr` (importar React) y `clg` (`console.log`). Los snippets usan dos espacios; Prettier lo ajusta al guardar.
+
+    **ID para buscar:** `dsznajder.es7-react-js-snippets`
+  </Card>
+
 </CardGrid>
 
 :::tip[Instalación rápida por ID]
-En la paleta de comandos (`Ctrl+Shift+P` / `Cmd+Shift+P`) escribe **Extensions: Install Extensions** y luego pega: `ext install dbaeumer.vscode-eslint esbenp.prettier-vscode astro-build.astro-vscode unifiedjs.vscode-mdx usernamehw.errorlens ritwickdey.LiveServer`
+En la paleta de comandos (`Ctrl+Shift+P` / `Cmd+Shift+P`) escribe **Extensions: Install Extensions** y luego pega: `ext install dbaeumer.vscode-eslint esbenp.prettier-vscode astro-build.astro-vscode unifiedjs.vscode-mdx usernamehw.errorlens ritwickdey.LiveServer dsznajder.es7-react-js-snippets`
+:::
+
+  </TabItem>
+</Tabs>
+
+## Extensiones del navegador
+
+<Tabs>
+  <TabItem label="React Developer Tools" icon="seti:react">
+
+## Instalar React Developer Tools
+
+Las herramientas de desarrollo del navegador (`F12`) muestran el HTML final, pero no los componentes de React que lo han generado ni su estado. **React Developer Tools** es la extensión oficial del equipo de React que añade esa capa. La usarás desde la unidad de React para ver qué props recibe cada componente y cómo cambia el estado al pulsar un botón.
+
+<Steps>
+  <ol>
+    <li><strong>Instala</strong> la extensión desde la tienda de tu navegador: <a href="https://chromewebstore.google.com/detail/react-developer-tools/fmkadmapgofadopljbjfkapdkoienihi">Chrome Web Store</a> (vale para Chrome, Edge, Brave y otros basados en Chromium) o <a href="https://addons.mozilla.org/es/firefox/addon/react-devtools/">Firefox Add-ons</a>.</li>
+    <li><strong>Abre</strong> una aplicación React en desarrollo (por ejemplo, GuitarLA con `npm run dev`) y pulsa `F12`. Aparecen dos pestañas nuevas: <strong>⚛ Components</strong> y <strong>⚛ Profiler</strong>.</li>
+    <li><strong>Comprueba</strong> que el icono de la extensión en la barra del navegador se pone de color: azul oscuro en una app en desarrollo, negro en una de producción, gris si la página no usa React.</li>
+  </ol>
+</Steps>
+
+<CardGrid stagger>
+
+  <Card title="Components" icon="lucide:layers">
+    **Para qué sirve:** Muestra el árbol de componentes de la página (`App`, `Header`, `Guitar`…) en lugar del árbol de etiquetas HTML. Al seleccionar uno, el panel derecho enseña sus **props**, su **estado** y sus hooks.
+
+    **Qué notarás:** Puedes editar un valor de estado o de una prop en vivo y ver cómo reacciona la interfaz, y el icono de la lupa salta al componente que ha renderizado el elemento que señales con el ratón.
+  </Card>
+
+  <Card title="Profiler" icon="lucide:activity">
+    **Para qué sirve:** Graba lo que ocurre al interactuar y muestra qué componentes se han vuelto a renderizar, cuántas veces y cuánto han tardado.
+
+    **Qué notarás:** De momento no lo necesitas. Será útil cuando la aplicación crezca y haya que averiguar por qué algo va lento o se renderiza más de la cuenta.
+  </Card>
+
+</CardGrid>
+
+:::tip[Si las pestañas no aparecen]
+Cierra y vuelve a abrir las herramientas de desarrollo después de instalar la extensión, o recarga la página. En Chrome y Edge, si usas una ventana de incógnito, hay que permitir la extensión en ese modo desde su página de configuración.
 :::
 
   </TabItem>

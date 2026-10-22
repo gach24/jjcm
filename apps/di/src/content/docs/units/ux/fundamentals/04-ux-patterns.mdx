@@ -1,0 +1,257 @@
+---
+title: Patrones, buenas prácticas y medición
+description: "Los patrones de interfaz para cuando la atención es escasa y para cuando hay muchas ocasiones de influir, las buenas prácticas UX organizadas por el embudo CREATE, y cómo medir si un diseño funciona con pruebas A/B y multivariante."
+evaluations:
+  - id: RA4
+    statement: Diseña interfaces gráficas identificando y aplicando criterios de usabilidad y accesibilidad.
+    criteria:
+      - Se ha diseñado el aspecto de la interfaz de usuario (colores y fuentes entre otros) atendiendo a su legibilidad.
+      - Se ha verificado que los mensajes generados por la aplicación son adecuados en extensión y claridad.
+      - Se han realizado pruebas para evaluar la usabilidad y accesibilidad de la aplicación.
+    contents:
+      - "Pautas de diseño del aspecto de la interfaz de usuario: colores, fuentes, iconos, distribución de elementos, entre otros."
+      - Medidas de usabilidad y accesibilidad de las aplicaciones; herramientas.
+sources:
+  - author: roadmap.sh
+    url: https://roadmap.sh/ux-design
+  - author: Stephen Wendel
+    url: https://www.oreilly.com/library/view/designing-for-behavior/9781492056027/
+  - author: Nielsen Norman Group
+    url: https://www.nngroup.com/articles/ab-testing/
+sidebar:
+  order: 4
+date: 2026-10-17
+updated: 2026-10-17
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+Las dos páginas anteriores explican cómo decide la gente y cómo se diseña un producto. Esta baja al detalle de la pantalla: qué **patrones** de interfaz existen para conseguir una acción, qué **buenas prácticas** aplicar en cada etapa del embudo CREATE, y cómo **medir** si lo que has hecho funciona, porque sin medir todo lo anterior es una opinión.
+
+<CardGrid stagger>
+	<Card title="Patrones" icon="puzzle">
+		Soluciones con nombre a problemas repetidos: llamada a la acción, recordatorio, tutorial, rastreador de objetivos.
+	</Card>
+	<Card title="Buenas prácticas" icon="approve-check">
+		Tácticas para que la acción se vea, guste, compense, sea fácil y ocurra ahora. Una lista por cada letra de CREATE.
+	</Card>
+	<Card title="Medición" icon="setting">
+		Pruebas A/B y multivariante para decidir con datos, y un ciclo para aprender, priorizar e integrar.
+	</Card>
+</CardGrid>
+
+## Patrones UX
+
+Un patrón es una solución probada a un problema de interfaz que se repite. El roadmap los agrupa por la **situación** del usuario, porque un patrón que funciona cuando alguien pasa de largo no sirve cuando ya está dentro.
+
+### Cuando la atención es escasa y fugaz
+
+El usuario está de paso: ha llegado de un enlace, mira la pantalla medio segundo y decide si se queda. Solo cabe **una** cosa.
+
+| Patrón | Qué es | Ejemplo |
+| :--- | :--- | :--- |
+| **Llamada a la acción** (*call to action*, CTA) | Un único elemento que dice qué hacer, en imperativo, visualmente dominante | "Agregar al carrito", "Empezar", "Reservar" |
+| **Consejos prácticos** (*how-to tips*) | Una indicación breve justo donde hace falta, no un manual | "Pulsa el icono del carrito para ver tu pedido" la primera vez |
+| **Informes de estado** (*status reports*) | Un resumen de cómo va lo que al usuario le importa, de un vistazo | "3 artículos · 1047 $" junto al icono del carrito |
+| **Recordatorios y avisos de planificación** | Un mensaje en el momento oportuno que trae al usuario de vuelta a una acción pendiente | "Tienes guitarras en el carrito" al volver a la tienda |
+
+### Cuando hay muchas ocasiones de influir
+
+El usuario ya usa el producto con regularidad. Hay tiempo para construir, enseñar y acompañar.
+
+| Patrón | Qué es |
+| :--- | :--- |
+| **Tutoriales** | Guían la primera vez por el flujo principal; cortos, saltables, una sola vez |
+| **Planificadores** | Ayudan a decidir cuándo y cómo hará el usuario algo, que es el paso previo a hacerlo |
+| **Rastreadores de objetivos** (*goal trackers*) | Hacen visible el progreso hacia una meta que el usuario se ha puesto |
+| **Recordatorios** | Como los anteriores, pero programados y repetidos; con cuidado, o se desactivan |
+| **Apoyo a la decisión** | Comparadores, recomendaciones, resúmenes: ayudan a pensar cuando hay que pensar |
+| **Compartir en redes** | Hacer público un logro o una intención; refuerza el compromiso |
+| **Gamificación** | Puntos, niveles, insignias, rachas: recompensas visibles por repetir una acción |
+| **Juegos de cambio de comportamiento** | La gamificación llevada hasta convertir el producto en un juego con reglas propias |
+
+<Aside type="caution" title="Gamificar no es poner puntos">
+	La gamificación funciona cuando la recompensa está ligada a algo que el usuario **ya valoraba** (una racha de días practicando guitarra) y falla cuando es un adorno (insignia por abrir la app). Y las recompensas variables del modelo Hook son las que crean dependencia: es la mecánica de las máquinas tragaperras. Úsala, si acaso, para lo que el usuario querría que fuera un hábito.
+</Aside>
+
+## Buenas prácticas UX
+
+El roadmap organiza las buenas prácticas por las etapas del [embudo CREATE](/jjcm/di/units/ux/fundamentals/02-human-decisions/#el-embudo-create). Son tácticas concretas; cada una responde a una pregunta del usuario que, si queda sin responder, corta el embudo.
+
+### Captar la atención (C)
+
+<Steps>
+	1. **Di cuál es la acción y pídela.** Un botón que dice "Agregar al carrito" vence a uno que dice "Más información". El verbo en imperativo, el objeto claro.
+	2. **Limpia la página de distracciones.** Cada elemento compite con la acción principal. Si no ayuda a decidir, sobra o va a segundo plano.
+	3. **Deja claro dónde actuar.** Tamaño, contraste, posición al final del flujo de lectura, espacio alrededor. El usuario no debe buscar el botón.
+</Steps>
+
+### Provocar una reacción intuitiva positiva (R)
+
+<Steps>
+	1. **Interfaz profesional y cuidada.** La primera impresión es estética y se forma en décimas de segundo; una interfaz desalineada o con tipografías mezcladas resta credibilidad al contenido antes de leerlo.
+	2. **Muestra autoridad en el tema.** Datos concretos, lenguaje preciso, referencias: quien sabe de guitarras lo nota en la ficha.
+	3. **Sé auténtico y personal.** Tono humano, nombres reales, sin plantillas vacías.
+	4. **Prueba social.** Lo que otros han hecho reduce la incertidumbre: valoraciones, "el más vendido", número de compradores. Siempre reales.
+</Steps>
+
+### Conseguir una evaluación consciente favorable (E)
+
+<Steps>
+	1. **Activa asociaciones relevantes.** Palabras e imágenes que conecten con lo que el usuario valora: no "producto", sino "tu próxima guitarra".
+	2. **Evita los pagos directos visibles.** No es ocultar el precio: es no convertir cada paso en una transacción. "Añadir" no cuesta nada; pagar llega al final, una sola vez.
+	3. **Evita la sobrecarga de opciones.** Más de cinco o seis alternativas paralizan. Agrupa, filtra, recomienda.
+	4. **Evita la carga cognitiva.** Cada cálculo, comparación o recuerdo que la interfaz pueda hacer por el usuario, lo hace la interfaz: el total del carrito se muestra, no se calcula.
+	5. **Aprovecha la aversión a la pérdida.** Perder algo duele más que ganar lo mismo: "tu carrito se vaciará" mueve más que "guarda tu carrito". Con honestidad.
+	6. **Usa comparaciones con iguales.** "El 80 % elige esta" orienta sin obligar.
+	7. **Usa la competición.** Rankings y retos, donde tengan sentido y el usuario los quiera.
+</Steps>
+
+### Crear urgencia para actuar ahora (T)
+
+<Steps>
+	1. **Redacta para evitar la miopía temporal.** Tendemos a valorar el ahora y descontar el futuro. Acerca el beneficio: "llega el jueves" en vez de "envío en 3 a 5 días".
+	2. **Recuerda compromisos previos.** "Guardaste esta guitarra el martes" reactiva una decisión ya tomada.
+	3. **Compromiso con otros.** Decirle a alguien lo que vas a hacer multiplica la probabilidad de hacerlo.
+	4. **Recompensa escasa.** Ofertas o unidades limitadas crean urgencia; solo si es **verdad**, o es un patrón oscuro y, en Europa, una infracción.
+</Steps>
+
+### Asegurar que el usuario puede hacerlo fácilmente (A)
+
+<Steps>
+	1. **Provoca intenciones de implementación.** Pedir "cuándo y dónde" lo harás ("¿quieres el envío en casa o en el trabajo?") convierte una intención vaga en un plan, y los planes se cumplen más.
+	2. **Valores por defecto en todo.** La opción recomendada ya marcada, el campo ya relleno con lo probable, la cantidad en 1.
+	3. **Reduce la carga de acción e información.** Menos campos, menos pasos, nada que el sistema ya sepa (no pedir el país si lo deduce).
+	4. **Comparaciones con iguales**, otra vez: ver que a otros les ha resultado fácil hace que parezca fácil.
+</Steps>
+
+<Aside type="note" title="Y los criterios del módulo">
+	Entre estas prácticas están, con otro nombre, los criterios de evaluación de usabilidad del módulo: **legibilidad** de colores y fuentes (reacción positiva: interfaz cuidada, contraste de 4,5:1 de las WCAG), **mensajes adecuados en extensión y claridad** (evaluación favorable: decir qué ha pasado y qué hacer, sin carga cognitiva), **controles bien distribuidos** y **el control adecuado** (facilidad: valores por defecto, menos carga de acción). No son dos listas, es la misma.
+</Aside>
+
+## Medir el impacto
+
+Todo lo anterior son hipótesis hasta que se mide. Un diseñador que no mide está adivinando con más vocabulario.
+
+### Pruebas A/B y multivariante
+
+<Tabs>
+	<TabItem label="A/B incremental">
+		Dos versiones de **una sola cosa** (el texto del botón, su color, la posición del carrito) mostradas al azar a dos grupos de usuarios, y una métrica que decide (porcentaje que añade al carrito). Se cambia **una variable** cada vez, para saber qué ha causado la diferencia, y se acumulan mejoras pequeñas: por eso "incremental". Hace falta suficiente tráfico para que la diferencia sea estadísticamente significativa; con cien visitas al día no se concluye nada.
+	</TabItem>
+	<TabItem label="Multivariante">
+		Varias variables a la vez (texto **y** color **y** posición) en todas sus combinaciones, para descubrir también cómo **interactúan** entre sí. Necesita mucho más tráfico que una A/B, porque cada combinación es un grupo. Reservada a productos con millones de usuarios.
+	</TabItem>
+</Tabs>
+
+Lo que se mide en una tienda como GuitarLA: **tasa de conversión** (visitas que añaden al carrito; carritos que terminan en pedido), **abandono** (en qué paso se va la gente), **tiempo por tarea** y, en lo cualitativo, las **pruebas con usuarios** de la [primera página](/jjcm/di/units/ux/fundamentals/01-introduction/#cómo-se-evalúa). Las herramientas van de la analítica web (eventos de clic) a plataformas de experimentación; para un proyecto de aula, un evento registrado por cada acción principal y una hoja de cálculo bastan.
+
+### Aprender, priorizar e integrar
+
+El roadmap cierra con un ciclo, no con un resultado:
+
+<Steps>
+	1. **Reunir las lecciones.** Qué ha funcionado, qué no y por qué, por escrito. Un experimento que no se documenta se repite.
+	2. **Priorizar.** No todo lo aprendido merece cambiar el producto; se ordena por impacto en el resultado objetivo y coste de aplicarlo.
+	3. **Integrar.** Lo que gana se incorpora al diseño base, a la guía de estilo y a los componentes, para que la siguiente pantalla parta de ahí.
+</Steps>
+
+Y vuelta a empezar: el producto cambia, los usuarios cambian, lo que funcionaba deja de funcionar.
+
+## 🧩 Aplicación en el proyecto
+
+En GuitarLA, cada página de React toca alguna de estas prácticas, y a partir de ahora lo dirá: el botón de cada tarjeta es la **llamada a la acción** (C), el panel del carrito con el total es un **informe de estado** sin carga cognitiva (E), guardar el carrito en `localStorage` es un **valor por defecto** que evita pedir nada (A), y el aviso "tienes artículos en el carrito" al volver será un **recordatorio** (T). Lo que no puedes hacer en un proyecto de aula es medir con miles de usuarios; sí puedes definir qué medirías, registrar los eventos y hacer una prueba con cinco compañeros, que es lo que pide el criterio de evaluación.
+
+## Resumen rápido
+
+| Bloque | Lo esencial |
+| :--- | :--- |
+| **Atención escasa** | CTA única, consejo breve en contexto, informe de estado, recordatorio oportuno |
+| **Muchas ocasiones** | Tutorial, planificador, rastreador de objetivos, apoyo a la decisión, gamificación con sentido |
+| **C · Atención** | Di la acción y pídela; sin distracciones; que se vea dónde actuar |
+| **R · Reacción** | Interfaz cuidada, autoridad, autenticidad, prueba social real |
+| **E · Evaluación** | Asociaciones relevantes; sin pagos a cada paso; pocas opciones; sin carga cognitiva; aversión a la pérdida; comparaciones |
+| **T · Momento** | Beneficio cercano, compromisos previos, compromiso con otros, escasez verdadera |
+| **A · Capacidad** | Intenciones de implementación, valores por defecto, menos pasos y campos |
+| **Medir** | A/B incremental (una variable), multivariante (varias, mucho tráfico); conversión y abandono; aprender, priorizar, integrar |
+
+## Convención práctica
+
+<Steps>
+	1. **Una llamada a la acción por pantalla**, en imperativo, con el objeto claro, donde termina la lectura.
+	2. **La interfaz calcula, el usuario decide**: totales, fechas, comparaciones, siempre hechos y visibles.
+	3. **Valores por defecto sensatos en todo** campo y control; el usuario solo cambia lo que quiere cambiar.
+	4. **Urgencia y escasez solo si son verdad**; la prueba social, con datos reales.
+	5. **Define la métrica antes de diseñar** la pantalla; si no sabes qué medir, no sabes qué estás intentando conseguir.
+</Steps>
+
+## Referencias
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://roadmap.sh/ux-design"
+		title="UX Design Roadmap (roadmap.sh)"
+		description="El mapa completo, con recursos por cada patrón y práctica."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://www.nngroup.com/articles/ab-testing/"
+		title="Pruebas A/B (NN/g)"
+		description="Cuándo sirven, cuándo no y cómo interpretarlas."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://www.nngroup.com/articles/call-to-action-buttons/"
+		title="Botones de llamada a la acción (NN/g)"
+		description="Texto, forma, posición y contraste de un CTA."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://www.nngroup.com/articles/gamification/"
+		title="Gamificación (NN/g)"
+		description="Cuándo mejora un producto y cuándo lo estropea."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://www.deceptive.design/types"
+		title="Tipos de patrones oscuros"
+		description="La lista de lo que estas técnicas no deben convertirse."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+## Siguientes pasos
+
+<CardGrid>
+	<LinkCard
+		href="/jjcm/di/units/react/03-state/"
+		title="Estado (React)"
+		description="El panel del carrito aplica varias de estas prácticas: informe de estado, cierre fácil, foco visible."
+	/>
+	<LinkCard
+		href="/jjcm/di/units/ux/fundamentals/01-introduction/"
+		title="Usabilidad y accesibilidad"
+		description="Volver a los fundamentos y a cómo se evalúa."
+	/>
+</CardGrid>

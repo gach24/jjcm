@@ -1,0 +1,290 @@
+---
+title: El proceso de diseño UX
+description: "Lo que ocurre antes de programar una interfaz: entender el producto y su modelo de negocio, definir a quién va dirigido con personas, convertir las necesidades en historias de usuario, y diseñar conceptualmente con flujos, wireframes y prototipos."
+evaluations:
+  - id: RA4
+    statement: Diseña interfaces gráficas identificando y aplicando criterios de usabilidad y accesibilidad.
+    criteria:
+      - Se han creado diferentes tipos de menús cuya estructura y contenido siguen los estándares establecidos.
+      - Se han distribuido las acciones en menús, barras de herramientas, botones de comando, entre otros, siguiendo un criterio coherente.
+      - Se han distribuido adecuadamente los controles en la interfaz de usuario.
+    contents:
+      - Esquemas (Wireframes) y Maquetas (Mockups).
+      - Pautas de diseño de la estructura de la interfaz de usuario; menús, ventanas, cuadros de diálogo, atajos de teclado, entre otros.
+sources:
+  - author: roadmap.sh
+    url: https://roadmap.sh/ux-design
+  - author: Strategyzer
+    url: https://www.strategyzer.com/library/the-business-model-canvas
+  - author: Nielsen Norman Group
+    url: https://www.nngroup.com/articles/persona/
+  - author: Mel Edwards
+    url: https://www.melissaedwards.net/
+sidebar:
+  order: 3
+date: 2026-10-17
+updated: 2026-10-17
+author:
+  name: Germán Carreño
+  email: germanach@educastur.com
+  url: https://github.com/gach24
+  image: https://github.com/gach24.png
+  social:
+    - name: GitHub
+      url: https://github.com/gach24
+---
+
+import {
+	Aside,
+	Card,
+	CardGrid,
+	LinkCard,
+	Steps,
+	TabItem,
+	Tabs,
+} from "@astrojs/starlight/components";
+
+En GuitarLA recibiste una maqueta ya decidida. En un proyecto real, esa maqueta es el **final** de un proceso: alguien ha tenido que entender qué vende la tienda, a quién, qué tiene que poder hacer esa persona y en qué orden, y dibujarlo varias veces antes de que exista una sola línea de código. El [roadmap de UX Design](https://roadmap.sh/ux-design) ordena ese proceso en cuatro bloques: **entender el producto**, **definir a los usuarios**, **crear el backlog** y **diseñar conceptualmente**. Esta página los recorre con las herramientas de cada uno.
+
+<CardGrid stagger>
+	<Card title="Producto" icon="seti:default">
+		Qué resultado se busca, quién debe actuar y qué acción concreta; y de qué vive el negocio.
+	</Card>
+	<Card title="Usuarios" icon="seti:smarty">
+		Personas: retratos concretos de los usuarios objetivo para dejar de diseñar "para todo el mundo".
+	</Card>
+	<Card title="Diseño conceptual" icon="pencil">
+		Flujos, wireframes y prototipos: decidir estructura y comportamiento antes de decidir colores.
+	</Card>
+</CardGrid>
+
+## Entender el producto
+
+Antes de dibujar nada, tres preguntas que parecen obvias y rara vez tienen respuesta escrita. Wendel las llama **resultado**, **actor** y **acción** objetivo:
+
+| Pregunta | Qué responde | En GuitarLA |
+| :--- | :--- | :--- |
+| **Resultado objetivo** (*target outcome*) | Qué cambio en el mundo quiere el producto. No "más clics": algo que importe | Que se vendan guitarras y el cliente vuelva |
+| **Actor objetivo** (*target actor*) | Quién tiene que hacer algo para que eso ocurra | Un músico aficionado que compra online |
+| **Acción objetivo** (*target action*) | El comportamiento **concreto y observable** que lleva al resultado | Añadir una guitarra al carrito y completar el pedido |
+
+El resultado de este paso es **clarificar el producto**: una frase que diga qué hace, para quién y qué acción debe provocar. Si el equipo no puede escribirla, cada pantalla la va a interpretar de forma distinta.
+
+### El modelo de negocio
+
+Una interfaz sirve a un negocio, y conocerlo evita diseñar contra él. Dos situaciones:
+
+<Tabs>
+	<TabItem label="Negocio existente">
+		Se documenta en un **Business Model Canvas** (Osterwalder): un lienzo de nueve casillas, segmentos de clientes, propuesta de valor, canales, relación con clientes, fuentes de ingresos, recursos, actividades, socios y costes. O en su versión reducida para productos nuevos, el **Lean Canvas** (Maurya), que cambia cuatro casillas por problema, solución, métricas clave y ventaja injusta. Una página basta, y obliga a responder quién paga y por qué.
+	</TabItem>
+	<TabItem label="Negocio nuevo">
+		Hay que inventar el modelo, y para eso se mira alrededor: un **inspirador de modelos** (catálogos de patrones de negocio: suscripción, marketplace, freemium…), un **análisis de la competencia** (qué hacen, qué cobran, qué les falta), las **cinco fuerzas de Porter** (rivalidad, proveedores, clientes, sustitutos, nuevos entrantes) y un **DAFO** (debilidades, amenazas, fortalezas, oportunidades).
+	</TabItem>
+</Tabs>
+
+<Aside type="note" title="Por qué le importa esto a quien programa">
+	Porque el modelo de negocio decide la interfaz. Un marketplace necesita confianza entre desconocidos (valoraciones, perfiles); una suscripción necesita que cancelar sea fácil o la ley te obligará; una tienda como GuitarLA necesita que el carrito sea el centro de todo. Saber de qué vive el producto es saber qué pantalla importa.
+</Aside>
+
+## Definir a los usuarios
+
+"Para todo el mundo" es "para nadie". El producto se diseña para unos **usuarios objetivo** concretos, y la herramienta para tenerlos presentes es la **persona**: un retrato ficticio pero realista de un usuario tipo, construido a partir de datos (entrevistas, analítica, soporte), no de suposiciones.
+
+Una persona útil cabe en media página:
+
+<Steps>
+	1. **Nombre y foto**, para hablar de ella como de alguien real: "¿Qué haría Marta aquí?".
+	2. **Contexto**: edad, ocupación, nivel técnico, dispositivo y situación en la que usa el producto.
+	3. **Objetivos**: qué quiere conseguir con el producto, en sus palabras.
+	4. **Frustraciones**: qué le ha fallado en productos parecidos.
+	5. **Una cita** que resuma su actitud.
+</Steps>
+
+Dos o tres personas bastan; con diez, nadie las usa. Y la primera decisión que provocan es cuál es la **persona principal**: cuando dos necesidades chocan, gana la suya.
+
+<Aside type="tip" title="GuitarLA: dos personas">
+	**Marta, 34, guitarrista aficionada**, compra desde el móvil en el sofá, sabe lo que quiere, le irrita tener que registrarse para ver el precio. **Luis, 52, profesor de música**, compra desde el ordenador del centro, compara mucho, necesita factura. Marta es la principal: por eso el catálogo es la portada, el carrito no interrumpe y el móvil se diseña primero. Lo que Luis necesita (comparar, factura) llegará, pero no a costa de Marta.
+</Aside>
+
+## Crear el backlog
+
+Con el producto y las personas claros, se convierte lo que hay que construir en una lista ordenada por valor: el **backlog**. Cada elemento es una **historia de usuario**, una frase con una forma fija:
+
+```txt
+Como <persona>, quiero <acción> para <beneficio>.
+
+Como Marta, quiero añadir una guitarra al carrito sin salir del catálogo
+para seguir mirando otras.
+
+Como Luis, quiero ver el total actualizado al cambiar cantidades
+para saber cuánto voy a pagar antes de decidir.
+```
+
+Las tres partes importan: la **persona** evita funciones para nadie, la **acción** es lo que se programa, y el **beneficio** es lo que permite decidir si la solución que se te ocurre sirve de verdad. Una historia sin "para" es una tarea, no una historia.
+
+Cada historia lleva **criterios de aceptación**: cómo sabremos que está hecha. "El carrito muestra el número de artículos", "el total cambia sin recargar la página". Son, casi literalmente, los **tests** que escribirás: la historia del carrito de Luis es el test `updates the total when quantity changes`.
+
+## Diseño conceptual
+
+Ahora sí se dibuja, pero de lo general a lo concreto: primero **qué pasa**, luego **dónde está cada cosa**, y al final **cómo se ve**.
+
+### Flujos: qué pasa y en qué orden
+
+Antes de las pantallas, los **recorridos**. El roadmap cita cuatro notaciones, de la más sencilla a la más formal:
+
+| Herramienta | Qué es | Cuándo |
+| :--- | :--- | :--- |
+| **Diagrama de flujo simple** | Cajas y flechas: pantalla, decisión, pantalla | Casi siempre; se entiende sin explicación |
+| **Mapa de experiencia del cliente** (Mel Edwards) | El recorrido completo del usuario, incluido lo que pasa fuera de la app: antes de llegar, mientras usa, después. Con lo que hace, piensa y siente en cada etapa | Para descubrir dónde duele: el momento en que abandona |
+| **EPC** (*Event-driven Process Chain*) | Cadena evento → función → evento, con conectores lógicos (y, o, o exclusivo) | Procesos de negocio con reglas; viene del mundo SAP |
+| **BPMN** | Notación estándar (ISO 19510) para procesos, con carriles por actor, eventos, tareas y pasarelas | Cuando hay varios actores o sistemas y el proceso se va a automatizar |
+
+Para GuitarLA basta un diagrama de flujo: `catálogo → añadir → carrito → cambiar cantidad / quitar / vaciar → pedido`. Lo importante es que exista **antes** de dibujar la pantalla, porque el flujo dice qué botones hacen falta y cuáles no.
+
+### Wireframes: dónde está cada cosa
+
+Un **wireframe** es un esquema de la pantalla en gris: cajas, texto de relleno, sin colores ni imágenes. Decide la **estructura** (qué hay, dónde, qué tamaño relativo, qué es más importante) sin discutir el aspecto. Se dibuja rápido y se tira rápido: su valor está en hacer cinco versiones en una tarde.
+
+Las reglas de composición que un wireframe debe respetar son las **reglas de buen layout** que ya conoces de la unidad de Tailwind, vistas ahora como decisiones de diseño:
+
+- **Jerarquía**: lo más importante es lo más grande, lo más contrastado o lo primero. En una tarjeta de guitarra, el precio y el botón.
+- **Agrupación**: lo relacionado va junto y separado de lo demás (proximidad, un borde, un fondo). Imagen, nombre, precio y botón forman una unidad.
+- **Alineación**: todo se alinea con algo; una rejilla de columnas evita que cada elemento vaya por libre.
+- **Consistencia**: el mismo tipo de elemento se ve y se coloca igual en todas las pantallas; el carrito siempre arriba a la derecha.
+- **Espacio en blanco**: no es espacio perdido, es lo que separa y da aire. Las interfaces apretadas se leen peor y parecen baratas.
+- **Flujo de lectura**: en Occidente, en Z o en F: arriba-izquierda primero, abajo-derecha al final. La acción principal va donde termina la mirada.
+
+<Aside type="note" title="Menús, barras y controles">
+	Los criterios de evaluación del módulo piden menús con estructura estándar, acciones distribuidas con coherencia en menús, barras y botones, y el control adecuado para cada dato. Es lo que decide el wireframe: las acciones frecuentes a un clic (botones), las secundarias agrupadas (menú), las destructivas separadas y confirmadas; un `select` para pocas opciones conocidas, un campo de texto con autocompletar para muchas, un `checkbox` para sí o no, `radio` para elegir una entre pocas visibles. Elegir el control es elegir cuánto tiene que pensar el usuario.
+</Aside>
+
+### Prototipos: cómo se comporta
+
+Un **prototipo** es un wireframe o una maqueta con **navegación**: se puede pulsar y pasar de pantalla, sin código. Sirve para probar el flujo con personas antes de programarlo, que es cien veces más barato que probarlo después. De baja fidelidad (cajas enlazadas) a alta fidelidad (indistinguible del producto), según lo que se quiera validar.
+
+Las herramientas que cita el roadmap:
+
+| Herramienta | Para qué destaca |
+| :--- | :--- |
+| **Figma** | El estándar actual: diseño, prototipado y colaboración en el navegador; componentes y variables que se parecen mucho a los de React. Gratuito para uso individual |
+| **Sketch** | Solo macOS; fue el estándar antes de Figma |
+| **Adobe XD** | Integrado con el resto de Adobe; en modo mantenimiento |
+| **Balsamiq** | Wireframes de baja fidelidad con aspecto de boceto a mano, para que nadie discuta colores |
+
+<Aside type="tip" title="Figma y React">
+	En Figma, un botón es un **componente** con **variantes** (primario, secundario, deshabilitado) y **propiedades** (texto, icono). Es el mismo modelo mental que `<Button variant="primary">` en React con sus props, y la razón de que un diseñador y un programador que usan los dos puedan hablar de lo mismo. Las stories de Storybook son el catálogo de componentes del lado del código; la librería de Figma, el del lado del diseño.
+</Aside>
+
+### Lo que hay que vigilar
+
+El roadmap cierra el diseño conceptual con cinco comprobaciones para cualquier tarea que se pida al usuario. Vienen del lado del comportamiento, y son fáciles de olvidar cuando uno conoce demasiado bien su propia interfaz:
+
+<Steps>
+	1. **Corto y simple.** Cada paso que sobra es un porcentaje de usuarios que se va.
+	2. **Fácil de entender y de completar.** Si hay que leer instrucciones, el diseño ha fallado.
+	3. **Progreso visible.** El usuario sabe en qué punto está y cuánto queda: pasos numerados, barra, "2 de 3".
+	4. **Progreso con sentido.** Cada paso completado se percibe como un avance que vale algo, no como trámite.
+	5. **Final inequívoco.** Al terminar, no hay duda de que se ha terminado: confirmación clara, qué pasa ahora.
+</Steps>
+
+## Entregables
+
+Lo que un proceso de diseño deja escrito, y que quien programa debería recibir antes de empezar:
+
+| Entregable | Contenido |
+| :--- | :--- |
+| **Definición del producto** | Resultado, actor y acción objetivo; modelo de negocio en un lienzo |
+| **Personas** | Dos o tres retratos, con la principal marcada |
+| **Backlog** | Historias de usuario con criterios de aceptación, ordenadas por valor |
+| **Flujos** | Diagrama de flujo o mapa de experiencia de los recorridos principales |
+| **Wireframes y prototipo** | Las pantallas con su estructura, enlazadas para probar el flujo |
+| **Guía de estilo** | Colores, tipografía, componentes: lo que en código es Tailwind y Storybook |
+
+## 🧩 Aplicación en el proyecto
+
+GuitarLA empezó por el final (una maqueta) porque el objetivo era React. Pero el proceso está debajo: las dos personas de arriba explican por qué el catálogo es la portada, por qué el carrito es un panel y no otra página, y por qué el móvil se diseña primero. Y cada historia de usuario con sus criterios de aceptación es un test de Testing Library esperando a que lo escribas. En el **proyecto final del módulo** harás el proceso completo: producto, personas, backlog, flujo y wireframe en Figma antes del primer componente.
+
+## Resumen rápido
+
+| Fase | Herramientas |
+| :--- | :--- |
+| **Entender el producto** | Resultado, actor y acción objetivo; Business Model Canvas o Lean Canvas; competencia, cinco fuerzas, DAFO |
+| **Definir usuarios** | Personas (2 o 3, una principal) a partir de datos |
+| **Crear el backlog** | Historias "Como… quiero… para…" con criterios de aceptación |
+| **Flujos** | Diagrama de flujo, mapa de experiencia, EPC, BPMN |
+| **Wireframes** | Estructura en gris; jerarquía, agrupación, alineación, consistencia, espacio, flujo de lectura |
+| **Prototipos** | Pantallas enlazadas para probar antes de programar; Figma, Balsamiq |
+| **Vigilar** | Corto, comprensible, progreso visible y con sentido, final inequívoco |
+
+## Convención práctica
+
+<Steps>
+	1. **Una frase de producto** (resultado, actor, acción) escrita antes de abrir el editor.
+	2. **Una persona principal** con nombre; ante dos opciones, gana lo que ella necesita.
+	3. **Toda función empieza como historia** con su "para" y sus criterios de aceptación; los criterios se convierten en tests.
+	4. **Flujo antes que pantalla, wireframe antes que color.** Cinco wireframes rápidos valen más que uno bonito.
+	5. **Control adecuado al dato**: pocas opciones conocidas, `select`; sí o no, `checkbox`; una entre pocas visibles, `radio`; texto libre, `input`.
+</Steps>
+
+## Referencias
+
+<CardGrid stagger>
+	<LinkCard
+		href="https://www.strategyzer.com/library/the-business-model-canvas"
+		title="Business Model Canvas (Strategyzer)"
+		description="El lienzo original y cómo rellenarlo."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://www.nngroup.com/articles/persona/"
+		title="Personas (NN/g)"
+		description="Qué son, cómo se construyen y errores habituales."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://www.atlassian.com/agile/project-management/user-stories"
+		title="Historias de usuario (Atlassian)"
+		description="Formato, criterios de aceptación y relación con el backlog."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://www.nngroup.com/articles/ux-prototype-hi-lo-fidelity/"
+		title="Prototipos de alta y baja fidelidad (NN/g)"
+		description="Cuándo conviene cada nivel de detalle."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://help.figma.com/hc/en-us/articles/360040328653-Create-and-use-prototypes"
+		title="Prototipos en Figma"
+		description="Enlazar pantallas y probar flujos en Figma."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+	<LinkCard
+		href="https://www.bpmn.org/"
+		title="BPMN (OMG)"
+		description="La notación estándar de procesos de negocio."
+		target="_blank"
+		rel="noopener noreferrer"
+	/>
+</CardGrid>
+
+## Siguientes pasos
+
+<CardGrid>
+	<LinkCard
+		href="/jjcm/di/units/ux/fundamentals/04-ux-patterns/"
+		title="Patrones y buenas prácticas"
+		description="Las tácticas concretas para cada etapa del embudo y cómo medir si funcionan."
+	/>
+	<LinkCard
+		href="/jjcm/di/units/ux/fundamentals/02-human-decisions/"
+		title="Cómo deciden las personas"
+		description="Los modelos de comportamiento en los que se apoya este proceso."
+	/>
+</CardGrid>

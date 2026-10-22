@@ -242,6 +242,139 @@ await user.keyboard("{Enter}");
 	Verás `fireEvent.click(boton)` en tutoriales antiguos. Dispara un único evento sintético y no reproduce el comportamiento real (no mueve el foco, no respeta `disabled`). `userEvent` es la recomendación actual de Testing Library.
 </Aside>
 
+## Probar un hook: `renderHook` y `act`
+
+Un **hook personalizado** (una función `useX` que llama a `useState`, `useEffect`…) solo puede ejecutarse dentro de un componente: fuera, React lanza *Invalid hook call*. Para probarlo sin montar ningún componente real, Testing Library trae `renderHook`, que lo envuelve en un componente invisible y te deja mirar lo que devuelve.
+
+### Un hook para probar
+
+```ts title="src/hooks/useCounter.ts"
+import { useState } from "react";
+
+export function useCounter(initial = 0, step = 1) {
+	const [count, setCount] = useState(initial);
+
+	const increment = () => setCount((c) => c + step);
+	const decrement = () => setCount((c) => Math.max(0, c - step));
+	const reset = () => setCount(initial);
+
+	return { count, increment, decrement, reset };
+}
+```
+
+No tiene JSX, así que su archivo y el de su test son `.ts`, no `.tsx`.
+
+### El test
+
+```ts title="src/hooks/useCounter.test.ts"
+import { act, renderHook } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+import { useCounter } from "./useCounter";
+
+describe("useCounter", () => {
+	it("starts with the initial value", () => {
+		const { result } = renderHook(() => useCounter(5));
+
+		expect(result.current.count).toBe(5);
+	});
+
+	it("increments by the step", () => {
+		const { result } = renderHook(() => useCounter(0, 2));
+
+		act(() => result.current.increment());
+
+		expect(result.current.count).toBe(2);
+	});
+
+	it("never goes below zero", () => {
+		const { result } = renderHook(() => useCounter(1));
+
+		act(() => result.current.decrement());
+		act(() => result.current.decrement());
+
+		expect(result.current.count).toBe(0);
+	});
+
+	it("resets to the initial value", () => {
+		const { result } = renderHook(() => useCounter(3));
+
+		act(() => result.current.increment());
+		act(() => result.current.reset());
+
+		expect(result.current.count).toBe(3);
+	});
+});
+```
+
+Las tres piezas, una por una:
+
+| Pieza | Qué es | Qué hace |
+| :--- | :--- | :--- |
+| `renderHook(() => useCounter(5))` | La función que **monta** el hook | Crea un componente de prueba que llama a la función que le pasas en cada renderizado, igual que haría `App`. Devuelve un objeto con `result`, `rerender` y `unmount` |
+| `result.current` | El **último valor devuelto** por el hook | Es lo que el hook ha devuelto en el renderizado más reciente: aquí `{ count, increment, decrement, reset }`. Cada vez que el estado cambia, el componente se vuelve a renderizar y `result.current` apunta al objeto nuevo |
+| `act(() => …)` | Un envoltorio para **cambiar el estado** | Ejecuta la función y **espera a que React procese** el cambio y renderice antes de seguir. Sin `act`, la aserción podría ejecutarse antes de que `count` se haya actualizado |
+
+Es el equivalente, para un hook, de lo que hacen `render` y `userEvent` con un componente: `renderHook` monta, `act` interactúa y `result.current` es lo que "se ve".
+
+<Aside type="caution" title="`result.current` se lee después, no antes">
+	Un error habitual:
+
+	```ts
+	const { count, increment } = result.current; // ✗ copia del primer renderizado
+	act(() => increment());
+	expect(count).toBe(1); // falla: count sigue siendo 0
+	```
+
+	`count` es un número copiado en ese momento; no cambia cuando el hook se vuelve a ejecutar. Lee siempre `result.current.count` **en la aserción**, después del `act`. Las funciones (`increment`) sí pueden copiarse si el hook las mantiene estables, pero es más seguro leerlas también desde `result.current`.
+</Aside>
+
+<Aside type="note" title="Si olvidas `act`">
+	Vitest no falla, pero avisa: *Warning: An update to TestComponent inside a test was not wrapped in act(...)*. Y la aserción puede fallar de forma intermitente. Cualquier llamada que acabe en un `setState` va dentro de `act`. Las acciones de `userEvent` ya lo hacen por dentro; con un hook lo escribes tú.
+</Aside>
+
+### Argumentos que cambian: `rerender`
+
+Si el hook recibe argumentos y el test necesita cambiarlos, se pasan como `initialProps` y se vuelven a renderizar con `rerender`:
+
+```ts
+const { result, rerender } = renderHook(
+	({ initial }) => useCounter(initial),
+	{ initialProps: { initial: 0 } }
+);
+
+rerender({ initial: 10 });
+
+act(() => result.current.reset());
+expect(result.current.count).toBe(10);
+```
+
+### Hooks con efectos
+
+Si el hook usa `useEffect` para hablar con algo externo (`localStorage`, `document.title`, un temporizador), el test prepara ese exterior antes y lo comprueba después, exactamente como con un componente:
+
+```ts
+localStorage.setItem("count", "7");
+
+const { result } = renderHook(() => usePersistentCounter());
+
+expect(result.current.count).toBe(7);
+
+act(() => result.current.increment());
+
+expect(localStorage.getItem("count")).toBe("8");
+```
+
+Y `unmount()` ejecuta las limpiezas de los efectos, para comprobar que un escuchador o un temporizador se retira.
+
+### Qué probar en un hook
+
+- **Lo que devuelve** con distintos valores iniciales.
+- **Cada acción** y su efecto en el estado, de una en una.
+- **Los límites y casos raros**: valores mínimos y máximos, llamar dos veces, llamar sin elementos.
+- **Lo externo**: qué lee y qué escribe en `localStorage`, en el DOM o en una API (simulada).
+
+No se prueba **cómo** lo hace: ni cuántos `useState` tiene ni cómo se llaman. Los componentes que usan el hook se prueban aparte, pasándoles funciones falsas (`vi.fn()`) en lugar del hook real.
+
 ## Un formulario completo
 
 ```tsx title="src/components/LoginForm.tsx"
