@@ -983,7 +983,7 @@ Las funciones también son args. Storybook trae `fn()` (de `storybook/test`): un
 	</TabItem>
 </Tabs>
 
-Abre `Cart › WithItems` y mira el panel **Accessibility**: sin violaciones. Los botones `-`, `+` y `X` pasan la regla `button-name` porque llevan `aria-label`; si quitas uno, aparecerán tres violaciones, una por fila, como en la [página de componentes](/jjcm/di/units/react/02-components/#cómo-se-ve-un-fallo-de-accesibilidad). En `Header › WithItems` comprueba que el botón sigue llamándose "Abrir carrito" en la pestaña **Accessibility**, no "Abrir carrito 3".
+Abre `Cart › WithItems` y mira el panel **Accessibility**. Los botones `-`, `+` y `X` pasan la regla `button-name` porque llevan `aria-label` (si quitas uno, aparecerán tres violaciones, una por fila, como en la [página de componentes](/jjcm/di/units/react/02-components/#cómo-se-ve-un-fallo-de-accesibilidad)). Pero verás **una violación**, `empty-table-header`, por el `<th></th>` vacío de la última columna; y en `Header › WithItems` otra, `label-content-name-mismatch`, porque el botón tiene `aria-label="Abrir carrito"` y dentro se ve un "3" que no forma parte del nombre. Son fallos reales, introducidos en esta página, y se arreglan al principio de la [página del hook](/jjcm/di/units/react/05-cart-hook/#dos-violaciones-de-accesibilidad), donde además la auditoría pasa a ser automática.
 
 ### Confirmar
 

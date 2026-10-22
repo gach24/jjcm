@@ -818,7 +818,7 @@ Para ver el panel en acción, quita la línea `aria-label="Abrir carrito"` del b
 
 <Image src={storybookA11y} alt="Storybook con la story Header abierta y el panel Accessibility mostrando una violación: Button name, regla button-name, impacto Critical" />
 
-La pestaña **Accessibility** pasa a marcar **1** y la lista **Violations** muestra la regla incumplida, **Button name** (`button-name`), con impacto **Critical**: el botón no tiene ningún texto que un lector de pantalla pueda anunciar. Al desplegarla verás el fragmento de HTML afectado y las formas de arreglarlo que propone axe (texto visible dentro del botón, `aria-label`, `aria-labelledby` o `title`). Las otras dos listas, **Passes** (10 comprobaciones superadas) e **Inconclusive**, no cambian.
+La pestaña **Accessibility** pasa a marcar **1** y la lista **Violations** muestra la regla incumplida, **Button name** (`button-name`), con impacto **Critical**: el botón no tiene ningún texto que un lector de pantalla pueda anunciar. Al desplegarla verás el fragmento de HTML afectado y las formas de arreglarlo que propone [axe](/jjcm/di/units/ux/fundamentals/01-introduction/#qué-es-axe), el motor de reglas que usa el panel (texto visible dentro del botón, `aria-label`, `aria-labelledby` o `title`). Las otras dos listas, **Passes** (10 comprobaciones superadas) e **Inconclusive**, no cambian.
 
 Vuelve a poner el `aria-label`: la violación desaparece. Es la misma comprobación que hace el test `shows the button to open the cart`, desde el otro lado: el test falla porque no encuentra un botón con ese nombre; axe avisa porque el botón no tiene ninguno. Cuando una de las dos cosas ocurra en un componente nuevo, la causa casi siempre es la misma.
 

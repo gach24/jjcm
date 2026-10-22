@@ -197,12 +197,31 @@ Una interfaz puede ser accesible y poco usable (todo está etiquetado, pero el f
 Ninguna herramienta automática detecta más de un tercio de los problemas de accesibilidad y ninguna mide la usabilidad. Se combinan:
 
 <Steps>
-	1. **Auditoría automática.** Lighthouse en Chrome (pestaña *Lighthouse* de las DevTools) puntúa la accesibilidad y lista los fallos detectables: contraste, `alt`, etiquetas, nombres. El panel **Accessibility** de Storybook hace lo mismo componente a componente con axe, y es lo que ya tienes instalado en GuitarLA.
+	1. **Auditoría automática.** Lighthouse en Chrome (pestaña *Lighthouse* de las DevTools) puntúa la accesibilidad y lista los fallos detectables: contraste, `alt`, etiquetas, nombres. El panel **Accessibility** de Storybook hace lo mismo componente a componente con **axe**, y es lo que ya tienes instalado en GuitarLA.
 	2. **Revisión manual con teclado.** Suelta el ratón y recorre la página con `Tab`, `Shift+Tab`, `Enter` y espacio. ¿Se ve dónde estás? ¿Llegas a todo? ¿Se queda atrapado el foco en algún sitio?
 	3. **Lector de pantalla.** NVDA es gratuito en Windows; VoiceOver viene con macOS e iOS; TalkBack con Android. Diez minutos escuchando tu propia interfaz cambian cómo la programas.
 	4. **Evaluación heurística.** Recorre las diez heurísticas de Nielsen con la interfaz delante y anota cada incumplimiento, con su gravedad.
 	5. **Prueba con usuarios.** Cinco personas haciendo tres tareas mientras piensan en voz alta encuentran la mayoría de los problemas de usabilidad. No hace falta laboratorio: un compañero que no haya visto la app y un cronómetro.
 </Steps>
+
+### Qué es axe
+
+**axe** (de [axe-core](https://github.com/dequelabs/axe-core), de la empresa Deque) es un **motor de reglas de accesibilidad**: una librería de JavaScript que recorre el DOM de una página, aplica unas cien reglas basadas en las WCAG y devuelve la lista de fallos. No es una aplicación que se abra; es el motor que usan por dentro otras herramientas:
+
+| Herramienta | Dónde la usas | Qué audita |
+| :--- | :--- | :--- |
+| Panel **Accessibility** de Storybook | Mientras desarrollas un componente | La story abierta |
+| **Lighthouse** de Chrome | En la aplicación desplegada o en local | La página entera, con una puntuación |
+| `@axe-core/playwright` | En un test de Playwright | La página en el estado en que la deje el test, y el test falla si hay violaciones |
+| Extensión **axe DevTools** | En cualquier web, desde el navegador | La página abierta |
+
+Cada fallo que encuentra indica:
+
+- **La regla**, con un identificador como `button-name` o `image-alt`, y un enlace a su explicación.
+- **El impacto**: *critical*, *serious*, *moderate* o *minor*.
+- **El fragmento de HTML** afectado y cómo arreglarlo.
+
+Como es el mismo motor en todas, una violación que ves en Storybook es la misma que señalará Lighthouse o hará fallar el test de Playwright.
 
 <Aside type="note" title="Qué puede y qué no puede hacer Storybook">
 	**Accesibilidad, sí**: el addon de accesibilidad ejecuta axe sobre cada story y separa **violaciones** (*Violations*, fallos seguros), **comprobaciones superadas** (*Passes*) y **no concluyentes** (*Inconclusive*, las que necesitan revisión humana, como el contraste sobre una imagen). Es un panel que miras, no un test que falla, y cubre solo lo automatizable; el teclado y el lector de pantalla se prueban a mano, y Storybook es un buen sitio para hacerlo porque aísla el componente.
