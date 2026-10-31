@@ -188,13 +188,13 @@ Tres cosas devuelven a una SPA lo que la web clásica daba gratis:
 | :--- | :--- | :--- |
 | **Un título por página** | `document.title` con el hook `useDocumentTitle` | Es lo primero que anuncia el lector al cambiar de página, y lo que se ve en la pestaña y en el historial |
 | **Un `h1` por página** | Cada página empieza por su `h1`; los demás niveles cuelgan de él sin saltos | Los lectores de pantalla navegan por encabezados; sin `h1` no hay dónde ir |
-| **El foco al contenido nuevo** | El `main` del layout recibe el foco (`tabIndex={-1}`) cuando cambia la ruta | El lector anuncia "principal" y el título, y el siguiente `Tab` entra en el contenido en vez de recorrer otra vez la cabecera |
+| **El foco al contenido nuevo** | Pendiente en GuitarLA: el `main` del layout recibiría el foco (`tabIndex={-1}` y un `ref`) cuando cambia la ruta | El lector anuncia "principal" y el título, y el siguiente `Tab` entra en el contenido en vez de recorrer otra vez la cabecera |
 
-Y un detalle en los enlaces de navegación: el enlace de la página actual lleva `aria-current="page"`, que `NavLink` pone solo. El lector anuncia "página actual" y el estilo del enlace activo se deriva de ese atributo. Es el mismo principio que `aria-invalid` en los campos y `aria-expanded` en los paneles: **el aspecto sigue al estado accesible**, nunca al revés.
+Y un detalle en los enlaces de navegación: el enlace de la página actual lleva `aria-current="page"`. `aria-current` es un atributo estándar de ARIA que marca, dentro de un grupo de elementos parecidos, cuál es el actual; su valor dice respecto a qué: `page` para la página en un menú, `step` para el paso de un proceso, `location` para la posición en unas migas de pan, `date` para el día de hoy en un calendario, o `true` cuando ninguno encaja. `NavLink` escribe `aria-current="page"` solo en el enlace cuya ruta está activa, el lector anuncia "página actual" y el estilo del enlace activo se deriva de ese atributo con `aria-[current=page]:underline`. Es el mismo principio que `aria-invalid` en los campos y `aria-expanded` en los paneles: **el aspecto sigue al estado accesible**, nunca al revés.
 
 ### Formularios
 
-Un formulario es donde más se nota si una interfaz está bien hecha: es el único sitio en que la aplicación **pide** algo a la persona, y donde más fácil es equivocarse. Lo que se aplica en el checkout de GuitarLA, en la [página de formularios](/jjcm/di/units/react/06-forms/), sale de cuatro reglas:
+Un formulario es donde más se nota si una interfaz está bien hecha: es el único sitio en que la aplicación **pide** algo a la persona, y donde más fácil es equivocarse. Lo que se aplica en el formulario de compra de GuitarLA, en la [página de ampliación](/jjcm/di/units/extensions/checkout/), y en el de alta de guitarras, sale de cuatro reglas:
 
 **1. Cada campo tiene una etiqueta visible y enlazada.** `<label htmlFor="id">` con el `id` del campo. Pulsar la etiqueta enfoca el campo, el lector de pantalla la lee al llegar, y el test puede encontrar el campo por ella. Un `placeholder` **no** es una etiqueta: desaparece al escribir y suele tener poco contraste. Las opciones que responden a una misma pregunta (los radios del envío) van en un `fieldset` con su `legend`.
 
@@ -272,7 +272,7 @@ En GuitarLA ya has aplicado accesibilidad sin llamarla así: HTML semántico (`h
 | **Base técnica** | HTML semántico, `alt`, nombres accesibles, teclado, contraste 4,5:1, `lang` |
 | **ARIA** | Solo para lo que el HTML no expresa: `aria-label`, `aria-expanded`, `aria-live`, `role="alert"` |
 | **Avisar** | Nombre accesible que contiene el texto visible; `aria-live` para cambios sin foco; el foco va a lo que se abre |
-| **Cambiar de página** | Título, `h1` y foco a `main` en cada ruta; `aria-current` en el enlace activo |
+| **Cambiar de página** | Título y `h1` en cada ruta, y foco a `main` cuando se aplique; `aria-current` en el enlace activo |
 | **Formularios** | `label` enlazada, `fieldset`/`legend`, `aria-invalid` + `aria-describedby`, mensajes que dicen qué hacer, validar desde el primer envío, foco al primer error |
 | **Evaluar** | Lighthouse y axe (automático) + teclado + lector de pantalla + heurísticas + usuarios |
 
