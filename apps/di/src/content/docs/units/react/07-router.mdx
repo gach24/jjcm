@@ -120,7 +120,7 @@ GuitarLA usa el **modo data**. Hoy solo se nota en cómo se escriben las rutas, 
 
 ### El layout y las páginas
 
-Las tres páginas comparten cabecera y pie. En React Router eso es una **ruta de layout**: un componente que pinta lo común y un `<Outlet />` donde va la página activa. El layout no es una página, así que tiene su propia carpeta, `src/layouts/`; las páginas van en `src/pages/`. Y la regla de los componentes se aplica también a las páginas y a los loaders: **una carpeta por página y por loader**, con su `index.ts`, y un índice en cada carpeta padre que las reexporta. El layout y los hooks son archivos sueltos en su carpeta. En los bloques siguientes solo se muestra el archivo principal de cada una; los `index.ts` son todos de una línea:
+Las tres páginas comparten cabecera y pie. En React Router eso es una **ruta de layout**: un componente que pinta lo común y un `<Outlet />` donde va la página activa. El layout no es una página, así que tiene su propia carpeta, `src/layouts/`; las páginas van en `src/pages/`. Y la regla de los componentes se aplica también a las páginas: **una carpeta por página**, con su `index.ts`, y un índice en cada carpeta padre que las reexporta. Los loaders se agrupan **por entidad**: todos los que cargan guitarras viven en `src/loaders/guitarLoaders/`, cada uno en su archivo, con su `index.ts`. El layout y los hooks son archivos sueltos en su carpeta. En los bloques siguientes solo se muestra el archivo principal de cada una; los `index.ts` son todos de una línea:
 
 <FileTree>
 - src/
@@ -139,7 +139,7 @@ Las tres páginas comparten cabecera y pie. En React Router eso es una **ruta de
 		- useDocumentTitle.ts nuevo
 		- …
 	- loaders/
-		- guitarLoader/ llega con la página de detalle
+		- guitarLoaders/ llega con la página de detalle
 	- router.tsx las rutas y el router; sustituye a App.tsx
 	- router.test.tsx antes App.test.tsx
 	- router.stories.tsx antes App.stories.tsx
@@ -740,9 +740,9 @@ Cada guitarra merece su propia dirección, `/guitars/3`, con la descripción com
 
 ### El loader
 
-Un `loader` es una función que React Router ejecuta **antes de pintar la ruta**. Recibe los parámetros de la URL y devuelve los datos; el componente los lee con `useLoaderData`. Van en una carpeta propia, `src/loaders/`, porque no son componentes ni hooks:
+Un `loader` es una función que React Router ejecuta **antes de pintar la ruta**. Recibe los parámetros de la URL y devuelve los datos; el componente los lee con `useLoaderData`. Van en una carpeta propia, `src/loaders/`, porque no son componentes ni hooks, agrupados por la entidad que cargan: este es el primero de los loaders de guitarras, y en la página siguiente llegará el del catálogo a la misma carpeta:
 
-```ts title="src/loaders/guitarLoader/guitarLoader.ts"
+```ts title="src/loaders/guitarLoaders/guitarLoader.ts"
 import { data, type LoaderFunctionArgs } from 'react-router';
 import { db } from '../../data/db';
 import type { Guitar } from '../../types';
@@ -766,12 +766,12 @@ export const guitarLoader = ({ params }: LoaderFunctionArgs): Guitar => {
 };
 ```
 
-```ts title="src/loaders/guitarLoader/index.ts"
+```ts title="src/loaders/guitarLoaders/index.ts"
 export * from './guitarLoader';
 ```
 
 ```ts title="src/loaders/index.ts"
-export * from './guitarLoader';
+export * from './guitarLoaders';
 ```
 
 | Pieza | Qué hace |
@@ -1123,7 +1123,7 @@ Un router en modo data con una ruta de layout, un `loader` por página con datos
 	2. **Rutas como objetos en `router.tsx`**: layout con `Outlet` y `ErrorBoundary`, `index` para la raíz y `*` al final para la 404; las páginas de error siempre ofrecen una salida.
 	3. **`Link` y `NavLink`** para navegar, nunca `<a href>` interno ni `window.location`.
 	4. **Un `h1` y un título de pestaña por página**, sin saltos de nivel en los encabezados.
-	5. **Los datos de una ruta se cargan en su `loader`**, en su carpeta de `src/loaders/`; la página los lee con `useLoaderData` y no sabe de dónde vienen.
+	5. **Los datos de una ruta se cargan en su `loader`**, en la carpeta de su entidad dentro de `src/loaders/` (`guitarLoaders/`); la página los lee con `useLoaderData` y no sabe de dónde vienen.
 	6. **`renderWithProviders` y `renderApp`** en los tests y un decorator global en Storybook, siempre con routers de memoria sobre las mismas `routes`.
 </Steps>
 
