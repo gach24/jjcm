@@ -176,7 +176,39 @@ La primera heurística de Nielsen, **visibilidad del estado del sistema**, dice 
 
 Un elemento con `aria-live` hace que el lector de pantalla **anuncie su contenido cada vez que cambia**, sin mover el foco. Con `polite` espera a que el usuario termine lo que está oyendo; `assertive` interrumpe, y se reserva para errores. El elemento tiene que **existir desde el principio** (vacío o con el valor inicial): si se crea en el momento del cambio, el lector no lo registra. Dos atajos del HTML: `role="status"` equivale a `aria-live="polite"` y `role="alert"` a `assertive`.
 
+Las **esperas** son otro cambio que hay que avisar. Cuando una página pide sus datos a un servidor, quien ve la pantalla ve un "Cargando…" o una zona atenuada; quien no la ve necesita lo mismo en forma de texto: un elemento con `role="status"` que diga "Cargando…" mientras dura la espera. Y la región que está cambiando se marca con `aria-busy="true"`: es el atributo de ARIA que dice "esto se está actualizando, no lo leas a medias", y las tecnologías de asistencia pueden esperar a que vuelva a `false` antes de anunciar el contenido nuevo. En GuitarLA el `main` del layout lleva `aria-busy` mientras React Router carga la siguiente página, con la página anterior visible y atenuada para que no haya un salto en blanco.
+
 Y la otra mitad de avisar es el **foco**. Cuando una acción abre algo (un panel, un diálogo), el foco debe ir a ese algo, o quien navega con teclado se queda "detrás" de lo que acaba de abrir. En el carrito de GuitarLA, `autoFocus` en el botón de cerrar hace que al abrirse el panel el lector anuncie dónde está y que `Enter` lo cierre. Cuando se cierra, lo ideal es devolver el foco al botón que lo abrió; llegará con los diálogos.
+
+### Cambiar de página en una aplicación
+
+En una web clásica, cada enlace carga un documento nuevo: el navegador lo anuncia, el lector de pantalla empieza a leer desde el título y el foco vuelve al principio. En una **aplicación de una sola página** (una SPA, como GuitarLA con React Router) el enlace solo cambia unos componentes dentro del mismo documento. Para quien ve la pantalla no hay diferencia; para quien no la ve, **no ha pasado nada**: el foco sigue en el enlace que pulsó, que a veces ya no existe, y nadie le dice que el contenido ha cambiado.
+
+Tres cosas devuelven a una SPA lo que la web clásica daba gratis:
+
+| Qué | Cómo en GuitarLA | Para qué |
+| :--- | :--- | :--- |
+| **Un título por página** | `document.title` con el hook `useDocumentTitle` | Es lo primero que anuncia el lector al cambiar de página, y lo que se ve en la pestaña y en el historial |
+| **Un `h1` por página** | Cada página empieza por su `h1`; los demás niveles cuelgan de él sin saltos | Los lectores de pantalla navegan por encabezados; sin `h1` no hay dónde ir |
+| **El foco al contenido nuevo** | Pendiente en GuitarLA: el `main` del layout recibiría el foco (`tabIndex={-1}` y un `ref`) cuando cambia la ruta | El lector anuncia "principal" y el título, y el siguiente `Tab` entra en el contenido en vez de recorrer otra vez la cabecera |
+
+Y un detalle en los enlaces de navegación: el enlace de la página actual lleva `aria-current="page"`. `aria-current` es un atributo estándar de ARIA que marca, dentro de un grupo de elementos parecidos, cuál es el actual; su valor dice respecto a qué: `page` para la página en un menú, `step` para el paso de un proceso, `location` para la posición en unas migas de pan, `date` para el día de hoy en un calendario, o `true` cuando ninguno encaja. `NavLink` escribe `aria-current="page"` solo en el enlace cuya ruta está activa, el lector anuncia "página actual" y el estilo del enlace activo se deriva de ese atributo con `aria-[current=page]:underline`. Es el mismo principio que `aria-invalid` en los campos y `aria-expanded` en los paneles: **el aspecto sigue al estado accesible**, nunca al revés.
+
+### Formularios
+
+Un formulario es donde más se nota si una interfaz está bien hecha: es el único sitio en que la aplicación **pide** algo a la persona, y donde más fácil es equivocarse. Lo que se aplica en el formulario de compra de GuitarLA, en la [página de ampliación](/jjcm/di/units/extensions/checkout/), y en el de alta de guitarras, sale de cuatro reglas:
+
+**1. Cada campo tiene una etiqueta visible y enlazada.** `<label htmlFor="id">` con el `id` del campo. Pulsar la etiqueta enfoca el campo, el lector de pantalla la lee al llegar, y el test puede encontrar el campo por ella. Un `placeholder` **no** es una etiqueta: desaparece al escribir y suele tener poco contraste. Las opciones que responden a una misma pregunta (los radios del envío) van en un `fieldset` con su `legend`.
+
+**2. El error se enlaza al campo y no depende solo del color.** Un borde rojo informa a quien ve bien y distingue el rojo. Para el resto hace falta un texto, y para quien usa lector de pantalla hace falta que el campo **apunte** al texto: `aria-invalid="true"` hace que se anuncie "no válido" y `aria-describedby="id-del-mensaje"` hace que se lea el mensaje después de la etiqueta. Son los criterios 1.4.1 (*uso del color*) y 3.3.1 (*identificación de errores*) de las WCAG.
+
+**3. El mensaje dice qué hacer, no qué ha fallado.** "Campo inválido" obliga a adivinar. "Escribe un correo con el formato nombre@ejemplo.com" se puede obedecer. Un mensaje por problema: no haber escrito el correo y haberlo escrito mal son dos problemas, con dos mensajes. Es el criterio 3.3.3 (*sugerencias ante errores*) y la heurística de Nielsen *ayudar a reconocer, diagnosticar y recuperarse de los errores*.
+
+**4. Validar en el momento adecuado y llevar el foco al problema.** Validar con cada tecla desde el principio interrumpe ("el correo está mal" cuando llevas escrito `an`). Validar solo al enviar obliga a reenviar para saber si ya está bien. El punto medio que recomiendan las guías de servicios públicos (GOV.UK, entre otras): **no avisar hasta el primer intento de envío; a partir de ahí, revalidar con cada cambio** para que el error desaparezca en cuanto el dato es correcto. Y al enviar con errores, el **foco va al primer campo que falla**: la persona aterriza donde tiene que actuar y oye la etiqueta y el mensaje.
+
+**5. Un botón deshabilitado dice por qué.** `disabled` quita el botón del recorrido del teclado y los lectores lo anuncian como "atenuado": es correcto cuando la acción no tiene sentido en ese estado (vaciar un carrito que ya está vacío, añadir una unidad más cuando se ha llegado al máximo), pero solo si el **motivo está a la vista**, en el texto del propio botón o justo al lado. Un botón gris sin explicación obliga a adivinar qué falta. Si hace falta que siga siendo enfocable, por ejemplo para mostrar una explicación al pasar por él, se usa `aria-disabled="true"` y se ignora el clic en el código.
+
+Dos detalles más que cuestan poco: `autocomplete` con el nombre estándar del dato (`name`, `email`, `street-address`) para que el navegador ofrezca rellenarlo (criterio 1.3.5), y `required` y `type="email"` aunque la validación la haga la aplicación, porque aportan semántica y el teclado adecuado en el móvil.
 
 ## Usabilidad y accesibilidad no son lo mismo
 
@@ -244,6 +276,8 @@ En GuitarLA ya has aplicado accesibilidad sin llamarla así: HTML semántico (`h
 | **Base técnica** | HTML semántico, `alt`, nombres accesibles, teclado, contraste 4,5:1, `lang` |
 | **ARIA** | Solo para lo que el HTML no expresa: `aria-label`, `aria-expanded`, `aria-live`, `role="alert"` |
 | **Avisar** | Nombre accesible que contiene el texto visible; `aria-live` para cambios sin foco; el foco va a lo que se abre |
+| **Cambiar de página** | Título y `h1` en cada ruta, y foco a `main` cuando se aplique; `aria-current` en el enlace activo |
+| **Formularios** | `label` enlazada, `fieldset`/`legend`, `aria-invalid` + `aria-describedby`, mensajes que dicen qué hacer, validar desde el primer envío, foco al primer error |
 | **Evaluar** | Lighthouse y axe (automático) + teclado + lector de pantalla + heurísticas + usuarios |
 
 ## Convención práctica
