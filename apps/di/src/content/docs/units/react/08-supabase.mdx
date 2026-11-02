@@ -580,7 +580,7 @@ La página del catálogo lee del loader, como ya hacía el detalle. El `useState
    const { addToCart } = useCartContext();
 ```
 
-Como `image` ya es una URL, la tarjeta y el detalle dejan de montarla:
+Como `image` ya es una URL, la tarjeta, el detalle y la miniatura del carrito dejan de montarla. El carrito es fácil de olvidar: no está en la página, y su test tampoco miraba la imagen, así que de paso gana esa comprobación.
 
 ```diff lang="tsx" title="src/components/Guitar/Guitar.tsx"
        <img
@@ -598,6 +598,23 @@ Como `image` ya es una URL, la tarjeta y el detalle dejan de montarla:
 +        src={guitar.image}
          alt={`Guitarra ${guitar.name}`}
        />
+```
+
+```diff lang="tsx" title="src/components/Cart/Cart.tsx"
+                     <img
+                       className="w-10"
+-                      src={`/img/${item.image}.jpg`}
++                      src={item.image}
+                       alt={`Guitarra ${item.name}`}
+                     />
+```
+
+```diff lang="tsx" title="src/components/Cart/Cart.test.tsx"
+     expect(screen.getByRole('cell', { name: 'SRV' })).toBeInTheDocument();
++    expect(
++      screen.getByRole('img', { name: 'Guitarra Lukather' })
++    ).toHaveAttribute('src', '/img/guitarra_01.jpg');
+     expect(screen.getByText('$947')).toBeInTheDocument();
 ```
 
 ### Mientras cargan los datos
